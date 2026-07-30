@@ -86,6 +86,8 @@ function reportHtml(rep) {
     <td>${r.people ?? '-'}</td><td>${r.age_h != null ? r.age_h + 'h' : ''}</td>
     <td>${r.confirmations ?? 0}</td></tr>`;
   return `<!doctype html><meta charset="utf-8"><title>Banpani - situation report</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>body{font:15px/1.5 system-ui;max-width:900px;margin:24px auto;padding:0 16px;color:#111}
 h1{margin:0}small{color:#666}table{width:100%;border-collapse:collapse;margin:12px 0 28px}

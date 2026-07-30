@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin:0; box-sizing:border-box; }
+  html,body { width:1200px; height:630px; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans","Noto Sans Bengali",sans-serif;
+    background:
+      radial-gradient(1100px 500px at 82% -12%, rgba(47,129,247,.22), transparent 60%),
+      linear-gradient(160deg,#141b23 0%, #0f1419 55%, #0b0f14 100%);
+    color:#e8edf2; padding:62px 76px; position:relative; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .waves { position:absolute; left:0; right:0; bottom:-40px; height:300px; z-index:0; }
+  .content { position:relative; z-index:1; display:flex; flex-direction:column; height:100%; }
+  .top { display:flex; align-items:center; gap:24px; }
+  .drop { width:120px; height:120px; }
+  .brand { font-size:74px; font-weight:800; letter-spacing:-1px; line-height:1; }
+  .brand .as { color:#8b97a6; font-weight:500; font-size:40px; }
+  .tag { font-size:52px; font-weight:800; line-height:1.1; margin-top:30px; max-width:960px;
+         background:linear-gradient(90deg,#e8edf2,#bcd4ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .sub { font-size:27px; color:#aeb9c7; margin-top:18px; line-height:1.45; max-width:960px; }
+  .pills { display:flex; gap:12px; margin-top:26px; flex-wrap:wrap; }
+  .pill { font-size:23px; color:#cdd6e2; border:1px solid #2a3541; background:rgba(30,39,50,.6);
+          border-radius:999px; padding:10px 19px; }
+  .spacer { flex:1; }
+  .foot { display:flex; align-items:center; justify-content:space-between; }
+  .url { font-size:33px; font-weight:700; color:#8fbaff; }
+  .meta { font-size:23px; color:#8b97a6; }
+  .dot { color:#3a4757; }
+</style>
+</head>
+<body>
+  <svg class="waves" viewBox="0 0 1200 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,110 C220,50 380,170 620,130 C860,90 1000,190 1200,140 L1200,300 L0,300 Z" fill="#2f81f7" opacity="0.10"/>
+    <path d="M0,170 C240,110 420,230 660,190 C900,150 1040,240 1200,200 L1200,300 L0,300 Z" fill="#8fbaff" opacity="0.07"/>
+  </svg>
+
+  <div class="content">
+    <div class="top">
+      <svg class="drop" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M256 96c-72 96-120 156-120 216a120 120 0 0 0 240 0c0-60-48-120-120-216z" fill="#2f81f7"/>
+        <path d="M150 320c44 26 70-18 108 0s70 24 108-4c22 40-8 100-8 100a120 120 0 0 1-208-96z" fill="#8fbaff" opacity="0.55"/>
+        <circle cx="256" cy="356" r="26" fill="#fff"/>
+      </svg>
+      <div class="brand">Banpani <span class="as">· বানপানী</span></div>
+    </div>
+
+    <div class="tag">Coordinating Community Flood Relief</div>
+    <div class="sub">A free, community-run live map for Assam — report needs, find the areas nobody has reached, and coordinate relief so no effort is doubled.</div>
+    <div class="pills">
+      <div class="pill">Free &amp; open source</div>
+      <div class="pill">Community-led</div>
+      <div class="pill">English · অসমীয়া · हिन्दी</div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="foot">
+      <div class="url">🌐 banpani.org</div>
+      <div class="meta">Owned by no one <span class="dot">·</span> built for everyone</div>
+    </div>
+  </div>
+</body>
+</html>
