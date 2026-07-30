@@ -1,0 +1,13 @@
+# runtime database (data lives on the server, never in the repo)
+server/banpani.db
+server/banpani.db-shm
+server/banpani.db-wal
+
+# generated at runtime
+frontend/report.html
+
+# local tooling / os
+.claude/
+.DS_Store
+*.log
+node_modules/

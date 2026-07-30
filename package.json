@@ -1,0 +1,17 @@
+{
+  "name": "banpani",
+  "version": "0.1.0",
+  "description": "Banpani — a free, community-run live map to coordinate flood relief. Built for Assam; meant to outlast any single flood.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node --experimental-sqlite server/server.js",
+    "seed": "node --experimental-sqlite server/seed.js",
+    "reset": "node --experimental-sqlite server/reset.js",
+    "report": "node --experimental-sqlite server/report.js",
+    "weather": "node --experimental-sqlite server/weather.js",
+    "dev": "node --experimental-sqlite --watch server/server.js"
+  },
+  "dependencies": {}
+}

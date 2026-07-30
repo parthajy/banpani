@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Banpani - Maintenance</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body{overflow:auto}
+    .wrap{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+    .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+    h2{font-size:16px;margin:0 0 4px}.sub2{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+    table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);font-size:12px}
+    th{color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.4px}
+    code{background:var(--panel2);padding:1px 5px;border-radius:4px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">🔧</div>
+    <div><h1>Banpani - Maintenance</h1><div class="sub">Optional. The site runs on community consensus without this page.</div></div>
+    <div class="spacer"></div>
+    <a class="link" href="index.html">🗺️ Live map</a>
+  </header>
+
+  <div class="wrap">
+    <div class="box" id="keybox">
+      <h2>Maintenance key</h2>
+      <p class="sub2">Paste <code>BANPANI_ADMIN_KEY</code>. Kept only in this browser. You normally never need this - verification and trust are fully community-driven. Use it only to override the auto weather advisory or clean up abuse the community hasn't caught.</p>
+      <input id="adminkey" type="password" placeholder="maintenance key" />
+      <button class="btn" id="unlock">Unlock</button>
+    </div>
+
+    <div id="panel" style="display:none">
+      <div class="box">
+        <h2>🌧️ Weather advisory (manual override)</h2>
+        <p class="sub2">Normally auto-filled every few hours by <code>npm run weather</code> (Open-Meteo). Edit here only to override.</p>
+        <label>Headline</label><input id="a_head" />
+        <label>Body</label><textarea id="a_body" rows="4"></textarea>
+        <label>Source</label><input id="a_src" />
+        <button class="btn" id="a_save">Save advisory</button>
+      </div>
+      <div class="box">
+        <h2>✉ Messages from people</h2>
+        <p class="sub2">Questions and notes sent via the site's Contact button. Their contact (if they left one) is here for you only - never shown publicly.</p>
+        <div style="overflow-x:auto"><table id="msgs"><thead><tr><th>When</th><th>Name</th><th>Reach them</th><th>Message</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="box">
+        <h2>🧾 Recent activity (audit log)</h2>
+        <p class="sub2">Last 200 actions - reports, votes, contact reveals. Full transparency.</p>
+        <div style="overflow-x:auto"><table id="audit"><thead><tr><th>Time</th><th>Kind</th><th>Target</th><th>Detail</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

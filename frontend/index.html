@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Banpani · বানপানী - Assam Flood Relief, coordinated</title>
+  <meta name="description" content="A free, community-run live map to coordinate flood relief in Assam - see who needs help, who's covering where, and which areas nobody has reached." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f1419" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <img class="logo" src="icon.svg" alt="Banpani" width="30" height="30" />
+    <div>
+      <h1>Banpani <span class="name-sub" style="color:var(--muted);font-weight:400">· বানপানী</span></h1>
+      <div class="sub" data-i18n="tagline">Coordinating Community Flood Relief</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="hdr-actions" id="hdrActions">
+      <div class="hlp">
+        <button class="link ic-btn" id="helpBtn"><span class="e">☎</span><span class="t" data-i18n="helplines">Help</span></button>
+        <div class="helpmenu" id="helpMenu"></div>
+      </div>
+      <button class="link ic-btn" id="shareMap"><span class="e">↗</span><span class="t" data-i18n="shareMap">Share</span></button>
+      <button class="link ic-btn" id="newsBtn"><span class="e">📰</span><span class="t" data-i18n="news">News</span></button>
+      <button class="link ic-btn" id="contactBtn"><span class="e">✉</span><span class="t" data-i18n="contact">Contact</span></button>
+      <a class="link ic-btn" href="verify.html"><span class="e">🛡️</span><span class="t" data-i18n="volunteers">Verify</span></a>
+      <a class="link ic-btn" href="report.html" target="_blank"><span class="e">📄</span><span class="t" data-i18n="report6h">Report</span></a>
+    </div>
+    <select id="lang" class="langsel" title="Language" aria-label="Language">
+      <option value="en">EN</option>
+      <option value="as">অস</option>
+      <option value="hi">हि</option>
+    </select>
+    <button class="hamburger" id="menuBtn" aria-label="Menu">☰</button>
+  </header>
+
+  <div class="disclaimer" id="disclaimer">
+    <span data-i18n="disclaimer">This is a community map - reports may be unverified. For rescue, always call the official helplines.</span>
+    <button id="discOk" data-i18n="gotit">Got it</button>
+  </div>
+
+  <div class="main">
+    <div id="map"></div>
+    <div class="modehint" id="modehint" data-i18n="tapMap">Tap the map to drop the location 📍</div>
+
+    <!-- reopen tabs shown when a column is collapsed -->
+    <button class="reopen reopen-right" id="panelReopen" title="Show panel">‹</button>
+
+    <!-- map overlay: layers, time views, uncovered pane -->
+    <div class="overlay" id="overlay">
+      <button class="ovl-toggle" id="overlayToggle" title="Collapse controls">▾ <span data-i18n="view">View</span></button>
+      <div class="ctl">
+        <h3 data-i18n="view">View</h3>
+        <div class="seg" id="timeseg">
+          <button data-v="live" class="on" data-i18n="live">Live</button>
+          <button data-v="today" data-i18n="today">Today</button>
+          <button data-v="older" data-i18n="earlier">Earlier</button>
+          <button data-v="uncovered" data-i18n="gaps">Gaps</button>
+        </div>
+        <div style="height:8px"></div>
+        <h3 data-i18n="layers">Layers</h3>
+        <label class="lyr"><input type="checkbox" id="ly_flood" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="floodExtent">Flood extent</span></label>
+        <label class="lyr"><input type="checkbox" id="ly_needs" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="needs">Needs</span></label>
+        <label class="lyr"><input type="checkbox" id="ly_cover" checked><span class="dot" style="background:#2f81f7"></span> <span data-i18n="coverage">Coverage / convoys</span></label>
+        <label class="lyr"><input type="checkbox" id="ly_ngo" checked><span class="dot" style="background:#28c76f"></span> <span data-i18n="ngosLayer">NGOs & drop-offs</span></label>
+        <div class="legend">
+          <span><i style="background:#f0453a"></i><span data-i18n="high">high</span></span><span><i style="background:#f5a623"></i><span data-i18n="medium">medium</span></span><span><i style="background:#8fbaff"></i><span data-i18n="receding">receding</span></span>
+        </div>
+      </div>
+
+      <div class="ctl uncovered">
+        <h3><span data-i18n="nobody">⚠ Nobody coming</span></h3>
+        <div id="gaps"><div class="none" data-i18n="loading">Loading…</div></div>
+      </div>
+
+      <!-- current flood + weather outlook (part of the same scrolling stack) -->
+      <div class="advisory" id="advisory">
+        <div class="adv-head" id="advToggle">
+          <b data-i18n="floodNow">🌊 Under flood now</b><span class="chev" id="advChev">▾</span>
+        </div>
+        <div class="adv-body" id="advBody">
+          <div id="floodTicker" class="flood-tick"></div>
+          <div id="floodNowList" class="flood-now"></div>
+          <div class="adv-sep"></div>
+          <div class="adv-out">
+            <div class="adv-out-h" data-i18n="outlook">🌧️ Weather outlook</div>
+            <div id="advHeadline" class="adv-hl"></div>
+            <div id="advText" class="adv-txt"></div>
+            <div id="advMeta" class="adv-meta"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right action panel -->
+    <aside class="panel">
+      <div class="tabs">
+        <div class="tab on" data-tab="need" data-i18n="tNeed">🆘 Need</div>
+        <div class="tab" data-tab="flood" data-i18n="tFlood">🌊 Flood</div>
+        <div class="tab" data-tab="convoy" data-i18n="tConvoy">🚚 Convoy</div>
+        <div class="tab" data-tab="drop" data-i18n="tDrop">📦 Drop-off</div>
+        <div class="tab" data-tab="ngo" data-i18n="tNgo">🏳️ NGO</div>
+        <div class="tab" data-tab="feed" data-i18n="tFeed">📋 Feed</div>
+        <button class="tab-collapse" id="panelToggle" title="Hide panel - see the full map">✕</button>
+      </div>
+      <div class="tabbody">
+
+        <section data-body="need">
+          <p class="intro" data-i18n="needIntro">Anyone can report - a stranded family, a neighbour, a volunteer. No login. A volunteer will verify it.</p>
+          <label data-i18n="place">Place / area</label><input id="n_place" data-ph="place" placeholder="Place / area" />
+          <label data-i18n="locSet">Location - tap map or use GPS</label>
+          <div class="locpick"><div class="coord" id="n_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="n_gps" data-i18n="gps">📍 GPS</button></div>
+          <label data-i18n="whatNeeded">What's needed?</label><div class="chips" id="n_items"></div>
+          <label data-i18n="people">People affected (approx)</label><input id="n_people" type="number" inputmode="numeric" placeholder="300" />
+          <label data-i18n="details">Details</label><input id="n_details" data-ph="details" placeholder="Details" />
+          <label data-i18n="whoAreYou">Who are you?</label>
+          <select id="n_kind"><option value="affected" data-i18n="affected">I'm affected / here</option><option value="witness" selected data-i18n="witness">I know this is true</option><option value="volunteer" data-i18n="volSelf">I'm a volunteer</option></select>
+          <label data-i18n="contactOpt">Contact phone (optional)</label><input id="n_contact" />
+          <button class="btn warn" id="n_submit" data-i18n="postNeed">🆘 Post this need</button>
+        </section>
+
+        <section data-body="flood" hidden>
+          <p class="intro" data-i18n="floodIntro">Is an area under water right now? Mark it so the map shows real, live flood status - never guessed. Tap the map or use GPS.</p>
+          <label data-i18n="place">Area name (optional)</label><input id="f_place" data-ph="place" placeholder="Area name" />
+          <label data-i18n="locSet">Location - tap map or use GPS</label>
+          <div class="locpick"><div class="coord" id="f_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="f_gps" data-i18n="gps">📍 GPS</button></div>
+          <label data-i18n="howBad">How bad is it?</label>
+          <div class="seg fsev" id="f_sev">
+            <button data-s="high" class="on" data-i18n="sevSevere">Severe</button>
+            <button data-s="medium" data-i18n="sevModerate">Moderate</button>
+            <button data-s="receding" data-i18n="sevReceding">Receding</button>
+            <button data-s="receded" data-i18n="sevGone">Water gone</button>
+          </div>
+          <button class="btn warn" id="f_submit" data-i18n="markFlood">🌊 Mark flooding here</button>
+        </section>
+
+        <section data-body="convoy" hidden>
+          <p class="intro" data-i18n="convoyIntro">Announce where your relief is going, so two convoys don't stack on one village while another gets nothing.</p>
+          <label data-i18n="groupName">Group / convoy name</label><input id="r_name" data-ph="groupName" placeholder="Group / convoy name" />
+          <label data-i18n="from">Starting from</label><input id="r_from" />
+          <label data-i18n="destSet">Destination - tap map or GPS</label>
+          <div class="locpick"><div class="coord" id="r_coord" data-i18n="noDest">No destination set</div><button class="btn sm" id="r_gps" data-i18n="gps">📍 GPS</button></div>
+          <label data-i18n="carrying">Carrying</label><div class="chips" id="r_items"></div>
+          <label data-i18n="eta">Departing / ETA</label><input id="r_eta" />
+          <label data-i18n="contactOpt">Contact (optional)</label><input id="r_contact" />
+          <div class="warnbox" id="r_warn"></div>
+          <button class="btn" id="r_submit" data-i18n="announceConvoy">🚚 Announce convoy</button>
+        </section>
+
+        <section data-body="drop" hidden>
+          <p class="intro" data-i18n="dropIntro">Register a collection point where people can drop supplies.</p>
+          <label data-i18n="pointName">Point name</label><input id="c_name" data-ph="pointName" placeholder="Point name" />
+          <label data-i18n="locSet">Location - tap map or GPS</label>
+          <div class="locpick"><div class="coord" id="c_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="c_gps" data-i18n="gps">📍 GPS</button></div>
+          <label data-i18n="accepting">Accepting</label><div class="chips" id="c_items"></div>
+          <label data-i18n="hours">Open hours</label><input id="c_hours" />
+          <label data-i18n="runBy">Run by</label><input id="c_org" />
+          <label data-i18n="contactOpt">Contact</label><input id="c_contact" />
+          <button class="btn" id="c_submit" data-i18n="regDrop">📦 Register drop-off</button>
+        </section>
+
+        <section data-body="ngo" hidden>
+          <p class="intro" data-i18n="ngoIntro">The unification layer: list your NGO/group so donors and convoys can find you and send what you need.</p>
+          <label data-i18n="ngoName">NGO / group name</label><input id="g_name" />
+          <label data-i18n="focus">Focus</label><div class="chips" id="g_focus"></div>
+          <label data-i18n="areaCovered">Area covered</label><input id="g_area" />
+          <label data-i18n="needNow">What you need donated now</label><input id="g_needs" />
+          <label data-i18n="contactOpt">Contact</label><input id="g_contact" />
+          <label data-i18n="website">Website (optional)</label><input id="g_website" />
+          <button class="btn" id="g_submit" data-i18n="addRegistry">🏳️ Add to registry</button>
+          <div id="ngolist" class="list" style="margin-top:16px"></div>
+        </section>
+
+        <section data-body="feed" hidden>
+          <div class="stats">
+            <div class="stat"><b id="s_open">0</b><span data-i18n="open">Open</span></div>
+            <div class="stat"><b id="s_unv">0</b><span data-i18n="unverif">Unverif.</span></div>
+            <div class="stat"><b id="s_cov">0</b><span data-i18n="convoys">Convoys</span></div>
+            <div class="stat gap"><b id="s_gap">0</b><span data-i18n="gapsStat">Gaps</span></div>
+          </div>
+          <div id="feedlist" class="list"></div>
+        </section>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- Live news feed (Google News aggregation) -->
+  <div class="modal" id="newsModal">
+    <div class="modal-card">
+      <h2 data-i18n="newsTitle">📰 Flood news &amp; updates</h2>
+      <p class="sub2" data-i18n="newsIntro">Live headlines about the Assam floods, aggregated from many news outlets (Google News). Tap to read the full story.</p>
+      <div id="newsList" class="news-list"></div>
+      <button class="btn ghost" id="news_close" style="margin-top:14px" data-i18n="close">Close</button>
+    </div>
+  </div>
+
+  <!-- Contact / ask the maintainers (no phone numbers exposed either way) -->
+  <div class="modal" id="contactModal">
+    <div class="modal-card">
+      <h2 data-i18n="contactTitle">Contact the maintainers</h2>
+      <p class="sub2" data-i18n="contactIntro">Banpani is run by the community and owned by no one. There's no call centre. Leave a message here and a maintainer will see it - no phone numbers are shown to anyone.</p>
+      <label data-i18n="yourName">Your name (optional)</label><input id="m_name" />
+      <label data-i18n="howReachYou">How to reach you back (optional)</label><input id="m_contact" data-ph="howReachYou" placeholder="phone / email / WhatsApp - only the maintainers see this" />
+      <label data-i18n="yourMessage">Your message</label><textarea id="m_message" rows="4"></textarea>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" id="m_send" style="margin:0" data-i18n="send">Send</button>
+        <button class="btn ghost" id="m_close" style="margin:0" data-i18n="close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
