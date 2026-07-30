@@ -201,9 +201,17 @@ textarea{resize:vertical;min-height:50px}
 .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
 
 .hide-sm{}
+.panel-fab{display:none}
 @media(max-width:860px){
   .main{flex-direction:column}
   .panel{width:100%;height:46dvh;border-left:none;border-top:1px solid var(--line)}
+  /* floating toggle for the bottom panel */
+  .panel-fab{display:flex;align-items:center;justify-content:center;position:fixed;right:14px;bottom:calc(46dvh + 12px);
+    width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;
+    box-shadow:var(--shadow);z-index:1100;cursor:pointer;transition:bottom .22s ease}
+  .main.panel-collapsed .panel{display:none}
+  .main.panel-collapsed .panel-fab{bottom:18px}
+  .tab-collapse{display:none}   /* the FAB handles collapse on mobile */
   .overlay{width:min(215px,64vw);top:58px;left:8px;gap:8px}
   .ctl{padding:9px 10px}
   header{gap:8px;padding:9px 10px}

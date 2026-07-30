@@ -408,6 +408,10 @@ $('overlayToggle').onclick = () => { const o = $('overlay'); o.classList.toggle(
 const mainEl = document.querySelector('.main');
 $('panelToggle').onclick = () => { mainEl.classList.add('hide-panel'); setTimeout(() => map.invalidateSize(), 60); };
 $('panelReopen').onclick = () => { mainEl.classList.remove('hide-panel'); setTimeout(() => map.invalidateSize(), 60); };
+// mobile: floating toggle for the bottom report panel
+$('panelFab').onclick = () => { const collapsed = mainEl.classList.toggle('panel-collapsed'); $('panelFab').textContent = collapsed ? '☰' : '▾'; setTimeout(() => map.invalidateSize(), 240); };
+// start collapsed on phones so the map fills the screen
+if (window.innerWidth <= 860) { mainEl.classList.add('panel-collapsed'); $('panelFab').textContent = '☰'; }
 $('shareMap').onclick = () => bp.shareMap();
 // news modal
 $('newsBtn').onclick = async () => {
