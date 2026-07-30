@@ -9,8 +9,8 @@ EnvironmentFile=/etc/banpani.env
 ExecStart=/usr/bin/node --experimental-sqlite server/server.js
 Restart=always
 RestartSec=3
-User=www-data
-Group=www-data
+# Runs as root for a simple single-purpose droplet. To harden later, create a
+# dedicated 'banpani' user, chown /opt/banpani to it, and set User/Group here.
 
 [Install]
 WantedBy=multi-user.target
