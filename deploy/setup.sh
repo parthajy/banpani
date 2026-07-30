@@ -39,9 +39,13 @@ sleep 2
 node --experimental-sqlite "$DIR/server/report.js" >/dev/null 2>&1 || true   # seed the public 6h report page
 
 echo "==> nginx reverse proxy"
-cp "$DIR/deploy/nginx.conf" /etc/nginx/sites-available/banpani
-ln -sf /etc/nginx/sites-available/banpani /etc/nginx/sites-enabled/banpani
-rm -f /etc/nginx/sites-enabled/default
+# Install the base config only on first setup. After certbot runs it OWNS this file
+# (adds the HTTPS server block + redirect), so re-deploys must NOT overwrite it.
+if [ ! -f /etc/nginx/sites-available/banpani ]; then
+  cp "$DIR/deploy/nginx.conf" /etc/nginx/sites-available/banpani
+  ln -sf /etc/nginx/sites-available/banpani /etc/nginx/sites-enabled/banpani
+  rm -f /etc/nginx/sites-enabled/default
+fi
 nginx -t && systemctl reload nginx
 
 echo "==> cron: auto weather (3h), 6h report, hourly DB backup"
