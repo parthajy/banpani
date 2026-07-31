@@ -55,6 +55,10 @@ header button.link{cursor:pointer;font-family:inherit}
 .news-item:hover{background:var(--panel2)}
 .news-item .nt{font-size:13.5px;line-height:1.35;font-weight:600}
 .news-item .nm{font-size:11px;color:var(--muted);margin-top:3px}
+.act-item{display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--line);font-size:13px}
+.act-item .ae{font-size:16px;flex:0 0 auto}
+.act-item .at{flex:1;text-transform:capitalize}
+.act-item .am{font-size:11px;color:var(--muted);white-space:nowrap;font-family:monospace}
 
 .pickpin{font-size:28px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.6));cursor:grab;animation:bob .9s ease-in-out infinite alternate}
 @keyframes bob{from{transform:translateY(0)}to{transform:translateY(-3px)}}

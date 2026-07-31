@@ -81,13 +81,24 @@ function renderFlood() {
     L.geoJSON({ type: 'Feature', geometry: p.geojson, properties: {} }, { style: { color: floodColor(p.severity), weight: 2, dashArray: '4 4', fillColor: floodColor(p.severity), fillOpacity: 0.30 } })
       .bindPopup(`<b>Community-reported flooding</b><br>${esc(p.note || '')}<br><small>${esc(p.severity)}</small>`).addTo(layers.flood);
   }
-  // real-time community flood markers: colour by severity, fade with age
-  for (const f of (STATE.flood_reports || [])) {
-    const age = ageH(f.created_at);
-    if (age > 48 || f.severity === 'receded') continue;               // stale or resolved -> off the map
+  // real-time community flood markers: newest-wins within ~1km, colour by severity, fade with age
+  const fresh = (STATE.flood_reports || []).filter(f => f.severity !== 'receded' && ageH(f.updated_at || f.created_at) <= 48)
+    .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
+  const shown = [];
+  for (const f of fresh) {
+    if (shown.some(s => haversine([s.lat, s.lng], [f.lat, f.lng]) < 1)) continue;  // a newer nearby marker already shown
+    shown.push(f);
+    const when = f.updated_at || f.created_at, age = ageH(when);
     const op = Math.max(0.15, 0.5 - age / 96);
     L.circle([f.lat, f.lng], { radius: 2500, color: floodColor(f.severity), weight: 1, fillColor: floodColor(f.severity), fillOpacity: op })
-      .bindPopup(`<b>🌊 Flooding reported</b><br>${f.place ? esc(f.place) + '<br>' : ''}Severity: ${esc(f.severity)}<br><small>${agoText(f.created_at)}</small>`).addTo(layers.flood);
+      .bindPopup(`<b>🌊 ${t('floodedHere')}</b><br>${f.place ? esc(f.place) + '<br>' : ''}${t('status')}: <b>${esc(f.severity)}</b><br><small>${agoText(when)}</small>
+        <div class="pmeta" style="margin-top:6px">${t('updateStatus')}:</div>
+        <div class="vbtns">
+          <button onclick="bp.floodStatus(${f.id},'high')">${t('sevSevere')}</button>
+          <button onclick="bp.floodStatus(${f.id},'medium')">${t('sevModerate')}</button>
+          <button onclick="bp.floodStatus(${f.id},'receding')">${t('sevReceding')}</button>
+        </div>
+        <div class="vbtns"><button onclick="bp.floodStatus(${f.id},'receded')">💧 ${t('sevGone')} (${f.clears || 0}/2)</button></div>`).addTo(layers.flood);
   }
 }
 function agoText(iso) {
@@ -271,6 +282,14 @@ window.bp = {
   shareMap: () => waShare(`Banpani - live Assam flood relief map. See who needs help & where nobody has reached: ${location.origin}`),
   directions: (id) => { const n = STATE.reports.find(x => x.id === id); if (n) window.open(`https://www.google.com/maps/dir/?api=1&destination=${n.lat},${n.lng}`, '_blank'); },
   locate: (id) => { const n = STATE.reports.find(x => x.id === id); if (n) { map.setView([n.lat, n.lng], 13); } },
+  floodStatus: async (id, severity) => {
+    try {
+      const r = await api(`/api/flood-reports/${id}/status`, { method: 'POST', body: { severity, device: deviceId() } });
+      if (severity === 'receded') toast(r.cleared ? t('floodCleared') : `${t('floodClearVote')} (${r.clears}/2)`);
+      else toast(t('floodStatusSet'));
+      map.closePopup(); await refresh();
+    } catch (e) { toast('Failed: ' + e.message); }
+  },
 };
 
 async function refresh() { STATE = await api('/api/state'); renderAll(); }
@@ -413,6 +432,22 @@ $('panelFab').onclick = () => { const collapsed = mainEl.classList.toggle('panel
 // start collapsed on phones so the map fills the screen
 if (window.innerWidth <= 860) { mainEl.classList.add('panel-collapsed'); $('panelFab').textContent = '☰'; }
 $('shareMap').onclick = () => bp.shareMap();
+// activity / transparency feed
+const ACT_LABEL = { need_report: '🆘', convoy: '🚚', drop_off: '📦', ngo_listed: '🏳️', flood_marked: '🌊', flood_update: '🌊', vote: '✅', contact_reveal: '📞' };
+$('activityBtn').onclick = async () => {
+  $('activityModal').classList.add('show');
+  $('activityList').innerHTML = `<div class="none">${t('loading')}</div>`;
+  try {
+    const { items } = await api('/api/activity');
+    $('activityList').innerHTML = items.length ? items.map(a => `<div class="act-item">
+      <span class="ae">${ACT_LABEL[a.kind] || '•'}</span>
+      <span class="at">${esc((a.kind || '').replace(/_/g, ' '))}${a.area ? ' · ' + esc(a.area) : ''}</span>
+      <span class="am">${agoText(a.created_at)} · ${esc(a.actor)}</span></div>`).join('')
+      : `<div class="none">${t('noActivity')}</div>`;
+  } catch { $('activityList').innerHTML = `<div class="none">${t('noActivity')}</div>`; }
+};
+$('activity_close').onclick = () => $('activityModal').classList.remove('show');
+$('activityModal').onclick = e => { if (e.target === $('activityModal')) $('activityModal').classList.remove('show'); };
 // tutorial / first-visit welcome
 function openTutorial() { $('tutorialModal').classList.add('show'); }
 function loadTutVideo() {

@@ -7,6 +7,7 @@
 // one-at-a-time via /api/reports/:id/contact and logged.
 
 import http from 'node:http';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -38,8 +39,19 @@ const jarr = v => JSON.stringify(Array.isArray(v) ? v.map(x => String(x).slice(0
 const num = v => (v == null || v === '' || isNaN(+v) ? null : +v);
 const dev = b => str(b.device, 80) || 'anon';
 const isAdmin = req => req.headers['x-admin-key'] && req.headers['x-admin-key'] === ADMIN_KEY;
-const logAction = (kind, target, detail, device) =>
-  run('INSERT INTO actions_log(created_at,volunteer_id,kind,target,detail) VALUES(?,?,?,?,?)', now(), null, kind, target, (detail || '') + (device ? ' @' + device : ''));
+
+// IP is HASHED, never stored raw and never shown publicly. It exists only to detect
+// abuse (a hash repeating a lot) and to derive an anonymous per-actor id for the public
+// transparency feed. Salt = admin key (secret, per-deploy) unless overridden.
+const IP_SALT = process.env.BANPANI_IP_SALT || ('salt:' + ADMIN_KEY);
+const clientIp = req => (req.headers['x-real-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0] || req.socket?.remoteAddress || '').trim();
+const ipHash = req => createHash('sha256').update(IP_SALT + '|' + clientIp(req)).digest('hex');
+// Comprehensive action log. Every write goes through this. `area` is a coarse public
+// label (place name / rounded location); nothing sensitive (no raw IP, no phone) is stored.
+const log = (req, kind, target, { detail = null, device = null, area = null } = {}) =>
+  run('INSERT INTO actions_log(created_at,kind,target,detail,device,ip_hash,area) VALUES(?,?,?,?,?,?,?)',
+    now(), kind, target || null, detail, device, ipHash(req), area);
+const coarse = (lat, lng) => (lat != null && lng != null) ? `${(+lat).toFixed(2)},${(+lng).toFixed(2)}` : null;
 
 /* -------------------------------- routes -------------------------------- */
 const routes = [];
@@ -56,7 +68,9 @@ on('GET', '/api/state', (req, res) => {
     collection_points: parseRows(all('SELECT * FROM collection_points WHERE hidden=0 AND active=1'), ['accepts']),
     ngos: decoratedNgos(),
     flood_polygons: all('SELECT id,geojson,severity,note,source,created_at FROM flood_polygons WHERE hidden=0').map(r => ({ ...r, geojson: JSON.parse(r.geojson) })),
-    flood_reports: all('SELECT id,place,lat,lng,severity,created_at FROM flood_reports WHERE hidden=0 ORDER BY created_at DESC LIMIT 500'),
+    flood_reports: all(`SELECT id,place,lat,lng,severity,created_at,updated_at,
+      (SELECT COUNT(DISTINCT device) FROM votes v WHERE v.target_type='flood' AND v.target_id=f.id AND v.category='clear') AS clears
+      FROM flood_reports f WHERE hidden=0 AND severity!='receded' ORDER BY COALESCE(updated_at,created_at) DESC LIMIT 500`),
     thresholds: { confirm: 3, resolve: 2, endorse: 5 },
     server_time: now(),
   });
@@ -65,6 +79,19 @@ on('GET', '/api/state', (req, res) => {
 on('GET', '/api/report', (req, res) => json(res, 200, buildReport()));
 on('GET', '/api/advisory', (req, res) => json(res, 200, one('SELECT * FROM advisory WHERE id=1') || {}));
 on('GET', '/api/news', async (req, res) => { try { json(res, 200, { items: await fetchNews() }); } catch { json(res, 200, { items: [] }); } });
+
+// Public transparency feed: what the community has been doing, REDACTED - no raw IP,
+// no phone numbers. Each actor is an anonymous short id derived from the hashed IP.
+on('GET', '/api/activity', (req, res) => {
+  const rows = all(`SELECT created_at,kind,area,ip_hash,device FROM actions_log
+    WHERE kind NOT LIKE 'admin_%' ORDER BY id DESC LIMIT 120`);
+  json(res, 200, {
+    items: rows.map(r => ({
+      kind: r.kind, area: r.area, created_at: r.created_at,
+      actor: (r.ip_hash || r.device || 'anon').slice(0, 5),
+    })),
+  });
+});
 
 // Private message to the maintainers. Public write; only readable via the maintenance page.
 on('POST', '/api/messages', async (req, res) => {
@@ -81,9 +108,9 @@ on('GET', '/api/admin/messages', (req, res) => {
 
 // Reveal one victim contact on demand (kept out of bulk data; every reveal is logged).
 on('GET', '/api/reports/:id/contact', (req, res, params) => {
-  const r = one('SELECT contact FROM reports WHERE id=? AND hidden=0', params.id);
+  const r = one('SELECT contact,place FROM reports WHERE id=? AND hidden=0', params.id);
   if (!r) return json(res, 404, { error: 'not found' });
-  logAction('contact_reveal', 'report:' + params.id, null, null);
+  log(req, 'contact_reveal', 'report:' + params.id, { area: r.place });
   json(res, 200, { contact: r.contact || null });
 });
 
@@ -95,6 +122,7 @@ on('POST', '/api/reports', async (req, res) => {
     VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
     num(b.people), str(b.details, 1000), str(b.contact, 60),
     ['affected', 'volunteer', 'witness'].includes(b.reporter_kind) ? b.reporter_kind : 'witness', dev(b));
+  log(req, 'need_report', 'report:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.place, 120) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 
@@ -104,6 +132,7 @@ on('POST', '/api/routes', async (req, res) => {
   const r = run(`INSERT INTO routes(created_at,name,from_place,from_lat,from_lng,lat,lng,items,eta,contact,covered_date,device)
     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.name), str(b.from_place), num(b.from_lat), num(b.from_lng),
     num(b.lat), num(b.lng), jarr(b.items), str(b.eta, 120), str(b.contact, 60), str(b.covered_date, 10) || today(), dev(b));
+  log(req, 'convoy', 'route:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.name, 120) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 
@@ -113,6 +142,7 @@ on('POST', '/api/collection-points', async (req, res) => {
   const r = run(`INSERT INTO collection_points(created_at,name,lat,lng,accepts,hours,contact,org,device)
     VALUES(?,?,?,?,?,?,?,?,?)`, now(), str(b.name), num(b.lat), num(b.lng), jarr(b.accepts),
     str(b.hours, 120), str(b.contact, 60), str(b.org), dev(b));
+  log(req, 'drop_off', 'cp:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.name, 120) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 
@@ -122,6 +152,7 @@ on('POST', '/api/ngos', async (req, res) => {
   const r = run(`INSERT INTO ngos(created_at,name,focus,area,contact,website,needs_now,last_active)
     VALUES(?,?,?,?,?,?,?,?)`, now(), str(b.name), jarr(b.focus), str(b.area), str(b.contact, 60),
     str(b.website, 200), str(b.needs_now, 300), now());
+  log(req, 'ngo_listed', 'ngo:' + Number(r.lastInsertRowid), { area: str(b.name, 120) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 
@@ -129,10 +160,32 @@ on('POST', '/api/ngos', async (req, res) => {
 on('POST', '/api/flood-reports', async (req, res) => {
   const b = await readBody(req);
   if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
-  const r = run('INSERT INTO flood_reports(created_at,place,lat,lng,severity,device) VALUES(?,?,?,?,?,?)',
-    now(), str(b.place, 120), num(b.lat), num(b.lng),
-    ['high', 'medium', 'receding', 'receded'].includes(b.severity) ? b.severity : 'high', dev(b));
+  const sev = ['high', 'medium', 'receding', 'receded'].includes(b.severity) ? b.severity : 'high';
+  const r = run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,device) VALUES(?,?,?,?,?,?,?)',
+    now(), now(), str(b.place, 120), num(b.lat), num(b.lng), sev, dev(b));
+  log(req, 'flood_marked', 'flood:' + Number(r.lastInsertRowid), { device: dev(b), detail: sev, area: str(b.place, 120) || coarse(b.lat, b.lng) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
+});
+
+// Update a flood marker's status. Worsening / setting receding is instant; fully clearing
+// (water gone) needs 2 different people so one person can't wipe a real flood off the map.
+on('POST', '/api/flood-reports/:id/status', async (req, res, params) => {
+  const b = await readBody(req);
+  const sev = b.severity;
+  if (!['high', 'medium', 'receding', 'receded'].includes(sev)) return json(res, 400, { error: 'bad severity' });
+  const f = one('SELECT * FROM flood_reports WHERE id=? AND hidden=0', params.id);
+  if (!f) return json(res, 404, { error: 'not found' });
+  const device = dev(b);
+  if (sev === 'receded') {
+    // consensus clear: count distinct "clear" votes; needs 2
+    castVote(req, 'flood', +params.id, device, 'clear', 'yes', f.place || coarse(f.lat, f.lng));
+    const clears = one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='flood' AND target_id=? AND category='clear'", params.id).c;
+    if (clears >= 2) { run("UPDATE flood_reports SET severity='receded', updated_at=? WHERE id=?", now(), params.id); return json(res, 200, { cleared: true, clears }); }
+    return json(res, 200, { cleared: false, clears });
+  }
+  run('UPDATE flood_reports SET severity=?, updated_at=? WHERE id=?', sev, now(), params.id);
+  log(req, 'flood_update', 'flood:' + params.id, { device, detail: sev, area: f.place || coarse(f.lat, f.lng) });
+  json(res, 200, { ok: true, severity: sev });
 });
 
 on('POST', '/api/flood/polygons', async (req, res) => {
@@ -145,11 +198,11 @@ on('POST', '/api/flood/polygons', async (req, res) => {
 });
 
 /* --- community consensus votes (no login; one device, one vote per category) --- */
-function castVote(target_type, id, device, category, value) {
+function castVote(req, target_type, id, device, category, value, area) {
   run(`INSERT INTO votes(created_at,target_type,target_id,device,category,value) VALUES(?,?,?,?,?,?)
        ON CONFLICT(target_type,target_id,device,category) DO UPDATE SET value=excluded.value, created_at=excluded.created_at`,
     now(), target_type, id, device, category, value);
-  logAction('vote', target_type + ':' + id, category + '=' + value, device);
+  log(req, 'vote', target_type + ':' + id, { device, detail: category + '=' + value, area: area || null });
 }
 
 on('POST', '/api/reports/:id/vote', async (req, res, params) => {
@@ -157,8 +210,9 @@ on('POST', '/api/reports/:id/vote', async (req, res, params) => {
   const { category, value } = b;
   const ok = (category === 'trust' && ['confirm', 'false'].includes(value)) || (category === 'resolve' && value === 'yes');
   if (!ok) return json(res, 400, { error: 'bad vote' });
-  if (!one('SELECT id FROM reports WHERE id=?', params.id)) return json(res, 404, { error: 'not found' });
-  castVote('report', +params.id, dev(b), category, value);
+  const rep = one('SELECT id,place FROM reports WHERE id=?', params.id);
+  if (!rep) return json(res, 404, { error: 'not found' });
+  castVote(req, 'report', +params.id, dev(b), category, value, rep.place);
   const [r] = decoratedReports().filter(x => x.id === +params.id);
   json(res, 200, { ok: true, confirmations: r?.confirmations, false_flags: r?.false_flags, verify_status: r?.verify_status, status: r?.status });
 });
@@ -166,8 +220,9 @@ on('POST', '/api/reports/:id/vote', async (req, res, params) => {
 on('POST', '/api/ngos/:id/endorse', async (req, res, params) => {
   const b = await readBody(req);
   if (!['yes', 'fake'].includes(b.value)) return json(res, 400, { error: 'value yes|fake' });
-  if (!one('SELECT id FROM ngos WHERE id=?', params.id)) return json(res, 404, { error: 'not found' });
-  castVote('ngo', +params.id, dev(b), 'endorse', b.value);
+  const ng = one('SELECT id,name FROM ngos WHERE id=?', params.id);
+  if (!ng) return json(res, 404, { error: 'not found' });
+  castVote(req, 'ngo', +params.id, dev(b), 'endorse', b.value, ng.name);
   const [n] = decoratedNgos().filter(x => x.id === +params.id) || [];
   json(res, 200, { ok: true, endorsements: n?.endorsements });
 });

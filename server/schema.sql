@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS flood_reports (
   lng         REAL NOT NULL,
   severity    TEXT NOT NULL DEFAULT 'high',  -- high | medium | receding | receded
   device      TEXT,
+  updated_at  TEXT,                          -- last status change (used for map freshness)
   hidden      INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_flood_reports ON flood_reports(created_at, hidden);
@@ -138,15 +139,20 @@ CREATE TABLE IF NOT EXISTS messages (
   handled     INTEGER NOT NULL DEFAULT 0
 );
 
--- Audit log of verification actions (transparency / accountability).
+-- ACTION LOG: every write goes here (transparency / accountability). ip_hash is a SALTED
+-- hash of the client IP - never the raw IP, never shown publicly; used only for abuse
+-- detection and to derive an anonymous per-actor id for the public activity feed.
 CREATE TABLE IF NOT EXISTS actions_log (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at   TEXT NOT NULL,
-  volunteer_id INTEGER,
-  kind         TEXT,                         -- report_verify | ngo_verify | polygon_add ...
+  kind         TEXT,                         -- need_report | convoy | vote | flood_marked ...
   target       TEXT,                         -- "report:12"
-  detail       TEXT
+  detail       TEXT,
+  device       TEXT,
+  ip_hash      TEXT,                          -- sha256(salt|ip) - NOT the raw IP
+  area         TEXT                           -- coarse public label (place name / rounded latlng)
 );
+CREATE INDEX IF NOT EXISTS idx_actions ON actions_log(id);
 
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, hidden);
 CREATE INDEX IF NOT EXISTS idx_routes_status ON routes(status, hidden);

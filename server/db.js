@@ -17,6 +17,14 @@ db.exec('PRAGMA journal_mode = WAL;');
 db.exec('PRAGMA foreign_keys = ON;');
 db.exec(readFileSync(join(__dirname, 'schema.sql'), 'utf8'));
 
+// Migrations for the live DB (CREATE TABLE IF NOT EXISTS won't add columns to existing tables).
+for (const stmt of [
+  'ALTER TABLE actions_log ADD COLUMN device TEXT',
+  'ALTER TABLE actions_log ADD COLUMN ip_hash TEXT',
+  'ALTER TABLE actions_log ADD COLUMN area TEXT',
+  'ALTER TABLE flood_reports ADD COLUMN updated_at TEXT',
+]) { try { db.exec(stmt); } catch { /* column already exists */ } }
+
 export const now = () => new Date().toISOString();
 export const today = () => new Date().toISOString().slice(0, 10);
 

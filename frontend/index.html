@@ -54,6 +54,7 @@
       </div>
       <button class="link ic-btn" id="shareMap"><span class="e">↗</span><span class="t" data-i18n="shareMap">Share</span></button>
       <button class="link ic-btn" id="newsBtn"><span class="e">📰</span><span class="t" data-i18n="news">News</span></button>
+      <button class="link ic-btn" id="activityBtn"><span class="e">🧾</span><span class="t" data-i18n="activity">Activity</span></button>
       <button class="link ic-btn" id="contactBtn"><span class="e">✉</span><span class="t" data-i18n="contact">Contact</span></button>
       <a class="link ic-btn" href="verify.html"><span class="e">🛡️</span><span class="t" data-i18n="volunteers">Verify</span></a>
       <a class="link ic-btn" href="report.html" target="_blank"><span class="e">📄</span><span class="t" data-i18n="report6h">Report</span></a>
@@ -218,6 +219,16 @@
 
       </div>
     </aside>
+  </div>
+
+  <!-- Public transparency feed -->
+  <div class="modal" id="activityModal">
+    <div class="modal-card">
+      <h2 data-i18n="activityTitle">🧾 Live activity</h2>
+      <p class="sub2" data-i18n="activityIntro">Everything happening on Banpani, in the open. No names, no phone numbers, no IP addresses — each person shows only as an anonymous id, so the system stays honest and private at the same time.</p>
+      <div id="activityList" class="news-list"></div>
+      <button class="btn ghost" id="activity_close" style="margin-top:14px" data-i18n="close">Close</button>
+    </div>
   </div>
 
   <!-- First-visit welcome + tutorial video -->
