@@ -120,6 +120,7 @@ header button.link{cursor:pointer;font-family:inherit}
 .lyr{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;cursor:pointer;user-select:none}
 .lyr input{accent-color:var(--accent);width:16px;height:16px}
 .lyr .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+.lyr.sub{margin-left:22px;font-size:12px;color:var(--muted);padding:3px 0}
 
 /* collapsible left controls */
 .ovl-toggle{display:none;align-self:flex-start;background:var(--panel);border:1px solid var(--line);color:var(--text);

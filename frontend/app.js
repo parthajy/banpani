@@ -152,11 +152,21 @@ function renderNeeds() {
 function renderCover() {
   layers.cover.clearLayers();
   if (!$('ly_cover').checked) return;
+  const showRoutes = $('ly_routes').checked;
   for (const r of STATE.routes) {
     if (r.status !== 'active' || !routeMatchesView(r)) continue;
-    if (r.from_lat != null) L.polyline([[r.from_lat, r.from_lng], [r.lat, r.lng]], { color: '#2f81f7', weight: 2, dashArray: '6 6', opacity: .65 }).addTo(layers.cover);
+    // the from→to route line + a start flag, only when the routes layer is on and origin is known
+    if (showRoutes && r.from_lat != null) {
+      L.polyline([[r.from_lat, r.from_lng], [r.lat, r.lng]], { color: '#2f81f7', weight: 2.5, dashArray: '6 7', opacity: .7 }).addTo(layers.cover);
+      L.marker([r.from_lat, r.from_lng], { icon: emojiIcon('🚩') }).addTo(layers.cover)
+        .bindPopup(`<b>🚩 ${t('start')}</b>${r.from_place ? '<br>' + esc(r.from_place) : ''}<br>→ 🚚 ${esc(r.name)}`);
+    }
+    const details = showRoutes
+      ? `<div style="margin:4px 0">${r.from_place ? '📍 ' + esc(r.from_place) + ' → ' : ''}🎯 ${t('destination')}</div>
+         🧺 ${(r.items || []).map(esc).join(', ')}<br>${r.eta ? '🕑 ' + esc(r.eta) + '<br>' : ''}${r.covered_date ? '📅 ' + esc(r.covered_date) + '<br>' : ''}${r.contact ? '📞 ' + esc(r.contact) : ''}`
+      : `Carrying: ${(r.items || []).map(esc).join(', ')}`;
     L.marker([r.lat, r.lng], { icon: emojiIcon('🚚') }).addTo(layers.cover)
-      .bindPopup(`<b>🚚 ${esc(r.name)}</b><br>${r.from_place ? 'from ' + esc(r.from_place) + '<br>' : ''}Carrying: ${(r.items || []).map(esc).join(', ')}<br>${r.eta ? esc(r.eta) + '<br>' : ''}<small>${esc(r.covered_date || '')}</small>`);
+      .bindPopup(`<b>🚚 ${esc(r.name)}</b><br>${details}`);
   }
 }
 function renderNgo() {
@@ -299,53 +309,61 @@ $('timeseg').querySelectorAll('button').forEach(b => b.onclick = () => {
   $('timeseg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
   b.classList.add('on'); currentView = b.dataset.v; renderAll();
 });
-['ly_flood', 'ly_needs', 'ly_cover', 'ly_ngo'].forEach(id => $(id).onchange = renderAll);
+['ly_flood', 'ly_needs', 'ly_cover', 'ly_routes', 'ly_ngo'].forEach(id => $(id).onchange = renderAll);
 
 let pickMode = 'need';
-const pending = { need: {}, r: {}, c: {}, f: {} };
+const pending = { need: {}, r: {}, rf: {}, c: {}, f: {} };
+let convoyTarget = 'dest';                        // which convoy point a map tap sets
+const modeKeys = { need: ['need'], convoy: ['r', 'rf'], drop: ['c'], flood: ['f'] };
 document.querySelectorAll('.tab').forEach(tb => tb.onclick = () => {
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('on')); tb.classList.add('on');
   document.querySelectorAll('[data-body]').forEach(s => s.hidden = s.dataset.body !== tb.dataset.tab);
   pickMode = { need: 'need', convoy: 'r', drop: 'c', flood: 'f' }[tb.dataset.tab] || null;
   $('modehint').classList.toggle('show', !!pickMode);
-  // show the draggable pin for this mode's pending location (or clear it)
-  if (pickMode && pending[pickMode]?.lat != null) placePickMarker(pending[pickMode].lat, pending[pickMode].lng);
-  else removePickMarker();
+  syncMarkers(tb.dataset.tab);
 });
 $('modehint').classList.add('show');
-// on phones, start with the controls collapsed so the map leads
 if (window.innerWidth <= 860) { $('overlay').classList.add('min'); $('overlayToggle').firstChild.textContent = '▸ '; }
 
-// Draggable location picker - tap the map to drop a pin, then DRAG it to the exact spot.
-// Works for a need's location, a convoy's destination, and a drop-off - you don't have to
-// be standing there.
-let pickMarker = null;
-const coordId = { need: 'n_coord', r: 'r_coord', c: 'c_coord', f: 'f_coord' };
-function setReadout(mode, lat, lng, gps) {
-  const el = $(coordId[mode]); el.textContent = `📍 ${lat.toFixed(3)}, ${lng.toFixed(3)}${gps ? ' (GPS)' : ''}`; el.classList.add('set');
+// Draggable location pickers - one marker per point (need / drop / flood / convoy start+dest).
+const coordId = { need: 'n_coord', r: 'r_coord', rf: 'rf_coord', c: 'c_coord', f: 'f_coord' };
+const pickEmoji = { rf: '🚩', r: '🎯' };
+const pickMarkers = {};
+function setReadout(key, lat, lng, gps) {
+  const el = $(coordId[key]); if (!el) return;
+  el.textContent = `📍 ${lat.toFixed(3)}, ${lng.toFixed(3)}${gps ? ' (GPS)' : ''}`; el.classList.add('set');
 }
-function placePickMarker(lat, lng) {
-  if (!pickMarker) {
-    pickMarker = L.marker([lat, lng], { draggable: true, autoPan: true,
-      icon: L.divIcon({ html: '<div class="pickpin">📍</div>', className: '', iconSize: [30, 30], iconAnchor: [15, 30] }) }).addTo(map);
-    pickMarker.on('dragend', () => {
-      const p = pickMarker.getLatLng(); pending[pickMode] = { lat: p.lat, lng: p.lng };
-      setReadout(pickMode, p.lat, p.lng); if (pickMode === 'r') checkOverlap();
-    });
-  } else pickMarker.setLatLng([lat, lng]);
+function placeMarker(key, lat, lng) {
+  if (!pickMarkers[key]) {
+    const m = L.marker([lat, lng], { draggable: true, autoPan: true,
+      icon: L.divIcon({ html: `<div class="pickpin">${pickEmoji[key] || '📍'}</div>`, className: '', iconSize: [30, 30], iconAnchor: [15, 30] }) }).addTo(map);
+    m.on('dragend', () => { const p = m.getLatLng(); pending[key] = { lat: p.lat, lng: p.lng }; setReadout(key, p.lat, p.lng); if (key === 'r') checkOverlap(); });
+    pickMarkers[key] = m;
+  } else pickMarkers[key].setLatLng([lat, lng]);
 }
-function removePickMarker() { if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; } }
-function setPick(mode, lat, lng, gps) { pending[mode] = { lat, lng }; setReadout(mode, lat, lng, gps); placePickMarker(lat, lng); if (mode === 'r') checkOverlap(); }
+function removeMarker(key) { if (pickMarkers[key]) { map.removeLayer(pickMarkers[key]); delete pickMarkers[key]; } }
+function syncMarkers(tab) {
+  const keep = modeKeys[tab] || [];
+  Object.keys(pickMarkers).forEach(k => { if (!keep.includes(k)) removeMarker(k); });
+  keep.forEach(k => { if (pending[k]?.lat != null) placeMarker(k, pending[k].lat, pending[k].lng); });
+}
+function setPick(key, lat, lng, gps) { pending[key] = { lat, lng }; setReadout(key, lat, lng, gps); placeMarker(key, lat, lng); if (key === 'r') checkOverlap(); }
+function activeKey() { return pickMode === 'r' ? (convoyTarget === 'start' ? 'rf' : 'r') : pickMode; }
 
-map.on('click', e => { if (pickMode) setPick(pickMode, e.latlng.lat, e.latlng.lng); });
-function useGPS(mode) {
+map.on('click', e => { if (pickMode) setPick(activeKey(), e.latlng.lat, e.latlng.lng); });
+function useGPS(key) {
   if (!navigator.geolocation) return toast('No GPS');
   toast('Getting location…');
-  navigator.geolocation.getCurrentPosition(p => { setPick(mode, p.coords.latitude, p.coords.longitude, true); map.setView([p.coords.latitude, p.coords.longitude], 12); },
+  navigator.geolocation.getCurrentPosition(p => { setPick(key, p.coords.latitude, p.coords.longitude, true); map.setView([p.coords.latitude, p.coords.longitude], 12); },
     () => toast('Could not get GPS'));
 }
+$('convoyTarget').querySelectorAll('button').forEach(b => b.onclick = () => {
+  $('convoyTarget').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); convoyTarget = b.dataset.t;
+  toast(convoyTarget === 'start' ? t('tapStart') : t('tapDest'));
+});
 $('n_gps').onclick = () => useGPS('need');
 $('r_gps').onclick = () => useGPS('r');
+$('rf_gps').onclick = () => useGPS('rf');
 $('c_gps').onclick = () => useGPS('c');
 $('f_gps').onclick = () => useGPS('f');
 
@@ -356,7 +374,7 @@ $('f_submit').onclick = async () => {
   if (pending.f.lat == null) return toast('Set location (tap map or GPS)');
   try {
     await api('/api/flood-reports', { method: 'POST', body: { place: $('f_place').value.trim(), lat: pending.f.lat, lng: pending.f.lng, severity: fSev, device: deviceId() } });
-    $('f_place').value = ''; pending.f = {}; $('f_coord').textContent = t('noLoc'); $('f_coord').classList.remove('set'); removePickMarker();
+    $('f_place').value = ''; pending.f = {}; $('f_coord').textContent = t('noLoc'); $('f_coord').classList.remove('set'); removeMarker('f');
     await refresh(); await renderAdvisory(); toast(t('floodMarked'));
   } catch (e) { toast('Failed: ' + e.message); }
 };
@@ -383,7 +401,7 @@ $('n_submit').onclick = async () => {
   try {
     await api('/api/reports', { method: 'POST', body: { place: $('n_place').value.trim(), lat: pending.need.lat, lng: pending.need.lng, items: [...nItems], people: $('n_people').value || null, details: $('n_details').value.trim(), reporter_kind: $('n_kind').value, contact: $('n_contact').value.trim(), device: deviceId() } });
     ['n_place', 'n_people', 'n_details', 'n_contact'].forEach(i => $(i).value = ''); nItems.clear(); chips('n_items', C.ITEMS, nItems);
-    pending.need = {}; $('n_coord').textContent = t('noLoc'); $('n_coord').classList.remove('set'); removePickMarker();
+    pending.need = {}; $('n_coord').textContent = t('noLoc'); $('n_coord').classList.remove('set'); removeMarker('need');
     await refresh(); toast(t('needPosted'));
   } catch (e) { toast('Failed: ' + e.message); }
 };
@@ -392,9 +410,9 @@ $('r_submit').onclick = async () => {
   if (pending.r.lat == null) return toast('Set destination');
   if (rItems.size === 0) return toast('Pick what you carry');
   try {
-    await api('/api/routes', { method: 'POST', body: { name: $('r_name').value.trim(), from_place: $('r_from').value.trim(), lat: pending.r.lat, lng: pending.r.lng, items: [...rItems], eta: $('r_eta').value.trim(), contact: $('r_contact').value.trim(), device: deviceId() } });
+    await api('/api/routes', { method: 'POST', body: { name: $('r_name').value.trim(), from_place: $('r_from').value.trim(), from_lat: pending.rf.lat ?? null, from_lng: pending.rf.lng ?? null, lat: pending.r.lat, lng: pending.r.lng, items: [...rItems], eta: $('r_eta').value.trim(), contact: $('r_contact').value.trim(), device: deviceId() } });
     ['r_name', 'r_from', 'r_eta', 'r_contact'].forEach(i => $(i).value = ''); rItems.clear(); chips('r_items', C.ITEMS, rItems);
-    pending.r = {}; $('r_coord').textContent = t('noDest'); $('r_coord').classList.remove('set'); $('r_warn').classList.remove('show'); removePickMarker();
+    pending.r = {}; pending.rf = {}; $('r_coord').textContent = t('noDest'); $('rf_coord').textContent = t('noStart'); $('r_coord').classList.remove('set'); $('rf_coord').classList.remove('set'); $('r_warn').classList.remove('show'); removeMarker('r'); removeMarker('rf');
     await refresh(); toast(t('convoyAnnounced'));
   } catch (e) { toast('Failed: ' + e.message); }
 };
@@ -404,7 +422,7 @@ $('c_submit').onclick = async () => {
   try {
     await api('/api/collection-points', { method: 'POST', body: { name: $('c_name').value.trim(), lat: pending.c.lat, lng: pending.c.lng, accepts: [...cItems], hours: $('c_hours').value.trim(), org: $('c_org').value.trim(), contact: $('c_contact').value.trim(), device: deviceId() } });
     ['c_name', 'c_hours', 'c_org', 'c_contact'].forEach(i => $(i).value = ''); cItems.clear(); chips('c_items', C.ACCEPTS, cItems);
-    pending.c = {}; $('c_coord').textContent = t('noLoc'); $('c_coord').classList.remove('set'); removePickMarker();
+    pending.c = {}; $('c_coord').textContent = t('noLoc'); $('c_coord').classList.remove('set'); removeMarker('c');
     await refresh(); toast(t('dropRegistered'));
   } catch (e) { toast('Failed: ' + e.message); }
 };

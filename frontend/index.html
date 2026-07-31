@@ -98,6 +98,7 @@
         <label class="lyr"><input type="checkbox" id="ly_flood" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="floodExtent">Flood extent</span></label>
         <label class="lyr"><input type="checkbox" id="ly_needs" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="needs">Needs</span></label>
         <label class="lyr"><input type="checkbox" id="ly_cover" checked><span class="dot" style="background:#2f81f7"></span> <span data-i18n="coverage">Coverage / convoys</span></label>
+        <label class="lyr sub"><input type="checkbox" id="ly_routes" checked><span class="dot" style="background:#2f81f7;opacity:.6"></span> <span data-i18n="convoyRoutes">Convoy routes &amp; details</span></label>
         <label class="lyr"><input type="checkbox" id="ly_ngo" checked><span class="dot" style="background:#28c76f"></span> <span data-i18n="ngosLayer">NGOs & drop-offs</span></label>
         <div class="legend">
           <span><i style="background:#f0453a"></i><span data-i18n="high">high</span></span><span><i style="background:#f5a623"></i><span data-i18n="medium">medium</span></span><span><i style="background:#8fbaff"></i><span data-i18n="receding">receding</span></span>
@@ -173,9 +174,14 @@
         <section data-body="convoy" hidden>
           <p class="intro" data-i18n="convoyIntro">Announce where your relief is going, so two convoys don't stack on one village while another gets nothing.</p>
           <label data-i18n="groupName">Group / convoy name</label><input id="r_name" data-ph="groupName" placeholder="Group / convoy name" />
-          <label data-i18n="from">Starting from</label><input id="r_from" />
-          <label data-i18n="destSet">Destination - tap map or GPS</label>
-          <div class="locpick"><div class="coord" id="r_coord" data-i18n="noDest">No destination set</div><button class="btn sm" id="r_gps" data-i18n="gps">📍 GPS</button></div>
+          <label data-i18n="from">Starting from (place name, optional)</label><input id="r_from" />
+          <label data-i18n="setRoute">Set the route on the map — pick which point, then tap the map</label>
+          <div class="seg" id="convoyTarget">
+            <button data-t="start" data-i18n="startPt">📍 Start</button>
+            <button data-t="dest" class="on" data-i18n="destPt">🎯 Destination</button>
+          </div>
+          <div class="locpick"><div class="coord" id="rf_coord" data-i18n="noStart">Start not set (optional)</div><button class="btn sm" id="rf_gps" data-i18n="gps">📍 GPS</button></div>
+          <div class="locpick"><div class="coord" id="r_coord" data-i18n="noDest">Destination not set</div><button class="btn sm" id="r_gps" data-i18n="gps">📍 GPS</button></div>
           <label data-i18n="carrying">Carrying</label><div class="chips" id="r_items"></div>
           <label data-i18n="eta">Departing / ETA</label><input id="r_eta" />
           <label data-i18n="contactOpt">Contact (optional)</label><input id="r_contact" />
