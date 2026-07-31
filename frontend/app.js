@@ -413,6 +413,17 @@ $('panelFab').onclick = () => { const collapsed = mainEl.classList.toggle('panel
 // start collapsed on phones so the map fills the screen
 if (window.innerWidth <= 860) { mainEl.classList.add('panel-collapsed'); $('panelFab').textContent = '☰'; }
 $('shareMap').onclick = () => bp.shareMap();
+// tutorial / first-visit welcome
+function openTutorial() { $('tutorialModal').classList.add('show'); }
+function loadTutVideo() {
+  const v = $('tutVideo'); if (v.querySelector('iframe')) return;
+  v.innerHTML = `<iframe src="https://www.youtube.com/embed/${v.dataset.id}?autoplay=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+}
+$('guideBtn').onclick = openTutorial;
+$('tutVideo').onclick = loadTutVideo;
+$('tut_close').onclick = () => { $('tutorialModal').classList.remove('show'); localStorage.setItem('banpani.tutorial', '1'); };
+$('tutorialModal').onclick = e => { if (e.target === $('tutorialModal')) { $('tutorialModal').classList.remove('show'); localStorage.setItem('banpani.tutorial', '1'); } };
+if (!localStorage.getItem('banpani.tutorial')) setTimeout(openTutorial, 600);   // first visit
 // news modal
 $('newsBtn').onclick = async () => {
   $('newsModal').classList.add('show');

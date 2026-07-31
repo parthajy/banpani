@@ -57,6 +57,7 @@
       <button class="link ic-btn" id="contactBtn"><span class="e">✉</span><span class="t" data-i18n="contact">Contact</span></button>
       <a class="link ic-btn" href="verify.html"><span class="e">🛡️</span><span class="t" data-i18n="volunteers">Verify</span></a>
       <a class="link ic-btn" href="report.html" target="_blank"><span class="e">📄</span><span class="t" data-i18n="report6h">Report</span></a>
+      <button class="link ic-btn" id="guideBtn"><span class="e">▶</span><span class="t" data-i18n="guide">Guide</span></button>
     </div>
     <select id="lang" class="langsel" title="Language" aria-label="Language">
       <option value="en">EN</option>
@@ -217,6 +218,24 @@
 
       </div>
     </aside>
+  </div>
+
+  <!-- First-visit welcome + tutorial video -->
+  <div class="modal" id="tutorialModal">
+    <div class="modal-card">
+      <h2 data-i18n="welcomeTitle">Welcome to Banpani 🌊</h2>
+      <p class="sub2" data-i18n="welcomeIntro">A free, community map to coordinate flood relief. Report where help is needed, see the areas nobody has reached, and help verify. Here's a 2-minute walkthrough:</p>
+      <div class="video" id="tutVideo" data-id="9LYnup1Mq1A">
+        <img src="https://img.youtube.com/vi/9LYnup1Mq1A/hqdefault.jpg" alt="Banpani tutorial" loading="lazy" />
+        <div class="playbtn">▶</div>
+      </div>
+      <ul class="quickstart">
+        <li data-i18n="qs1">🆘 <b>Need help?</b> Open the Need tab, drop a pin, say what's needed. No login.</li>
+        <li data-i18n="qs2">🗺️ <b>Helping?</b> Check the <b>Gaps</b> view — areas nobody has reached yet.</li>
+        <li data-i18n="qs3">🌊 <b>See flooding?</b> Use the Flood tab to mark where the water is.</li>
+      </ul>
+      <button class="btn" id="tut_close" style="margin-top:6px" data-i18n="tutStart">Got it — let's go</button>
+    </div>
   </div>
 
   <!-- Live news feed (Google News aggregation) -->
