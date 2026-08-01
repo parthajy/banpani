@@ -1,0 +1,11 @@
+{
+  "source": "ASDMA",
+  "updated": "2026-08-01",
+  "note": "District-level relief-camp totals from ASDMA/press (approximate town locations). Specific camp pins can be added by volunteers who know them.",
+  "camps": [
+    { "district": "Sivasagar", "lat": 26.985, "lng": 94.63, "camps": 66, "people": 30000 },
+    { "district": "Jorhat", "lat": 26.75, "lng": 94.22, "camps": null, "people": 1080 },
+    { "district": "Charaideo (Sonari)", "lat": 27.02, "lng": 95.02, "camps": null, "people": 479 },
+    { "district": "Golaghat", "lat": 26.52, "lng": 93.96, "camps": null, "people": 422 }
+  ]
+}

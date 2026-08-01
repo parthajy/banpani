@@ -54,7 +54,7 @@ map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp
 const h = location.hash.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
 if (h) map.setView([+h[1], +h[2]], 11);
 
-const layers = { flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map) };
+const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map) };
 const floodColor = s => ({ high: '#f0453a', medium: '#f5a623', receding: '#8fbaff' }[s] || '#f0453a');
 
 function pinIcon(status, verify, emoji, gap) {
@@ -64,19 +64,30 @@ function pinIcon(status, verify, emoji, gap) {
 const emojiIcon = e => L.divIcon({ html: `<div class="emoji">${e}</div>`, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
 
 /* ------------------------------ rendering ----------------------------- */
-let officialFlood = null;
+let officialFlood = null, officialCamps = { camps: [], updated: '' };
 async function loadOfficialFlood() {
   try { officialFlood = await (await fetch(C.FLOOD_GEOJSON)).json(); } catch { officialFlood = { type: 'FeatureCollection', features: [] }; }
+  try { officialCamps = await (await fetch('data/relief-camps.json')).json(); } catch { officialCamps = { camps: [], updated: '' }; }
+}
+// Official ASDMA layer: affected-district shading (dated + sourced) + relief-camp summaries.
+function renderOfficial() {
+  layers.official.clearLayers();
+  if (!$('ly_official').checked || !officialFlood) return;
+  L.geoJSON(officialFlood, {
+    filter: f => f.properties.severity,
+    style: f => ({ color: floodColor(f.properties.severity), weight: 1.4, fillColor: floodColor(f.properties.severity), fillOpacity: 0.22 }),
+    onEachFeature: (f, l) => l.bindPopup(`<b>${esc(f.properties.name)}</b><br>${t('officialAffected')} · <b>${esc(f.properties.severity)}</b><br><small>${t('sourceASDMA')} · ${esc(f.properties.updated || '')}</small>`),
+  }).addTo(layers.official);
+  for (const c of (officialCamps.camps || [])) {
+    L.marker([c.lat, c.lng], { icon: emojiIcon('🏕️') }).addTo(layers.official)
+      .bindPopup(`<b>🏕️ ${esc(c.district)}</b><br>${c.camps ? c.camps + ' ' + t('reliefCamps') + '<br>' : ''}${c.people ? '~' + Number(c.people).toLocaleString() + ' ' + t('sheltered') + '<br>' : ''}<small>${t('sourceASDMA')} · ${esc(officialCamps.updated || '')}</small>`);
+  }
 }
 function renderFlood() {
   layers.flood.clearLayers();
   if (!$('ly_flood').checked) return;
-  if (officialFlood) L.geoJSON(officialFlood, {
-    style: f => f.properties.severity
-      ? { color: floodColor(f.properties.severity), weight: 1, fillColor: floodColor(f.properties.severity), fillOpacity: 0.20 }
-      : { color: '#3a4757', weight: 0.7, fill: false, opacity: 0.5 },   // unaffected districts: faint outline only
-    onEachFeature: (f, l) => { if (f.properties.severity) l.bindPopup(`<b>${esc(f.properties.name)}</b><br>Flood severity: ${esc(f.properties.severity)}<br>${f.properties.people ? '~' + f.properties.people.toLocaleString() + ' affected' : ''}<br><small>district zone · ${esc(f.properties.updated || '')}</small>`); },
-  }).addTo(layers.flood);
+  // faint district outlines for geographic context (official shading lives in the Official layer)
+  if (officialFlood) L.geoJSON(officialFlood, { style: () => ({ color: '#3a4757', weight: 0.7, fill: false, opacity: 0.5 }) }).addTo(layers.flood);
   for (const p of STATE.flood_polygons) {
     L.geoJSON({ type: 'Feature', geometry: p.geojson, properties: {} }, { style: { color: floodColor(p.severity), weight: 2, dashArray: '4 4', fillColor: floodColor(p.severity), fillOpacity: 0.30 } })
       .bindPopup(`<b>Community-reported flooding</b><br>${esc(p.note || '')}<br><small>${esc(p.severity)}</small>`).addTo(layers.flood);
@@ -233,7 +244,7 @@ function renderNgoList() {
     </div>`;
   }).join('');
 }
-function renderAll() { renderFlood(); renderNeeds(); renderCover(); renderNgo(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
+function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderCover(); renderNgo(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
 
 function renderFloodNow() {
   const box = $('floodNowList'), tick = $('floodTicker');
@@ -309,7 +320,7 @@ $('timeseg').querySelectorAll('button').forEach(b => b.onclick = () => {
   $('timeseg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
   b.classList.add('on'); currentView = b.dataset.v; renderAll();
 });
-['ly_flood', 'ly_needs', 'ly_cover', 'ly_routes', 'ly_ngo'].forEach(id => $(id).onchange = renderAll);
+['ly_official', 'ly_flood', 'ly_needs', 'ly_cover', 'ly_routes', 'ly_ngo'].forEach(id => $(id).onchange = renderAll);
 
 let pickMode = 'need';
 const pending = { need: {}, r: {}, rf: {}, c: {}, f: {} };

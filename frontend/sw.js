@@ -2,12 +2,12 @@
 // Strategy: cache-first for the app shell (so it opens instantly / offline);
 // network-first for API + map tiles (so live data is fresh but the last-seen map
 // survives a dead connection).
-const SHELL = 'banpani-shell-v11';
-const RUNTIME = 'banpani-runtime-v11';
+const SHELL = 'banpani-shell-v12';
+const RUNTIME = 'banpani-runtime-v12';
 const SHELL_FILES = [
   './', 'index.html', 'styles.css', 'app.js', 'config.js', 'i18n.js',
   'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png',
-  'manifest.webmanifest', 'data/assam-districts.geojson',
+  'manifest.webmanifest', 'data/assam-districts.geojson', 'data/relief-camps.json',
 ];
 
 self.addEventListener('install', e => {
