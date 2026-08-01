@@ -47,7 +47,7 @@ const STR = {
     needPosted: 'Need posted 🆘 - please ask 2 others to confirm it', convoyAnnounced: 'Convoy announced 🚚',
     dropRegistered: 'Drop-off registered 📦', addedRegistry: 'Added to registry 🏳️', shareMap: 'Share', helplines: 'Help',
     disclaimer: 'Banpani is built and run by the community - it belongs to no one and no company. Reports are crowd-sourced and may be wrong or incomplete, so please do not rely on it 100%. For rescue, always call the official helplines below.', gotit: 'Got it',
-    guide: 'Guide', welcomeTitle: 'Welcome to Banpani 🌊',
+    guide: 'Guide', about: 'About', welcomeTitle: 'Welcome to Banpani 🌊',
     welcomeIntro: 'A free, community map to coordinate flood relief. Report where help is needed, see the areas nobody has reached, and help verify. Here is a short walkthrough:',
     qs1: '🆘 Need help? Open the Need tab, drop a pin, say what is needed. No login.',
     qs2: '🗺️ Helping? Check the Gaps view - areas nobody has reached yet.',

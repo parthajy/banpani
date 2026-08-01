@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About Banpani — Coordinating Community Flood Relief</title>
+  <meta name="description" content="What Banpani is, why it was built, how to use it, and the data behind it. A free, community-run flood-relief coordination map for Assam." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f1419" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
+  <style>
+    body{overflow:auto}
+    .wrap{max-width:760px;margin:0 auto;padding:26px 18px 70px;line-height:1.6}
+    .wrap h2{font-size:20px;margin:30px 0 8px}
+    .wrap h3{font-size:15px;margin:20px 0 6px;color:#cdd6e2}
+    .wrap p,.wrap li{color:#c3cdda;font-size:15px}
+    .lead{font-size:17px;color:var(--text)}
+    .wrap a{color:#8fbaff}
+    .card2{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:16px 0}
+    .warn2{background:rgba(240,69,58,.10);border:1px solid #6b2f2a;border-radius:12px;padding:14px 16px;color:#ffb3ad}
+    ul{padding-left:20px}
+    .cta{display:inline-block;background:var(--accent);color:#fff;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:11px;margin-top:8px}
+    .muted{color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+  <header>
+    <img class="logo" src="icon.svg" alt="Banpani" width="30" height="30" />
+    <div><h1>About Banpani <span style="color:var(--muted);font-weight:400">· বানপানী</span></h1><div class="sub">Coordinating Community Flood Relief</div></div>
+    <div class="spacer"></div>
+    <a class="link" href="index.html">🗺️ Live map</a>
+  </header>
+
+  <div class="wrap">
+    <p class="lead">Banpani is a <b>free, community-run live map to coordinate flood relief in Assam</b> — so no area is left stranded, and no two convoys collide on the same village. It belongs to no one, and it's built by volunteers.</p>
+
+    <div class="warn2">⚠️ Banpani is a <b>community tool, not a replacement for official rescue.</b> Reports are crowd-sourced and may be wrong or incomplete — please don't rely on it 100%. For any emergency, always call <b>112 / SDRF / the ASDMA control room</b> first.</div>
+
+    <h2>Why we built it</h2>
+    <p>During the floods, relief is enormous and generous — but a lot of it lives inside scattered WhatsApp groups, where messages pile up and things slip: two convoys reach the same village while another waits, a camp runs out of ORS and the ask gets buried, a stranded family is seen by one person who doesn't know who to tell. Banpani puts it all on one shared, living map so we can see the whole picture at once — together.</p>
+
+    <h2>How to use it</h2>
+    <ul>
+      <li><b>🆘 Need help?</b> Open the Need tab, drop a pin, say what's needed. No login, no account.</li>
+      <li><b>🗺️ Helping?</b> Check the <b>Gaps</b> view — the flooded areas nobody has reached yet.</li>
+      <li><b>🚚 Running a convoy?</b> Announce your route so effort isn't doubled — the map warns you if another group is already covering that spot.</li>
+      <li><b>🌊 See water rising or receding?</b> Mark it on the Flood tab. The flood map is only as live as we make it.</li>
+      <li><b>🏳️ An NGO?</b> List your group so donors and convoys can find you.</li>
+    </ul>
+    <a class="cta" href="index.html">Open the live map →</a>
+
+    <h2>How trust works — community consensus</h2>
+    <p>There are no accounts and no gatekeeper. Anyone can report; the community verifies. A report becomes <b>trusted</b> when <b>3 different people</b> confirm it, and false reports get flagged and hidden. NGOs earn a <b>community-verified</b> badge at 5 endorsements. Victim phone numbers are never shown publicly — they're revealed only to someone actually coordinating help. Every action is visible in the public <a href="index.html">Activity</a> feed (no names, no numbers, no IP addresses — just anonymous ids), and a <a href="report.html">public 6-hour report</a> lists everything still unverified and every coverage gap.</p>
+
+    <h2>Languages</h2>
+    <p>Banpani works in <b>English, অসমীয়া (Assamese) and हिन्दी (Hindi)</b> — switch from the top-right of the map.</p>
+
+    <h2>Data &amp; sources</h2>
+    <p>Banpani links back to its sources and never claims to replace an official warning.</p>
+    <div class="card2 muted">
+      <b>Map:</b> © OpenStreetMap contributors<br>
+      <b>Weather outlook:</b> live rainfall forecast from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (auto-updated)<br>
+      <b>Official affected areas &amp; relief camps:</b> <a href="https://sdmassam.nic.in/" target="_blank" rel="noopener">ASDMA</a> bulletins (dated snapshots)<br>
+      <b>River levels (planned):</b> <a href="https://cwc.gov.in/" target="_blank" rel="noopener">Central Water Commission</a> — for gauge stations above danger mark<br>
+      <b>News:</b> aggregated headlines via Google News<br>
+      <b>Also see:</b> <a href="https://assamflood.org/" target="_blank" rel="noopener">Axom Flood</a> — an independent CWC river-level dashboard for Assam (a great companion to this map)
+    </div>
+
+    <h2>Owned by no one</h2>
+    <p>Banpani is <b>open source (MIT)</b> and belongs to everyone. Anyone can fork it, improve it, or run it for the next flood, anywhere. Code: <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">github.com/parthajy/banpani</a></p>
+
+    <h2>Contact &amp; help</h2>
+    <p>Something not working, or want to help build/translate/run it? Use the <b>✉ Contact</b> button on the <a href="index.html">map</a> — no phone numbers are shown to anyone. This is ours, together. 🙏</p>
+
+    <p class="muted" style="margin-top:28px"><a href="index.html">← Back to the live map</a></p>
+  </div>
+</body>
+</html>
