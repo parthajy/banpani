@@ -8,6 +8,7 @@
 
 import http from 'node:http';
 import { createHash } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -34,6 +35,17 @@ const readBody = req => new Promise((resolve, reject) => {
   req.on('end', () => { try { resolve(b ? JSON.parse(b) : {}); } catch (e) { reject(e); } });
   req.on('error', reject);
 });
+// gzip text responses (big win on weak flood-zone connections) + cache-control.
+const GZIP_TYPES = /text|javascript|json|svg|manifest|xml/;
+function writeBody(req, res, code, buf, type, cacheControl) {
+  const headers = { 'content-type': type, 'access-control-allow-origin': '*' };
+  if (cacheControl) headers['cache-control'] = cacheControl;
+  const ae = req.headers['accept-encoding'] || '';
+  if (GZIP_TYPES.test(type) && buf.length > 600 && /\bgzip\b/.test(ae)) {
+    buf = gzipSync(buf); headers['content-encoding'] = 'gzip'; headers['vary'] = 'Accept-Encoding';
+  }
+  res.writeHead(code, headers); res.end(buf);
+}
 const str = (v, max = 400) => (v == null ? null : String(v).slice(0, max));
 const jarr = v => JSON.stringify(Array.isArray(v) ? v.map(x => String(x).slice(0, 80)).slice(0, 40) : []);
 const num = v => (v == null || v === '' || isNaN(+v) ? null : +v);
@@ -58,11 +70,15 @@ const routes = [];
 const on = (m, p, h) => routes.push({ method: m, path: p, handler: h });
 
 // Public read - everything the map needs, with victim contact stripped out.
+// A 4s in-memory micro-cache absorbs traffic spikes (e.g. the FB ad) so a burst can't
+// hammer SQLite - the map still feels live (the client polls every 20s anyway).
+let stateCache = null;
 on('GET', '/api/state', (req, res) => {
+  if (stateCache && Date.now() - stateCache.at < 4000) return writeBody(req, res, 200, Buffer.from(stateCache.s), 'application/json', 'public, max-age=4');
   const reports = decoratedReports()
-    .filter(r => r.verify_status !== 'false')                 // community-hidden bogus reports drop out
+    .filter(r => r.verify_status !== 'false')
     .map(({ contact, device, ...r }) => ({ ...r, has_contact: !!contact }));
-  json(res, 200, {
+  const s = JSON.stringify({
     reports,
     routes: parseRows(all('SELECT * FROM routes WHERE hidden=0 ORDER BY created_at DESC'), ['items']),
     collection_points: parseRows(all('SELECT * FROM collection_points WHERE hidden=0 AND active=1'), ['accepts']),
@@ -74,6 +90,8 @@ on('GET', '/api/state', (req, res) => {
     thresholds: { confirm: 3, resolve: 2, endorse: 5 },
     server_time: now(),
   });
+  stateCache = { at: Date.now(), s };
+  writeBody(req, res, 200, Buffer.from(s), 'application/json', 'public, max-age=4');
 });
 
 on('GET', '/api/report', (req, res) => json(res, 200, buildReport()));
@@ -265,15 +283,17 @@ function matchRoute(method, pathname) {
   return null;
 }
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
-  '.geojson': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
-async function serveStatic(res, pathname) {
+  '.geojson': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon', '.xml': 'application/xml', '.txt': 'text/plain' };
+async function serveStatic(req, res, pathname) {
   const full = normalize(join(FRONTEND, pathname === '/' ? '/index.html' : pathname));
   if (!full.startsWith(FRONTEND)) return json(res, 403, { error: 'forbidden' });
   if (!existsSync(full)) return json(res, 404, { error: 'not found' });
   try {
     const buf = await readFile(full);
-    res.writeHead(200, { 'content-type': MIME[extname(full)] || 'application/octet-stream' });
-    res.end(buf);
+    const ext = extname(full), type = MIME[ext] || 'application/octet-stream';
+    const cache = ext === '.html' ? 'no-cache' : 'public, max-age=3600';
+    writeBody(req, res, 200, buf, type, cache);
   } catch { json(res, 500, { error: 'read failed' }); }
 }
 
@@ -286,7 +306,7 @@ http.createServer(async (req, res) => {
       if (!m) return json(res, 404, { error: 'no such endpoint' });
       return await m.handler(req, res, m.params, url);
     }
-    return await serveStatic(res, url.pathname);
+    return await serveStatic(req, res, url.pathname);
   } catch (e) { console.error(e); json(res, 500, { error: 'server error', detail: String(e.message || e) }); }
 }).listen(PORT, () => {
   console.log(`Banpani running -> http://localhost:${PORT}`);
