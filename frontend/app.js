@@ -73,11 +73,13 @@ async function loadOfficialFlood() {
 function renderOfficial() {
   layers.official.clearLayers();
   if (!$('ly_official').checked || !officialFlood) return;
+  // shading is purely visual (interactive:false) so taps pass through to place a pin
   L.geoJSON(officialFlood, {
     filter: f => f.properties.severity,
-    style: f => ({ color: floodColor(f.properties.severity), weight: 1.4, fillColor: floodColor(f.properties.severity), fillOpacity: 0.22 }),
-    onEachFeature: (f, l) => l.bindPopup(`<b>${esc(f.properties.name)}</b><br>${t('officialAffected')} · <b>${esc(f.properties.severity)}</b><br><small>${t('sourceASDMA')} · ${esc(f.properties.updated || '')}</small>`),
+    interactive: false,
+    style: f => ({ color: floodColor(f.properties.severity), weight: 1.4, fillColor: floodColor(f.properties.severity), fillOpacity: 0.20 }),
   }).addTo(layers.official);
+  const dn = $('officialDate'); if (dn) dn.textContent = officialCamps.updated ? `🏛️ ${t('sourceASDMA')} · ${officialCamps.updated}` : '';
   for (const c of (officialCamps.camps || [])) {
     L.marker([c.lat, c.lng], { icon: emojiIcon('🏕️') }).addTo(layers.official)
       .bindPopup(`<b>🏕️ ${esc(c.district)}</b><br>${c.camps ? c.camps + ' ' + t('reliefCamps') + '<br>' : ''}${c.people ? '~' + Number(c.people).toLocaleString() + ' ' + t('sheltered') + '<br>' : ''}<small>${t('sourceASDMA')} · ${esc(officialCamps.updated || '')}</small>`);
@@ -89,8 +91,7 @@ function renderFlood() {
   // faint district outlines for geographic context (official shading lives in the Official layer)
   if (officialFlood) L.geoJSON(officialFlood, { style: () => ({ color: '#3a4757', weight: 0.7, fill: false, opacity: 0.5 }) }).addTo(layers.flood);
   for (const p of STATE.flood_polygons) {
-    L.geoJSON({ type: 'Feature', geometry: p.geojson, properties: {} }, { style: { color: floodColor(p.severity), weight: 2, dashArray: '4 4', fillColor: floodColor(p.severity), fillOpacity: 0.30 } })
-      .bindPopup(`<b>Community-reported flooding</b><br>${esc(p.note || '')}<br><small>${esc(p.severity)}</small>`).addTo(layers.flood);
+    L.geoJSON({ type: 'Feature', geometry: p.geojson, properties: {} }, { interactive: false, style: { color: floodColor(p.severity), weight: 2, dashArray: '4 4', fillColor: floodColor(p.severity), fillOpacity: 0.30 } }).addTo(layers.flood);
   }
   // real-time community flood markers: newest-wins within ~1km, colour by severity, fade with age
   const fresh = (STATE.flood_reports || []).filter(f => f.severity !== 'receded' && ageH(f.updated_at || f.created_at) <= 48)

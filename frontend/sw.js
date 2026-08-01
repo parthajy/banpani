@@ -2,8 +2,8 @@
 // Strategy: cache-first for the app shell (so it opens instantly / offline);
 // network-first for API + map tiles (so live data is fresh but the last-seen map
 // survives a dead connection).
-const SHELL = 'banpani-shell-v12';
-const RUNTIME = 'banpani-runtime-v12';
+const SHELL = 'banpani-shell-v13';
+const RUNTIME = 'banpani-runtime-v13';
 const SHELL_FILES = [
   './', 'index.html', 'styles.css', 'app.js', 'config.js', 'i18n.js',
   'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png',
