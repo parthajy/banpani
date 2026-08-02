@@ -34,7 +34,7 @@ export function coverageOf(need, activeRoutes) {
 }
 
 export function buildReport() {
-  const reports = decoratedReports().filter(r => r.verify_status !== 'false'); // consensus-derived
+  const reports = decoratedReports().filter(r => r.verify_status !== 'false' && r.mode !== 'rehab'); // relief situation report
   const activeRoutes = all("SELECT * FROM routes WHERE hidden=0 AND status='active'");
   const ngos = all('SELECT COUNT(*) c FROM ngos WHERE hidden=0')[0].c;
 

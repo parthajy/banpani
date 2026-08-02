@@ -32,6 +32,10 @@ window.BANPANI = {
   ITEMS: ['Drinking water', 'ORS', 'Dettol / antiseptic', 'Rice / dry food', 'Baby food',
     'Tarpaulin', 'Blankets', 'Sanitary pads', 'Medicines', 'Candles / matches',
     'Boat / rescue', 'Mosquito nets', 'Cattle feed', 'First aid'],
+  // Rehabilitation phase — what people need to recover, not just survive.
+  REHAB_ITEMS: ['House rebuild (full)', 'House repair (partial)', 'Roofing / tin', 'Seeds & saplings',
+    'Livestock', 'Farming tools', 'Fishing net / boat', 'School kit / books', 'Clothes & bedding',
+    'Utensils', 'Well / water repair', 'Medical follow-up', 'Compensation help', 'Cash / debt relief'],
   ACCEPTS: ['Dry food', 'Water', 'Clothes', 'Blankets', 'Medicines', 'Tarpaulin', 'Baby food', 'Cash'],
   FOCUS: ['rescue', 'food', 'water', 'medical', 'shelter', 'sanitation', 'cattle', 'rebuild'],
 };

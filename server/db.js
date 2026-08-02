@@ -23,6 +23,9 @@ for (const stmt of [
   'ALTER TABLE actions_log ADD COLUMN ip_hash TEXT',
   'ALTER TABLE actions_log ADD COLUMN area TEXT',
   'ALTER TABLE flood_reports ADD COLUMN updated_at TEXT',
+  "ALTER TABLE reports ADD COLUMN mode TEXT NOT NULL DEFAULT 'relief'",
+  'ALTER TABLE reports ADD COLUMN adopted_by TEXT',
+  'ALTER TABLE reports ADD COLUMN adopted_at TEXT',
 ]) { try { db.exec(stmt); } catch { /* column already exists */ } }
 
 export const now = () => new Date().toISOString();
@@ -65,6 +68,9 @@ export function decoratedReports() {
     o.confirmations = r.nc; o.false_flags = r.nf; o.resolve_votes = r.nr;
     o.verify_status = r.nf >= THRESH.FALSE ? 'false' : r.nc >= THRESH.CONFIRM ? 'confirmed' : 'unverified';
     o.status = r.nr >= THRESH.RESOLVE ? 'resolved' : (r.status === 'resolved' ? 'resolved' : 'open');
+    o.mode = r.mode || 'relief';
+    o.adopted = !!r.adopted_by;                 // rehab: someone has opted to undertake it
+    o.delivered = o.status === 'resolved';       // rehab: confirmed delivered by consensus
     o.hidden_by_community = r.nf >= THRESH.FALSE;
     return o;
   });

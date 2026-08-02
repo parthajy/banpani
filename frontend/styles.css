@@ -106,7 +106,15 @@ header button.link{cursor:pointer;font-family:inherit}
 #map{flex:1;min-height:0;background:#0b0f14;z-index:1}
 
 /* left overlay: layer + time controls, and the uncovered pane */
-.overlay{position:absolute;top:74px;left:12px;z-index:600;width:250px;display:flex;flex-direction:column;gap:10px;
+.modeswitch{position:absolute;top:12px;left:12px;z-index:650;display:flex;gap:3px;background:var(--panel);border:1px solid var(--line);
+  border-radius:11px;padding:3px;box-shadow:var(--shadow)}
+.modeswitch button{border:none;background:transparent;color:var(--muted);font-size:12.5px;font-weight:700;padding:7px 13px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.modeswitch button.on{background:var(--accent);color:#fff}
+body.rehab .modeswitch button.on{background:#b5651d}
+.relief-only{}
+body.rehab .relief-only{display:none !important}
+.badge.claimed{background:rgba(245,166,35,.18);color:#ffce7a}
+.overlay{position:absolute;top:58px;left:12px;z-index:600;width:250px;display:flex;flex-direction:column;gap:10px;
   max-height:calc(100dvh - 90px);overflow-y:auto;overflow-x:hidden;padding-right:2px;pointer-events:none;
   scrollbar-width:thin}
 .overlay::-webkit-scrollbar{width:6px}

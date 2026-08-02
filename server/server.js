@@ -136,11 +136,12 @@ on('GET', '/api/reports/:id/contact', (req, res, params) => {
 on('POST', '/api/reports', async (req, res) => {
   const b = await readBody(req);
   if (!str(b.place) || b.lat == null || b.lng == null) return json(res, 400, { error: 'place, lat, lng required' });
-  const r = run(`INSERT INTO reports(created_at,place,lat,lng,items,people,details,contact,reporter_kind,device)
-    VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
+  const mode = b.mode === 'rehab' ? 'rehab' : 'relief';
+  const r = run(`INSERT INTO reports(created_at,place,lat,lng,items,people,details,contact,reporter_kind,mode,device)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
     num(b.people), str(b.details, 1000), str(b.contact, 60),
-    ['affected', 'volunteer', 'witness'].includes(b.reporter_kind) ? b.reporter_kind : 'witness', dev(b));
-  log(req, 'need_report', 'report:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.place, 120) });
+    ['affected', 'volunteer', 'witness'].includes(b.reporter_kind) ? b.reporter_kind : 'witness', mode, dev(b));
+  log(req, mode === 'rehab' ? 'rehab_report' : 'need_report', 'report:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.place, 120) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 
@@ -235,6 +236,18 @@ on('POST', '/api/reports/:id/vote', async (req, res, params) => {
   json(res, 200, { ok: true, confirmations: r?.confirmations, false_flags: r?.false_flags, verify_status: r?.verify_status, status: r?.status });
 });
 
+// Rehab: a group/NGO opts to UNDERTAKE a rehab need (adopt). Public claim, logged.
+// Its credibility is then its Promised-vs-Delivered record, not our say-so.
+on('POST', '/api/reports/:id/adopt', async (req, res, params) => {
+  const b = await readBody(req);
+  if (!str(b.name)) return json(res, 400, { error: 'name required' });
+  const rep = one('SELECT id,place FROM reports WHERE id=? AND hidden=0', params.id);
+  if (!rep) return json(res, 404, { error: 'not found' });
+  run('UPDATE reports SET adopted_by=?, adopted_at=? WHERE id=?', str(b.name, 120), now(), params.id);
+  log(req, 'adopt', 'report:' + params.id, { device: dev(b), detail: str(b.name, 120), area: rep.place });
+  json(res, 200, { ok: true, adopted_by: str(b.name, 120) });
+});
+
 on('POST', '/api/ngos/:id/endorse', async (req, res, params) => {
   const b = await readBody(req);
   if (!['yes', 'fake'].includes(b.value)) return json(res, 400, { error: 'value yes|fake' });
@@ -304,7 +317,9 @@ http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/api/')) {
       const m = matchRoute(req.method, url.pathname);
       if (!m) return json(res, 404, { error: 'no such endpoint' });
-      return await m.handler(req, res, m.params, url);
+      const r = await m.handler(req, res, m.params, url);
+      if (req.method === 'POST') stateCache = null;   // a write happened - drop the /api/state micro-cache
+      return r;
     }
     return await serveStatic(req, res, url.pathname);
   } catch (e) { console.error(e); json(res, 500, { error: 'server error', detail: String(e.message || e) }); }

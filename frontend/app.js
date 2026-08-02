@@ -31,6 +31,8 @@ const ageH = iso => (Date.now() - new Date(iso).getTime()) / 3.6e6;
 /* ------------------------------- state -------------------------------- */
 let STATE = { reports: [], routes: [], collection_points: [], ngos: [], flood_polygons: [] };
 let currentView = 'live';
+let currentMode = localStorage.getItem('banpani.mode') === 'rehab' ? 'rehab' : 'relief';
+const inMode = r => (r.mode || 'relief') === currentMode;   // reports belong to relief OR rehab
 
 function coverageOf(need) {
   let best = null;
@@ -41,7 +43,12 @@ function coverageOf(need) {
   }
   return best;
 }
-const isGap = n => n.status !== 'resolved' && n.verify_status !== 'false' && !coverageOf(n);
+// a "gap" = something real that nobody is on. Relief: no convoy inbound. Rehab: not yet adopted.
+function isGap(n) {
+  if (n.status === 'resolved' || n.verify_status === 'false') return false;
+  if ((n.mode || 'relief') === 'rehab') return !n.adopted;
+  return !coverageOf(n);
+}
 
 /* -------------------------------- map --------------------------------- */
 const B = L.latLngBounds(C.BOUNDS);
@@ -90,6 +97,7 @@ function renderFlood() {
   if (!$('ly_flood').checked) return;
   // faint district outlines for geographic context (official shading lives in the Official layer)
   if (officialFlood) L.geoJSON(officialFlood, { style: () => ({ color: '#3a4757', weight: 0.7, fill: false, opacity: 0.5 }) }).addTo(layers.flood);
+  if (currentMode !== 'relief') return;   // live flood markers are a relief-phase signal
   for (const p of STATE.flood_polygons) {
     L.geoJSON({ type: 'Feature', geometry: p.geojson, properties: {} }, { interactive: false, style: { color: floodColor(p.severity), weight: 2, dashArray: '4 4', fillColor: floodColor(p.severity), fillOpacity: 0.30 } }).addTo(layers.flood);
   }
@@ -131,18 +139,35 @@ function routeMatchesView(r) {
 }
 
 function needPopup(n) {
-  const cov = coverageOf(n);
-  const covTxt = n.status === 'resolved' ? '' : cov
-    ? `<div style="color:#7fe6b0">🚚 ${esc(cov.r.name)} inbound (~${cov.dist.toFixed(1)}km)</div>`
-    : `<div style="color:#ff8079">⚠️ nobody heading here yet</div>`;
-  return `<b>${esc(n.place)}</b> <span class="pmeta">${n.status} · ${n.verify_status}${n.confirmations ? ' · ' + n.confirmations + '✅' : ''}</span>
-    <div style="margin:4px 0">🆘 ${n.items.map(esc).join(', ')}</div>
-    ${n.people ? '~' + n.people + ' people<br>' : ''}${n.details ? esc(n.details) + '<br>' : ''}${covTxt}
-    <div class="vbtns">
-      <button onclick="bp.vote(${n.id},'trust','confirm')">✅ ${t('confirm')} (${n.confirmations || 0})</button>
-      <button onclick="bp.vote(${n.id},'resolve','yes')">✓ ${t('delivered')}</button>
-      <button onclick="bp.vote(${n.id},'trust','false')">⚑ ${t('notReal')}</button>
-    </div>
+  const rehab = (n.mode || 'relief') === 'rehab';
+  let statusTxt, actionRow;
+  if (rehab) {
+    statusTxt = n.delivered
+      ? `<div style="color:#7fe6b0">✅ ${t('deliveredConfirmed')}${n.adopted_by ? ' — ' + esc(n.adopted_by) : ''}</div>`
+      : n.adopted
+        ? `<div style="color:#8fbaff">🤝 ${t('beingHandled')}: <b>${esc(n.adopted_by)}</b></div>`
+        : `<div style="color:#ff8079">⚠️ ${t('notAdopted')}</div>`;
+    actionRow = `<div class="vbtns">
+        <button onclick="bp.vote(${n.id},'trust','confirm')">✅ ${t('confirm')} (${n.confirmations || 0})</button>
+        ${!n.adopted ? `<button onclick="bp.adopt(${n.id})">🤝 ${t('adopt')}</button>`
+                     : `<button onclick="bp.vote(${n.id},'resolve','yes')">✓ ${t('markDelivered')} (${n.resolve_votes || 0}/2)</button>`}
+        <button onclick="bp.vote(${n.id},'trust','false')">⚑ ${t('notReal')}</button>
+      </div>`;
+  } else {
+    const cov = coverageOf(n);
+    statusTxt = n.status === 'resolved' ? '' : cov
+      ? `<div style="color:#7fe6b0">🚚 ${esc(cov.r.name)} inbound (~${cov.dist.toFixed(1)}km)</div>`
+      : `<div style="color:#ff8079">⚠️ nobody heading here yet</div>`;
+    actionRow = `<div class="vbtns">
+        <button onclick="bp.vote(${n.id},'trust','confirm')">✅ ${t('confirm')} (${n.confirmations || 0})</button>
+        <button onclick="bp.vote(${n.id},'resolve','yes')">✓ ${t('delivered')}</button>
+        <button onclick="bp.vote(${n.id},'trust','false')">⚑ ${t('notReal')}</button>
+      </div>`;
+  }
+  return `<b>${esc(n.place)}</b> <span class="pmeta">${n.verify_status}${n.confirmations ? ' · ' + n.confirmations + '✅' : ''}</span>
+    <div style="margin:4px 0">${rehab ? '🔨' : '🆘'} ${n.items.map(esc).join(', ')}</div>
+    ${n.people ? '~' + n.people + (rehab ? ' families<br>' : ' people<br>') : ''}${n.details ? esc(n.details) + '<br>' : ''}${statusTxt}
+    ${actionRow}
     <div class="vbtns">
       <button onclick="bp.directions(${n.id})">🧭 ${t('directions')}</button>
       ${n.has_contact ? `<button onclick="bp.reveal(${n.id})">📞 ${t('getContact')}</button>` : ''}
@@ -155,15 +180,17 @@ function renderNeeds() {
   layers.needs.clearLayers();
   if (!$('ly_needs').checked) return;
   for (const n of STATE.reports) {
+    if (!inMode(n)) continue;
     const gap = isGap(n);
     if (!needMatchesView(n, gap)) continue;
-    const emoji = n.status === 'resolved' ? '✓' : (n.confirmations >= C.CONFIRM_AT ? '!' : '?');
-    L.marker([n.lat, n.lng], { icon: pinIcon(n.status, n.verify_status, emoji, gap && currentView !== 'today') }).addTo(layers.needs).bindPopup(needPopup(n));
+    const st = n.delivered ? 'resolved' : (n.adopted ? 'claimed' : n.status);
+    const emoji = n.delivered ? '✓' : n.adopted ? '🤝' : (n.confirmations >= C.CONFIRM_AT ? '!' : '?');
+    L.marker([n.lat, n.lng], { icon: pinIcon(st, n.verify_status, emoji, gap && currentView !== 'today') }).addTo(layers.needs).bindPopup(needPopup(n));
   }
 }
 function renderCover() {
   layers.cover.clearLayers();
-  if (!$('ly_cover').checked) return;
+  if (currentMode !== 'relief' || !$('ly_cover').checked) return;
   const showRoutes = $('ly_routes').checked;
   for (const r of STATE.routes) {
     if (r.status !== 'active' || !routeMatchesView(r)) continue;
@@ -183,14 +210,14 @@ function renderCover() {
 }
 function renderNgo() {
   layers.ngo.clearLayers();
-  if (!$('ly_ngo').checked) return;
+  if (currentMode !== 'relief' || !$('ly_ngo').checked) return;
   for (const c of STATE.collection_points) {
     L.marker([c.lat, c.lng], { icon: emojiIcon('📦') }).addTo(layers.ngo)
       .bindPopup(`<b>📦 ${esc(c.name)}</b><br>Accepts: ${(c.accepts || []).map(esc).join(', ')}<br>${c.hours ? esc(c.hours) + '<br>' : ''}${c.org ? esc(c.org) + '<br>' : ''}${c.contact ? '📞 ' + esc(c.contact) : ''}`);
   }
 }
 function renderPane() {
-  const gaps = STATE.reports.filter(isGap).map(n => ({ ...n, age: ageH(n.created_at), pri: (n.people || 20) * (1 + ageH(n.created_at) / 24) })).sort((a, b) => b.pri - a.pri).slice(0, 8);
+  const gaps = STATE.reports.filter(n => inMode(n) && isGap(n)).map(n => ({ ...n, age: ageH(n.created_at), pri: (n.people || 20) * (1 + ageH(n.created_at) / 24) })).sort((a, b) => b.pri - a.pri).slice(0, 8);
   const box = $('gaps');
   if (!gaps.length) { box.innerHTML = `<div class="none">${t('noneUnattended')}</div>`; return; }
   box.innerHTML = gaps.map(g => `<div class="gaprow"><div data-lat="${g.lat}" data-lng="${g.lng}" class="gp-go" style="flex:1">
@@ -201,26 +228,41 @@ function renderPane() {
   box.querySelectorAll('.gp-go').forEach(el => el.onclick = () => map.setView([+el.dataset.lat, +el.dataset.lng], 11));
 }
 function renderStats() {
-  const r = STATE.reports;
-  $('s_open').textContent = r.filter(n => n.status !== 'resolved').length;
-  $('s_unv').textContent = r.filter(n => n.verify_status === 'unverified' && n.status !== 'resolved').length;
-  $('s_cov').textContent = STATE.routes.filter(x => x.status === 'active').length;
-  $('s_gap').textContent = r.filter(isGap).length;
+  const r = STATE.reports.filter(inMode);
+  if (currentMode === 'rehab') {
+    // Promised vs Delivered
+    $('s_open').textContent = r.filter(n => !n.delivered).length;
+    $('s_unv').textContent = r.filter(n => n.adopted && !n.delivered).length;   // promised (adopted, not yet done)
+    $('s_cov').textContent = r.filter(n => n.delivered).length;                 // delivered (confirmed)
+    $('s_gap').textContent = r.filter(isGap).length;                            // not adopted
+    $('lbl_unv').textContent = t('promised'); $('lbl_cov').textContent = t('deliveredLbl'); $('lbl_gap').textContent = t('notAdoptedLbl');
+  } else {
+    $('s_open').textContent = r.filter(n => n.status !== 'resolved').length;
+    $('s_unv').textContent = r.filter(n => n.verify_status === 'unverified' && n.status !== 'resolved').length;
+    $('s_cov').textContent = STATE.routes.filter(x => x.status === 'active').length;
+    $('s_gap').textContent = r.filter(isGap).length;
+    $('lbl_unv').textContent = t('unverif'); $('lbl_cov').textContent = t('convoys'); $('lbl_gap').textContent = t('gapsStat');
+  }
 }
 function renderFeed() {
   const list = $('feedlist'); if (!list) return;
-  const rows = STATE.reports.slice().sort((a, b) => {
-    const rank = n => n.status === 'resolved' ? 4 : isGap(n) ? 0 : n.verify_status === 'unverified' ? 1 : 2;
+  const rows = STATE.reports.filter(inMode).sort((a, b) => {
+    const rank = n => n.delivered ? 4 : isGap(n) ? 0 : n.verify_status === 'unverified' ? 1 : 2;
     return rank(a) - rank(b);
   });
   if (!rows.length) { list.innerHTML = `<div class="empty">${t('noReports')}</div>`; return; }
+  const rehab = currentMode === 'rehab';
   list.innerHTML = rows.map(n => {
     const gap = isGap(n);
-    return `<div class="card ${n.status}" data-lat="${n.lat}" data-lng="${n.lng}">
-      <div class="top"><span class="place">${esc(n.place)} ${gap ? '<span class="badge gap">GAP</span>' : ''}</span>
-        <span class="badge ${n.verify_status === 'confirmed' ? 'confirmed' : 'unverified'}">${esc(n.verify_status)}${n.confirmations ? ' ' + n.confirmations + '✅' : ''}</span></div>
-      <div class="items">🆘 ${n.items.map(esc).join(', ')}</div>
-      <div class="meta">${n.people ? '~' + n.people + ' ppl · ' : ''}${n.status}${gap ? ' · <span style="color:#ff8079">no convoy inbound</span>' : ''}</div>
+    const cardCls = n.delivered ? 'resolved' : n.adopted ? 'claimed' : n.status;
+    const rightBadge = rehab
+      ? (n.delivered ? '<span class="badge confirmed">✓ ' + t('deliveredLbl') + '</span>' : n.adopted ? '<span class="badge claimed">🤝 ' + esc(n.adopted_by) + '</span>' : '<span class="badge gap">' + t('notAdoptedLbl') + '</span>')
+      : `<span class="badge ${n.verify_status === 'confirmed' ? 'confirmed' : 'unverified'}">${esc(n.verify_status)}${n.confirmations ? ' ' + n.confirmations + '✅' : ''}</span>`;
+    const metaTail = rehab ? '' : (gap ? ' · <span style="color:#ff8079">no convoy inbound</span>' : '');
+    return `<div class="card ${cardCls}" data-lat="${n.lat}" data-lng="${n.lng}">
+      <div class="top"><span class="place">${esc(n.place)} ${gap && !rehab ? '<span class="badge gap">GAP</span>' : ''}</span>${rightBadge}</div>
+      <div class="items">${rehab ? '🔨' : '🆘'} ${n.items.map(esc).join(', ')}</div>
+      <div class="meta">${n.people ? '~' + n.people + (rehab ? ' families · ' : ' ppl · ') : ''}${n.delivered ? t('deliveredLbl') : n.adopted ? t('promised') : n.status}${metaTail}</div>
       <div class="fcard-acts">
         <button onclick="event.stopPropagation();bp.locate(${n.id})">📍 ${t('showMap')}</button>
         <button onclick="event.stopPropagation();bp.directions(${n.id})">🧭 ${t('directions')}</button>
@@ -312,7 +354,36 @@ window.bp = {
       map.closePopup(); await refresh();
     } catch (e) { toast('Failed: ' + e.message); }
   },
+  adopt: async (id) => {
+    const name = prompt(t('adoptPrompt'));
+    if (!name || !name.trim()) return;
+    try { await api(`/api/reports/${id}/adopt`, { method: 'POST', body: { name: name.trim(), device: deviceId() } }); toast(t('adopted')); map.closePopup(); await refresh(); }
+    catch (e) { toast('Failed: ' + e.message); }
+  },
 };
+
+/* ------------------------- Relief ⇄ Rehab mode ------------------------- */
+function applyMode() {
+  document.body.classList.toggle('rehab', currentMode === 'rehab');
+  $('modeswitch').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === currentMode));
+  const rehab = currentMode === 'rehab';
+  // relabel the report tab + form for the phase
+  $('tab-need').textContent = rehab ? t('tRehabReport') : t('tNeed');
+  const intro = document.querySelector('[data-body="need"] .intro'); if (intro) intro.textContent = rehab ? t('rehabIntro') : t('needIntro');
+  $('n_submit').textContent = rehab ? t('postRehab') : t('postNeed');
+  $('whatNeededLbl') && ($('whatNeededLbl').textContent = rehab ? t('whatRehab') : t('whatNeeded'));
+  // swap the item vocabulary
+  nItems.clear(); chips('n_items', rehab ? C.REHAB_ITEMS : C.ITEMS, nItems);
+  // if a relief-only tab was active, fall back to the Need tab
+  if (rehab && ['flood', 'convoy', 'drop', 'ngo'].includes(currentTab())) { document.querySelector('.tab[data-tab="need"]').click(); }
+  renderAll();
+}
+function currentTab() { const a = document.querySelector('.tab.on'); return a ? a.dataset.tab : 'need'; }
+$('modeswitch').querySelectorAll('button').forEach(b => b.onclick = () => {
+  currentMode = b.dataset.mode; localStorage.setItem('banpani.mode', currentMode);
+  applyMode();
+  toast(currentMode === 'rehab' ? t('modeRehabOn') : t('modeReliefOn'));
+});
 
 async function refresh() { STATE = await api('/api/state'); renderAll(); }
 
@@ -411,8 +482,8 @@ $('n_submit').onclick = async () => {
   if (pending.need.lat == null) return toast('Set location (tap map or GPS)');
   if (nItems.size === 0) return toast('Pick at least one item');
   try {
-    await api('/api/reports', { method: 'POST', body: { place: $('n_place').value.trim(), lat: pending.need.lat, lng: pending.need.lng, items: [...nItems], people: $('n_people').value || null, details: $('n_details').value.trim(), reporter_kind: $('n_kind').value, contact: $('n_contact').value.trim(), device: deviceId() } });
-    ['n_place', 'n_people', 'n_details', 'n_contact'].forEach(i => $(i).value = ''); nItems.clear(); chips('n_items', C.ITEMS, nItems);
+    await api('/api/reports', { method: 'POST', body: { place: $('n_place').value.trim(), lat: pending.need.lat, lng: pending.need.lng, items: [...nItems], people: $('n_people').value || null, details: $('n_details').value.trim(), reporter_kind: $('n_kind').value, contact: $('n_contact').value.trim(), mode: currentMode, device: deviceId() } });
+    ['n_place', 'n_people', 'n_details', 'n_contact'].forEach(i => $(i).value = ''); nItems.clear(); chips('n_items', currentMode === 'rehab' ? C.REHAB_ITEMS : C.ITEMS, nItems);
     pending.need = {}; $('n_coord').textContent = t('noLoc'); $('n_coord').classList.remove('set'); removeMarker('need');
     await refresh(); toast(t('needPosted'));
   } catch (e) { toast('Failed: ' + e.message); }
@@ -543,6 +614,7 @@ $('recenter').onclick = fitToHotspot;
 
 (async function () {
   applyI18n();
+  applyMode();
   await loadOfficialFlood();
   try { await refresh(); await renderAdvisory(); } catch (e) { toast('Cannot reach server - is it running? ' + e.message); }
   if (!location.hash.match(/@/)) fitToHotspot();   // first load: fly to the worst-hit area (unless a deep-link says otherwise)

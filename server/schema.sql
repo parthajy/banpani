@@ -15,7 +15,10 @@ CREATE TABLE IF NOT EXISTS reports (
   details      TEXT,
   contact      TEXT,                         -- private; never returned in bulk /api/state
   reporter_kind TEXT DEFAULT 'witness',     -- affected | volunteer | witness
-  status       TEXT NOT NULL DEFAULT 'open',      -- open | resolved (resolved is set by consensus votes)
+  status       TEXT NOT NULL DEFAULT 'open',      -- open | resolved (resolved/delivered set by consensus votes)
+  mode         TEXT NOT NULL DEFAULT 'relief',    -- relief | rehab  (the two phases; same map, different loop)
+  adopted_by   TEXT,                         -- rehab: the group/NGO that opted to undertake it
+  adopted_at   TEXT,
   device       TEXT,                         -- opaque per-device id, for light rate-limiting
   hidden       INTEGER NOT NULL DEFAULT 0
 );

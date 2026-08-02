@@ -84,6 +84,12 @@
     <!-- mobile: floating toggle to expand/collapse the bottom panel -->
     <button class="panel-fab" id="panelFab" aria-label="Toggle report panel">☰</button>
 
+    <!-- Relief ⇄ Rehabilitation phase switcher -->
+    <div class="modeswitch" id="modeswitch">
+      <button data-mode="relief" class="on" data-i18n="modeRelief">🆘 Relief</button>
+      <button data-mode="rehab" data-i18n="modeRehab">🔨 Rehab</button>
+    </div>
+
     <!-- map overlay: layers, time views, uncovered pane -->
     <div class="overlay" id="overlay">
       <button class="ovl-toggle" id="overlayToggle" title="Collapse controls">▾ <span data-i18n="view">View</span></button>
@@ -100,9 +106,9 @@
         <label class="lyr"><input type="checkbox" id="ly_official" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="officialLayer">Affected areas (official)</span></label>
         <label class="lyr"><input type="checkbox" id="ly_flood" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="floodExtent">Flood extent</span></label>
         <label class="lyr"><input type="checkbox" id="ly_needs" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="needs">Needs</span></label>
-        <label class="lyr"><input type="checkbox" id="ly_cover" checked><span class="dot" style="background:#2f81f7"></span> <span data-i18n="coverage">Coverage / convoys</span></label>
-        <label class="lyr sub"><input type="checkbox" id="ly_routes" checked><span class="dot" style="background:#2f81f7;opacity:.6"></span> <span data-i18n="convoyRoutes">Convoy routes &amp; details</span></label>
-        <label class="lyr"><input type="checkbox" id="ly_ngo" checked><span class="dot" style="background:#28c76f"></span> <span data-i18n="ngosLayer">NGOs & drop-offs</span></label>
+        <label class="lyr relief-only"><input type="checkbox" id="ly_cover" checked><span class="dot" style="background:#2f81f7"></span> <span data-i18n="coverage">Coverage / convoys</span></label>
+        <label class="lyr sub relief-only"><input type="checkbox" id="ly_routes" checked><span class="dot" style="background:#2f81f7;opacity:.6"></span> <span data-i18n="convoyRoutes">Convoy routes &amp; details</span></label>
+        <label class="lyr relief-only"><input type="checkbox" id="ly_ngo" checked><span class="dot" style="background:#28c76f"></span> <span data-i18n="ngosLayer">NGOs & drop-offs</span></label>
         <div class="legend">
           <span><i style="background:#f0453a"></i><span data-i18n="high">high</span></span><span><i style="background:#f5a623"></i><span data-i18n="medium">medium</span></span><span><i style="background:#8fbaff"></i><span data-i18n="receding">receding</span></span>
         </div>
@@ -136,11 +142,11 @@
     <!-- right action panel -->
     <aside class="panel">
       <div class="tabs">
-        <div class="tab on" data-tab="need" data-i18n="tNeed">🆘 Need</div>
-        <div class="tab" data-tab="flood" data-i18n="tFlood">🌊 Flood</div>
-        <div class="tab" data-tab="convoy" data-i18n="tConvoy">🚚 Convoy</div>
-        <div class="tab" data-tab="drop" data-i18n="tDrop">📦 Drop-off</div>
-        <div class="tab" data-tab="ngo" data-i18n="tNgo">🏳️ NGO</div>
+        <div class="tab on" data-tab="need" id="tab-need" data-i18n="tNeed">🆘 Need</div>
+        <div class="tab relief-only" data-tab="flood" data-i18n="tFlood">🌊 Flood</div>
+        <div class="tab relief-only" data-tab="convoy" data-i18n="tConvoy">🚚 Convoy</div>
+        <div class="tab relief-only" data-tab="drop" data-i18n="tDrop">📦 Drop-off</div>
+        <div class="tab relief-only" data-tab="ngo" data-i18n="tNgo">🏳️ NGO</div>
         <div class="tab" data-tab="feed" data-i18n="tFeed">📋 Feed</div>
         <button class="tab-collapse" id="panelToggle" title="Hide panel - see the full map">✕</button>
       </div>
@@ -151,7 +157,7 @@
           <label data-i18n="place">Place / area</label><input id="n_place" data-ph="place" placeholder="Place / area" />
           <label data-i18n="locSet">Location - tap map or use GPS</label>
           <div class="locpick"><div class="coord" id="n_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="n_gps" data-i18n="gps">📍 GPS</button></div>
-          <label data-i18n="whatNeeded">What's needed?</label><div class="chips" id="n_items"></div>
+          <label id="whatNeededLbl" data-i18n="whatNeeded">What's needed?</label><div class="chips" id="n_items"></div>
           <label data-i18n="people">People affected (approx)</label><input id="n_people" type="number" inputmode="numeric" placeholder="300" />
           <label data-i18n="details">Details</label><input id="n_details" data-ph="details" placeholder="Details" />
           <label data-i18n="whoAreYou">Who are you?</label>
@@ -220,9 +226,9 @@
         <section data-body="feed" hidden>
           <div class="stats">
             <div class="stat"><b id="s_open">0</b><span data-i18n="open">Open</span></div>
-            <div class="stat"><b id="s_unv">0</b><span data-i18n="unverif">Unverif.</span></div>
-            <div class="stat"><b id="s_cov">0</b><span data-i18n="convoys">Convoys</span></div>
-            <div class="stat gap"><b id="s_gap">0</b><span data-i18n="gapsStat">Gaps</span></div>
+            <div class="stat"><b id="s_unv">0</b><span id="lbl_unv" data-i18n="unverif">Unverif.</span></div>
+            <div class="stat"><b id="s_cov">0</b><span id="lbl_cov" data-i18n="convoys">Convoys</span></div>
+            <div class="stat gap"><b id="s_gap">0</b><span id="lbl_gap" data-i18n="gapsStat">Gaps</span></div>
           </div>
           <div id="feedlist" class="list"></div>
         </section>
