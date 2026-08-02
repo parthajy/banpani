@@ -46,6 +46,10 @@
       <h1>Banpani <span class="name-sub" style="color:var(--muted);font-weight:400">· বানপানী</span></h1>
       <div class="sub" data-i18n="tagline">Coordinating Community Flood Relief</div>
     </div>
+    <div class="modeswitch" id="modeswitch">
+      <button data-mode="relief" class="on" data-i18n="modeRelief">🆘 Relief</button>
+      <button data-mode="rehab" data-i18n="modeRehab">🔨 Rehab</button>
+    </div>
     <div class="spacer"></div>
     <div class="hdr-actions" id="hdrActions">
       <div class="hlp">
@@ -83,12 +87,6 @@
     <button class="reopen reopen-right" id="panelReopen" title="Show panel">‹</button>
     <!-- mobile: floating toggle to expand/collapse the bottom panel -->
     <button class="panel-fab" id="panelFab" aria-label="Toggle report panel">☰</button>
-
-    <!-- Relief ⇄ Rehabilitation phase switcher -->
-    <div class="modeswitch" id="modeswitch">
-      <button data-mode="relief" class="on" data-i18n="modeRelief">🆘 Relief</button>
-      <button data-mode="rehab" data-i18n="modeRehab">🔨 Rehab</button>
-    </div>
 
     <!-- map overlay: layers, time views, uncovered pane -->
     <div class="overlay" id="overlay">
