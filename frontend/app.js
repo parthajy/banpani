@@ -526,10 +526,26 @@ if (!localStorage.getItem('banpani.disclaimer2')) $('disclaimer').classList.add(
 $('discOk').onclick = () => { $('disclaimer').classList.remove('show'); localStorage.setItem('banpani.disclaimer2', '1'); };
 
 /* ------------------------------- boot --------------------------------- */
+// Zoom to where the action is, so a first-time visitor lands ON the hotspot, not empty terrain.
+function hotspotBounds() {
+  const pts = [];
+  STATE.reports.forEach(r => pts.push([r.lat, r.lng]));
+  (STATE.flood_reports || []).forEach(f => pts.push([f.lat, f.lng]));
+  if (pts.length) return L.latLngBounds(pts);
+  if (officialFlood) {
+    const aff = { type: 'FeatureCollection', features: officialFlood.features.filter(f => f.properties.severity) };
+    if (aff.features.length) return L.geoJSON(aff).getBounds();
+  }
+  return null;
+}
+function fitToHotspot() { const b = hotspotBounds(); if (b && b.isValid()) map.fitBounds(b, { padding: [50, 50], maxZoom: 10 }); }
+$('recenter').onclick = fitToHotspot;
+
 (async function () {
   applyI18n();
   await loadOfficialFlood();
   try { await refresh(); await renderAdvisory(); } catch (e) { toast('Cannot reach server - is it running? ' + e.message); }
+  if (!location.hash.match(/@/)) fitToHotspot();   // first load: fly to the worst-hit area (unless a deep-link says otherwise)
   setInterval(() => { refresh().catch(() => {}); renderAdvisory().catch(() => {}); }, 20000);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

@@ -209,6 +209,9 @@ textarea{resize:vertical;min-height:50px}
 .toast.show{opacity:1}
 .modehint{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:8px 15px;border-radius:999px;font-size:13px;font-weight:600;z-index:800;box-shadow:var(--shadow);display:none}
 .modehint.show{display:block}
+.recenter-btn{position:absolute;right:12px;top:96px;z-index:600;width:40px;height:40px;border-radius:9px;
+  background:var(--panel);border:1px solid var(--line);color:#fff;font-size:18px;cursor:pointer;box-shadow:var(--shadow)}
+.recenter-btn:active{transform:scale(.94)}
 .legend{font-size:11px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:9px}
 .legend span{display:flex;align-items:center;gap:4px}
 .lyr-note{font-size:10.5px;color:var(--muted);margin-top:6px}
