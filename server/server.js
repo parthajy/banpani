@@ -98,6 +98,25 @@ on('GET', '/api/report', (req, res) => json(res, 200, buildReport()));
 on('GET', '/api/advisory', (req, res) => json(res, 200, one('SELECT * FROM advisory WHERE id=1') || {}));
 on('GET', '/api/news', async (req, res) => { try { json(res, 200, { items: await fetchNews() }); } catch { json(res, 200, { items: [] }); } });
 
+// Place search - proxied to OpenStreetMap Nominatim (bounded to Assam), cached, proper UA
+// (so it respects the usage policy and the key/UA stays server-side).
+const geoCache = new Map();
+on('GET', '/api/geocode', async (req, res, params, url) => {
+  const q = (url.searchParams.get('q') || '').trim();
+  if (q.length < 2) return json(res, 200, { results: [] });
+  const key = q.toLowerCase();
+  if (geoCache.has(key)) return json(res, 200, { results: geoCache.get(key) });
+  try {
+    const u = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=in&bounded=1'
+      + '&viewbox=89.5,28.6,96.3,24.0&q=' + encodeURIComponent(q);
+    const r = await fetch(u, { headers: { 'user-agent': 'Banpani/1.0 (https://banpani.org)' } });
+    const arr = await r.json();
+    const results = (Array.isArray(arr) ? arr : []).map(x => ({ name: x.display_name, lat: +x.lat, lng: +x.lon })).slice(0, 6);
+    geoCache.set(key, results); if (geoCache.size > 500) geoCache.clear();
+    json(res, 200, { results });
+  } catch { json(res, 200, { results: [] }); }
+});
+
 // Public transparency feed: what the community has been doing, REDACTED - no raw IP,
 // no phone numbers. Each actor is an anonymous short id derived from the hashed IP.
 on('GET', '/api/activity', (req, res) => {

@@ -631,6 +631,39 @@ function hotspotBounds() {
 function fitToHotspot() { const b = hotspotBounds(); if (b && b.isValid()) map.fitBounds(b, { padding: [40, 40], maxZoom: 9 }); }
 $('recenter').onclick = fitToHotspot;
 
+/* ------------------------------ place search ------------------------------ */
+let searchT, searchMarker = null;
+function localMatches(q) {
+  q = q.toLowerCase(); const seen = new Set(), out = [];
+  for (const r of STATE.reports) {
+    if (inMode(r) && r.place && r.place.toLowerCase().includes(q) && !seen.has(r.place)) { seen.add(r.place); out.push({ name: r.place, lat: r.lat, lng: r.lng, local: true }); if (out.length >= 4) break; }
+  }
+  return out;
+}
+function showSearchResults(list) {
+  const box = $('searchResults');
+  if (!list.length) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  box.innerHTML = list.map(r => `<div class="sr ${r.local ? 'local' : ''}" data-lat="${r.lat}" data-lng="${r.lng}" data-name="${esc(r.name)}">${r.local ? '📍 ' : '🔎 '}${esc(r.name.split(',')[0])}<div class="sub">${esc(r.name)}</div></div>`).join('');
+  box.classList.add('show');
+  box.querySelectorAll('.sr').forEach(el => el.onclick = () => {
+    map.setView([+el.dataset.lat, +el.dataset.lng], 12);
+    if (searchMarker) map.removeLayer(searchMarker);
+    searchMarker = L.marker([+el.dataset.lat, +el.dataset.lng], { icon: emojiIcon('📍') }).addTo(map).bindPopup(esc(el.dataset.name.split(',')[0])).openPopup();
+    box.classList.remove('show'); $('searchInput').blur();
+  });
+}
+$('searchInput').oninput = () => {
+  const q = $('searchInput').value.trim();
+  clearTimeout(searchT);
+  if (q.length < 2) { $('searchResults').classList.remove('show'); return; }
+  const loc = localMatches(q); showSearchResults(loc);        // instant local matches
+  searchT = setTimeout(async () => {
+    try { const { results } = await api('/api/geocode?q=' + encodeURIComponent(q)); showSearchResults([...loc, ...results]); } catch {}
+  }, 350);
+};
+$('searchInput').onkeydown = e => { if (e.key === 'Escape') { $('searchResults').classList.remove('show'); $('searchInput').blur(); } };
+document.addEventListener('click', e => { if (!$('searchbox').contains(e.target)) $('searchResults').classList.remove('show'); });
+
 (async function () {
   applyI18n();
   applyMode();

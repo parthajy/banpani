@@ -215,11 +215,23 @@ textarea{resize:vertical;min-height:50px}
 
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#000d;border:1px solid var(--line);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:1200;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1}
-.modehint{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:8px 15px;border-radius:999px;font-size:13px;font-weight:600;z-index:800;box-shadow:var(--shadow);display:none}
+.modehint{position:absolute;top:64px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:8px 15px;border-radius:999px;font-size:13px;font-weight:600;z-index:800;box-shadow:var(--shadow);display:none}
 .modehint.show{display:block}
 .recenter-btn{position:absolute;right:12px;top:96px;z-index:600;width:40px;height:40px;border-radius:9px;
   background:var(--panel);border:1px solid var(--line);color:#fff;font-size:18px;cursor:pointer;box-shadow:var(--shadow)}
 .recenter-btn:active{transform:scale(.94)}
+/* place search */
+.searchbox{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:620;width:min(420px,72vw)}
+.searchbox input{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:11px;
+  padding:11px 15px;font-size:14px;box-shadow:var(--shadow);outline:none}
+.searchbox input:focus{border-color:var(--accent)}
+.searchresults{display:none;margin-top:6px;background:var(--panel);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);overflow:hidden;max-height:50dvh;overflow-y:auto}
+.searchresults.show{display:block}
+.searchresults .sr{padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--line);color:var(--text)}
+.searchresults .sr:hover{background:var(--panel2)}
+.searchresults .sr .sub{font-size:11px;color:var(--muted)}
+.searchresults .sr.local{color:#8fbaff}
+@media(max-width:860px){.searchbox{top:10px;width:min(420px,86vw)}}
 .legend{font-size:11px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:9px}
 .legend span{display:flex;align-items:center;gap:4px}
 .lyr-note{font-size:10.5px;color:var(--muted);margin-top:6px}
@@ -254,7 +266,7 @@ textarea{resize:vertical;min-height:50px}
   .hdr-actions .helpmenu{position:static;box-shadow:none;border:none;background:transparent;padding:0;min-width:0;margin-top:2px}
   .hdr-actions .helpmenu a{padding-left:36px;font-size:13px}
   /* map hint: compact, never spanning the top */
-  .modehint{font-size:11px;padding:5px 11px;max-width:78vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;top:10px}
+  .modehint{font-size:11px;padding:5px 11px;max-width:78vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;top:62px}
   /* tabs scroll in one row instead of wrapping to two */
   .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
