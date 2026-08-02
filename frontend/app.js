@@ -600,16 +600,19 @@ $('discOk').onclick = () => { $('disclaimer').classList.remove('show'); localSto
 // Zoom to where the action is, so a first-time visitor lands ON the hotspot, not empty terrain.
 function hotspotBounds() {
   const pts = [];
-  STATE.reports.forEach(r => pts.push([r.lat, r.lng]));
+  STATE.reports.filter(inMode).forEach(r => pts.push([r.lat, r.lng]));
   (STATE.flood_reports || []).forEach(f => pts.push([f.lat, f.lng]));
-  if (pts.length) return L.latLngBounds(pts);
-  if (officialFlood) {
-    const aff = { type: 'FeatureCollection', features: officialFlood.features.filter(f => f.properties.severity) };
-    if (aff.features.length) return L.geoJSON(aff).getBounds();
+  if (pts.length) return L.latLngBounds(pts);                       // 1) live pins = the real action
+  const camps = (officialCamps.camps || []).map(c => [c.lat, c.lng]);
+  if (camps.length) return L.latLngBounds(camps);                   // 2) relief camps = the worst-hit cluster
+  if (officialFlood) {                                              // 3) only the HIGH-severity districts (not all 8)
+    const high = officialFlood.features.filter(f => f.properties.severity === 'high');
+    const feats = high.length ? high : officialFlood.features.filter(f => f.properties.severity);
+    if (feats.length) return L.geoJSON({ type: 'FeatureCollection', features: feats }).getBounds();
   }
   return null;
 }
-function fitToHotspot() { const b = hotspotBounds(); if (b && b.isValid()) map.fitBounds(b, { padding: [50, 50], maxZoom: 10 }); }
+function fitToHotspot() { const b = hotspotBounds(); if (b && b.isValid()) map.fitBounds(b, { padding: [40, 40], maxZoom: 9 }); }
 $('recenter').onclick = fitToHotspot;
 
 (async function () {

@@ -305,8 +305,9 @@ async function serveStatic(req, res, pathname) {
   try {
     const buf = await readFile(full);
     const ext = extname(full), type = MIME[ext] || 'application/octet-stream';
-    const cache = ext === '.html' ? 'no-cache' : 'public, max-age=3600';
-    writeBody(req, res, 200, buf, type, cache);
+    // code + data revalidate every load (always fresh); images/manifest can cache a day
+    const revalidate = ['.html', '.js', '.css', '.json', '.geojson', '.xml', '.txt'].includes(ext);
+    writeBody(req, res, 200, buf, type, revalidate ? 'no-cache' : 'public, max-age=86400');
   } catch { json(res, 500, { error: 'read failed' }); }
 }
 
