@@ -609,10 +609,59 @@ $('overlayToggle').onclick = () => { const o = $('overlay'); o.classList.toggle(
 const mainEl = document.querySelector('.main');
 $('panelToggle').onclick = () => { mainEl.classList.add('hide-panel'); setTimeout(() => map.invalidateSize(), 60); };
 $('panelReopen').onclick = () => { mainEl.classList.remove('hide-panel'); setTimeout(() => map.invalidateSize(), 60); };
-// mobile: floating toggle for the bottom report panel
-$('panelFab').onclick = () => { const collapsed = mainEl.classList.toggle('panel-collapsed'); $('panelFab').textContent = collapsed ? '☰' : '▾'; setTimeout(() => map.invalidateSize(), 240); };
-// start collapsed on phones so the map fills the screen
-if (window.innerWidth <= 860) { mainEl.classList.add('panel-collapsed'); $('panelFab').textContent = '☰'; }
+/* ---------- mobile: drag-to-snap bottom sheet (peek / half / full) ---------- */
+(function initSheet() {
+  const panel = document.querySelector('.panel');
+  const handle = $('sheetHandle');
+  if (!panel || !handle) return;
+  const mq = window.matchMedia('(max-width:860px)');
+  let snap = 'peek', dragging = false, moved = false, startY = 0, startTY = 0, curTY = 0, lastY = 0, lastT = 0, vel = 0;
+  // translateY (px) for each detent, measured from the sheet's own height
+  const detents = () => { const h = panel.offsetHeight, peekPx = 138, halfPx = Math.round(window.innerHeight * 0.52);
+    return { full: 4, half: Math.max(60, h - halfPx), peek: Math.max(0, h - peekPx) }; };
+  const put = ty => { curTY = ty; panel.style.transform = `translateY(${ty}px)`; };
+  function go(s) { snap = s; put(detents()[s]); mainEl.dataset.snap = s; mainEl.classList.toggle('sheet-full', s === 'full'); }
+  function nearest(ty, v) {
+    const d = detents(), order = ['full', 'half', 'peek']; let best = 'half', bd = 1e9;
+    for (const k of order) { const dist = Math.abs(ty - d[k]); if (dist < bd) { bd = dist; best = k; } }
+    const i = order.indexOf(best);                                    // velocity bias: flick snaps one detent further
+    if (v > 0.55 && i < 2) best = order[i + 1];
+    else if (v < -0.55 && i > 0) best = order[i - 1];
+    return best;
+  }
+  handle.addEventListener('pointerdown', e => {
+    if (!mq.matches) return;
+    dragging = true; moved = false; panel.classList.add('dragging');
+    startY = e.clientY; startTY = curTY; lastY = e.clientY; lastT = e.timeStamp; vel = 0;
+    e.preventDefault();
+  });
+  window.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const dy = e.clientY - startY; if (Math.abs(dy) > 6) moved = true;
+    const d = detents(); put(Math.min(d.peek + 48, Math.max(-8, startTY + dy)));   // rubber-band at the ends
+    const dt = e.timeStamp - lastT; if (dt > 0) { vel = (e.clientY - lastY) / dt; lastY = e.clientY; lastT = e.timeStamp; }
+    e.preventDefault();
+  }, { passive: false });
+  window.addEventListener('pointerup', () => {
+    if (!dragging) return; dragging = false; panel.classList.remove('dragging');
+    go(nearest(curTY, vel));
+  });
+  handle.addEventListener('click', () => { if (moved) { moved = false; return; }   // tap the handle to cycle up
+    go(snap === 'peek' ? 'half' : snap === 'half' ? 'full' : 'peek'); });
+  // tapping any tab opens the sheet from its peek state
+  document.querySelectorAll('.tab').forEach(tb => tb.addEventListener('click', () => { if (mq.matches && snap === 'peek') go('half'); }));
+  // + FAB starts a report: jump to the Need tab and open to half
+  $('panelFab').onclick = () => { const tb = document.querySelector('.tab[data-tab="need"]'); if (tb) tb.click(); go('half'); };
+  const bd = $('sheetBackdrop'); if (bd) bd.addEventListener('click', () => go('half'));
+  function sync() {
+    if (mq.matches) requestAnimationFrame(() => go(snap));
+    else { panel.style.transform = ''; mainEl.classList.remove('sheet-full'); delete mainEl.dataset.snap; }
+    setTimeout(() => map.invalidateSize(), 80);
+  }
+  mq.addEventListener('change', sync);
+  window.addEventListener('resize', () => { if (mq.matches && !dragging) put(detents()[snap]); });
+  sync();
+})();
 $('shareMap').onclick = () => bp.shareMap();
 // activity / transparency feed
 const ACT_LABEL = { need_report: '🆘', rehab_report: '🔨', convoy: '🚚', drop_off: '📦', ngo_listed: '🏳️', flood_marked: '🌊', flood_update: '🌊', vote: '✅', adopt: '🤝', dispute_cleared: '🚩', contact_reveal: '📞' };

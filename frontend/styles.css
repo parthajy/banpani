@@ -250,20 +250,50 @@ textarea{resize:vertical;min-height:50px}
 
 .hide-sm{}
 .panel-fab{display:none}
+.sheet-handle{display:none}
+.sheet-backdrop{display:none}
 @media(max-width:860px){
-  .main{flex-direction:column}
-  .panel{width:100%;height:48dvh;border-left:none;border-top:1px solid var(--line);border-radius:16px 16px 0 0;position:relative;box-shadow:0 -8px 24px rgba(0,0,0,.35)}
-  .panel::before{content:'';position:absolute;top:7px;left:50%;transform:translateX(-50%);width:38px;height:4px;border-radius:2px;background:var(--line);z-index:3}
-  .tabs{padding-top:15px}
+  .main{flex-direction:column;position:relative}
+  #map{height:100%}                                    /* full-bleed map behind the sheet */
+
+  /* ---- floating drag-to-snap bottom sheet (peek / half / full) ---- */
+  .panel{position:fixed;left:0;right:0;bottom:0;width:100%;
+    height:min(88dvh,780px);max-height:88dvh;
+    border-left:none;border-top:none;border-radius:20px 20px 0 0;
+    box-shadow:0 -12px 34px rgba(0,0,0,.5);
+    transform:translateY(62vh);
+    transition:transform .36s cubic-bezier(.32,.72,0,1);
+    z-index:1000;overflow:hidden;will-change:transform}
+  .panel.dragging{transition:none}
+  .sheet-handle{display:block;position:relative;height:30px;flex:0 0 auto;cursor:grab;
+    touch-action:none;-webkit-tap-highlight-color:transparent}
+  .sheet-handle::before{content:'';position:absolute;top:11px;left:50%;transform:translateX(-50%);
+    width:44px;height:5px;border-radius:3px;background:var(--line);transition:background .2s,width .2s}
+  .sheet-handle:active::before{background:var(--muted);width:54px}
+  .panel::before{display:none}                         /* replaced by the real handle */
+
+  .tabs{padding:0 8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:9px 13px;font-size:13px;flex:0 0 auto;border-radius:10px}
+  .tab-collapse{display:none}
+  .tabbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;
+    padding:14px 14px calc(20px + env(safe-area-inset-bottom))}
+
+  /* dim the map when the sheet is fully open */
+  .sheet-backdrop{display:block;position:fixed;inset:0;background:rgba(5,8,12,.5);
+    opacity:0;pointer-events:none;transition:opacity .34s;z-index:999}
+  .main.sheet-full .sheet-backdrop{opacity:1;pointer-events:auto}
+
+  /* primary "report a need" CTA - only while the sheet is peeked */
+  .panel-fab{display:none;align-items:center;justify-content:center;position:fixed;right:16px;
+    bottom:calc(158px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;
+    background:var(--accent);color:#fff;border:none;font-size:28px;line-height:1;font-weight:300;
+    box-shadow:0 6px 20px rgba(0,0,0,.45);z-index:1001;cursor:pointer;transition:transform .14s}
+  .panel-fab:active{transform:scale(.9)}
+  .main[data-snap="peek"] .panel-fab{display:flex}
+
   .btn{padding:15px;font-size:16px}
   .chip{padding:9px 13px;font-size:13px}
-  /* floating toggle for the bottom panel */
-  .panel-fab{display:flex;align-items:center;justify-content:center;position:fixed;right:14px;bottom:calc(46dvh + 12px);
-    width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;
-    box-shadow:var(--shadow);z-index:1100;cursor:pointer;transition:bottom .22s ease}
-  .main.panel-collapsed .panel{display:none}
-  .main.panel-collapsed .panel-fab{bottom:18px}
-  .tab-collapse{display:none}   /* the FAB handles collapse on mobile */
   .overlay{width:min(215px,64vw);top:58px;left:8px;gap:8px}
   .ctl{padding:9px 10px}
   header{gap:8px;padding:9px 10px}
@@ -282,12 +312,6 @@ textarea{resize:vertical;min-height:50px}
   .hdr-actions .helpmenu a{padding-left:36px;font-size:13px}
   /* map hint: compact, never spanning the top */
   .modehint{font-size:11px;padding:5px 11px;max-width:78vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;top:62px}
-  /* tabs scroll in one row instead of wrapping to two */
-  .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .tabs::-webkit-scrollbar{display:none}
-  .tab{padding:8px 10px;font-size:12.5px;flex:0 0 auto}
-  .tab-collapse{margin-left:4px}
-  .tabbody{padding:12px}
   input,textarea,select{font-size:16px}   /* ≥16px stops iOS auto-zoom */
   .langsel{font-size:14px}
 }

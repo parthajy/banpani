@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Banpani · বানপানী - Assam Flood Relief, coordinated</title>
   <meta name="description" content="A free, community-run live map to coordinate flood relief in Assam - see who needs help, who's covering where, and which areas nobody has reached." />
 
@@ -89,8 +89,10 @@
 
     <!-- reopen tabs shown when a column is collapsed -->
     <button class="reopen reopen-right" id="panelReopen" title="Show panel">‹</button>
-    <!-- mobile: floating toggle to expand/collapse the bottom panel -->
-    <button class="panel-fab" id="panelFab" aria-label="Toggle report panel">☰</button>
+    <!-- mobile: primary "report a need" shortcut (shown only while the sheet is peeked) -->
+    <button class="panel-fab" id="panelFab" aria-label="Report a need">＋</button>
+    <!-- mobile: dim backdrop when the bottom sheet is fully open -->
+    <div class="sheet-backdrop" id="sheetBackdrop"></div>
 
     <!-- map overlay: layers, time views, uncovered pane -->
     <div class="overlay" id="overlay">
@@ -144,6 +146,7 @@
 
     <!-- right action panel -->
     <aside class="panel">
+      <div class="sheet-handle" id="sheetHandle" role="button" aria-label="Drag to resize, tap to expand"></div>
       <div class="tabs">
         <div class="tab on" data-tab="need" id="tab-need" data-i18n="tNeed">🆘 Need</div>
         <div class="tab" data-tab="photo" data-i18n="tPhoto">📷 Photo</div>

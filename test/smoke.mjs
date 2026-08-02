@@ -74,6 +74,7 @@ Object.assign(win, {
   matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {} }),
   getComputedStyle: () => chain(),
   requestAnimationFrame: () => 0, cancelAnimationFrame() {},
+  performance: { now: () => 0 },
   setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
   open: () => null, scrollTo() {}, alert() {}, confirm: () => true, prompt: () => null,
   innerWidth: 390, innerHeight: 780, devicePixelRatio: 2,
