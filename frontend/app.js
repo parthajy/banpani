@@ -355,9 +355,6 @@ function openGallery() {
 $('galleryBtn2').onclick = openGallery;
 $('gallery_close').onclick = () => $('galleryModal').classList.remove('show');
 $('galleryModal').onclick = e => { if (e.target === $('galleryModal')) $('galleryModal').classList.remove('show'); };
-bp.dirTo = (lat, lng) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-bp.flagPhoto = async (id) => { try { const r = await api(`/api/photos/${id}/flag`, { method: 'POST', body: { device: deviceId() } }); toast(r.hidden ? t('photoRemoved') : t('flagged')); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } };
-bp.enlarge = (url) => { const d = document.createElement('div'); d.className = 'lightbox'; d.innerHTML = `<img src="${url}"/>`; d.onclick = () => d.remove(); document.body.appendChild(d); };
 
 function renderFloodNow() {
   const box = $('floodNowList'), tick = $('floodTicker');
@@ -391,6 +388,9 @@ async function renderAdvisory() {
 
 /* ------------------------- consensus / actions ------------------------- */
 window.bp = {
+  dirTo: (lat, lng) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank'),
+  flagPhoto: async (id) => { try { const r = await api(`/api/photos/${id}/flag`, { method: 'POST', body: { device: deviceId() } }); toast(r.hidden ? t('photoRemoved') : t('flagged')); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
+  enlarge: (url) => { const d = document.createElement('div'); d.className = 'lightbox'; d.innerHTML = `<img src="${url}"/>`; d.onclick = () => d.remove(); document.body.appendChild(d); },
   vote: async (id, category, value) => {
     try {
       const r = await api(`/api/reports/${id}/vote`, { method: 'POST', body: { category, value, device: deviceId() } });
