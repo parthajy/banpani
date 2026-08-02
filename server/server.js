@@ -60,9 +60,9 @@ const clientIp = req => (req.headers['x-real-ip'] || (req.headers['x-forwarded-f
 const ipHash = req => createHash('sha256').update(IP_SALT + '|' + clientIp(req)).digest('hex');
 // Comprehensive action log. Every write goes through this. `area` is a coarse public
 // label (place name / rounded location); nothing sensitive (no raw IP, no phone) is stored.
-const log = (req, kind, target, { detail = null, device = null, area = null } = {}) =>
-  run('INSERT INTO actions_log(created_at,kind,target,detail,device,ip_hash,area) VALUES(?,?,?,?,?,?,?)',
-    now(), kind, target || null, detail, device, ipHash(req), area);
+const log = (req, kind, target, { detail = null, device = null, area = null, mode = 'relief' } = {}) =>
+  run('INSERT INTO actions_log(created_at,kind,target,detail,device,ip_hash,area,mode) VALUES(?,?,?,?,?,?,?,?)',
+    now(), kind, target || null, detail, device, ipHash(req), area, mode);
 const coarse = (lat, lng) => (lat != null && lng != null) ? `${(+lat).toFixed(2)},${(+lng).toFixed(2)}` : null;
 
 /* -------------------------------- routes -------------------------------- */
@@ -101,11 +101,11 @@ on('GET', '/api/news', async (req, res) => { try { json(res, 200, { items: await
 // Public transparency feed: what the community has been doing, REDACTED - no raw IP,
 // no phone numbers. Each actor is an anonymous short id derived from the hashed IP.
 on('GET', '/api/activity', (req, res) => {
-  const rows = all(`SELECT created_at,kind,area,ip_hash,device FROM actions_log
-    WHERE kind NOT LIKE 'admin_%' ORDER BY id DESC LIMIT 120`);
+  const rows = all(`SELECT created_at,kind,area,ip_hash,device,mode FROM actions_log
+    WHERE kind NOT LIKE 'admin_%' ORDER BY id DESC LIMIT 200`);
   json(res, 200, {
     items: rows.map(r => ({
-      kind: r.kind, area: r.area, created_at: r.created_at,
+      kind: r.kind, area: r.area, created_at: r.created_at, mode: r.mode || 'relief',
       actor: (r.ip_hash || r.device || 'anon').slice(0, 5),
     })),
   });
@@ -141,7 +141,7 @@ on('POST', '/api/reports', async (req, res) => {
     VALUES(?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
     num(b.people), str(b.details, 1000), str(b.contact, 60),
     ['affected', 'volunteer', 'witness'].includes(b.reporter_kind) ? b.reporter_kind : 'witness', mode, dev(b));
-  log(req, mode === 'rehab' ? 'rehab_report' : 'need_report', 'report:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.place, 120) });
+  log(req, mode === 'rehab' ? 'rehab_report' : 'need_report', 'report:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.place, 120), mode });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 
@@ -217,11 +217,11 @@ on('POST', '/api/flood/polygons', async (req, res) => {
 });
 
 /* --- community consensus votes (no login; one device, one vote per category) --- */
-function castVote(req, target_type, id, device, category, value, area) {
+function castVote(req, target_type, id, device, category, value, area, mode = 'relief') {
   run(`INSERT INTO votes(created_at,target_type,target_id,device,category,value) VALUES(?,?,?,?,?,?)
        ON CONFLICT(target_type,target_id,device,category) DO UPDATE SET value=excluded.value, created_at=excluded.created_at`,
     now(), target_type, id, device, category, value);
-  log(req, 'vote', target_type + ':' + id, { device, detail: category + '=' + value, area: area || null });
+  log(req, 'vote', target_type + ':' + id, { device, detail: category + '=' + value, area: area || null, mode });
 }
 
 on('POST', '/api/reports/:id/vote', async (req, res, params) => {
@@ -229,9 +229,9 @@ on('POST', '/api/reports/:id/vote', async (req, res, params) => {
   const { category, value } = b;
   const ok = (category === 'trust' && ['confirm', 'false'].includes(value)) || (category === 'resolve' && value === 'yes');
   if (!ok) return json(res, 400, { error: 'bad vote' });
-  const rep = one('SELECT id,place FROM reports WHERE id=?', params.id);
+  const rep = one('SELECT id,place,mode FROM reports WHERE id=?', params.id);
   if (!rep) return json(res, 404, { error: 'not found' });
-  castVote(req, 'report', +params.id, dev(b), category, value, rep.place);
+  castVote(req, 'report', +params.id, dev(b), category, value, rep.place, rep.mode || 'relief');
   const [r] = decoratedReports().filter(x => x.id === +params.id);
   json(res, 200, { ok: true, confirmations: r?.confirmations, false_flags: r?.false_flags, verify_status: r?.verify_status, status: r?.status });
 });
@@ -244,8 +244,26 @@ on('POST', '/api/reports/:id/adopt', async (req, res, params) => {
   const rep = one('SELECT id,place FROM reports WHERE id=? AND hidden=0', params.id);
   if (!rep) return json(res, 404, { error: 'not found' });
   run('UPDATE reports SET adopted_by=?, adopted_at=? WHERE id=?', str(b.name, 120), now(), params.id);
-  log(req, 'adopt', 'report:' + params.id, { device: dev(b), detail: str(b.name, 120), area: rep.place });
+  log(req, 'adopt', 'report:' + params.id, { device: dev(b), detail: str(b.name, 120), area: rep.place, mode: 'rehab' });
   json(res, 200, { ok: true, adopted_by: str(b.name, 120) });
+});
+
+// Community can DISPUTE an adoption ("this isn't actually happening / false claim").
+// 2 distinct disputes clear the adoption, sending it back to the unadopted "gap" pool.
+on('POST', '/api/reports/:id/dispute', async (req, res, params) => {
+  const b = await readBody(req);
+  const rep = one('SELECT id,place,adopted_by FROM reports WHERE id=? AND hidden=0', params.id);
+  if (!rep) return json(res, 404, { error: 'not found' });
+  if (!rep.adopted_by) return json(res, 400, { error: 'not adopted' });
+  castVote(req, 'report', +params.id, dev(b), 'dispute', 'yes', rep.place, 'rehab');
+  const n = one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='report' AND target_id=? AND category='dispute'", params.id).c;
+  if (n >= 2) {
+    run('UPDATE reports SET adopted_by=NULL, adopted_at=NULL WHERE id=?', params.id);
+    run("DELETE FROM votes WHERE target_type='report' AND target_id=? AND category='dispute'", params.id); // reset so it can be re-adopted cleanly
+    log(req, 'dispute_cleared', 'report:' + params.id, { area: rep.place, mode: 'rehab' });
+    return json(res, 200, { cleared: true });
+  }
+  json(res, 200, { cleared: false, disputes: n });
 });
 
 on('POST', '/api/ngos/:id/endorse', async (req, res, params) => {

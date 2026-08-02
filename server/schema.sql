@@ -153,7 +153,8 @@ CREATE TABLE IF NOT EXISTS actions_log (
   detail       TEXT,
   device       TEXT,
   ip_hash      TEXT,                          -- sha256(salt|ip) - NOT the raw IP
-  area         TEXT                           -- coarse public label (place name / rounded latlng)
+  area         TEXT,                          -- coarse public label (place name / rounded latlng)
+  mode         TEXT NOT NULL DEFAULT 'relief' -- relief | rehab (so the feed can split them)
 );
 CREATE INDEX IF NOT EXISTS idx_actions ON actions_log(id);
 

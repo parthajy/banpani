@@ -26,6 +26,7 @@ for (const stmt of [
   "ALTER TABLE reports ADD COLUMN mode TEXT NOT NULL DEFAULT 'relief'",
   'ALTER TABLE reports ADD COLUMN adopted_by TEXT',
   'ALTER TABLE reports ADD COLUMN adopted_at TEXT',
+  "ALTER TABLE actions_log ADD COLUMN mode TEXT NOT NULL DEFAULT 'relief'",
 ]) { try { db.exec(stmt); } catch { /* column already exists */ } }
 
 export const now = () => new Date().toISOString();

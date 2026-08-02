@@ -147,12 +147,16 @@ function needPopup(n) {
       : n.adopted
         ? `<div style="color:#8fbaff">🤝 ${t('beingHandled')}: <b>${esc(n.adopted_by)}</b></div>`
         : `<div style="color:#ff8079">⚠️ ${t('notAdopted')}</div>`;
-    actionRow = `<div class="vbtns">
-        <button onclick="bp.vote(${n.id},'trust','confirm')">✅ ${t('confirm')} (${n.confirmations || 0})</button>
-        ${!n.adopted ? `<button onclick="bp.adopt(${n.id})">🤝 ${t('adopt')}</button>`
-                     : `<button onclick="bp.vote(${n.id},'resolve','yes')">✓ ${t('markDelivered')} (${n.resolve_votes || 0}/2)</button>`}
-        <button onclick="bp.vote(${n.id},'trust','false')">⚑ ${t('notReal')}</button>
-      </div>`;
+    actionRow = !n.adopted
+      ? `<div class="vbtns">
+          <button onclick="bp.vote(${n.id},'trust','confirm')">✅ ${t('confirm')} (${n.confirmations || 0})</button>
+          <button onclick="bp.adopt(${n.id})">🤝 ${t('adopt')}</button>
+          <button onclick="bp.vote(${n.id},'trust','false')">⚑ ${t('notReal')}</button>
+        </div>`
+      : `<div class="vbtns">
+          <button onclick="bp.vote(${n.id},'resolve','yes')">✓ ${t('markDelivered')} (${n.resolve_votes || 0}/2)</button>
+          <button onclick="bp.dispute(${n.id})" title="${t('disputeHint')}">🚩 ${t('dispute')}</button>
+        </div>`;
   } else {
     const cov = coverageOf(n);
     statusTxt = n.status === 'resolved' ? '' : cov
@@ -354,13 +358,23 @@ window.bp = {
       map.closePopup(); await refresh();
     } catch (e) { toast('Failed: ' + e.message); }
   },
-  adopt: async (id) => {
-    const name = prompt(t('adoptPrompt'));
-    if (!name || !name.trim()) return;
-    try { await api(`/api/reports/${id}/adopt`, { method: 'POST', body: { name: name.trim(), device: deviceId() } }); toast(t('adopted')); map.closePopup(); await refresh(); }
+  adopt: (id) => { adoptTargetId = id; $('adopt_name').value = ''; $('adoptModal').classList.add('show'); setTimeout(() => $('adopt_name').focus(), 60); },
+  dispute: async (id) => {
+    try { const r = await api(`/api/reports/${id}/dispute`, { method: 'POST', body: { device: deviceId() } });
+      toast(r.cleared ? t('disputeCleared') : `${t('disputed')} (${r.disputes}/2)`); map.closePopup(); await refresh(); }
     catch (e) { toast('Failed: ' + e.message); }
   },
 };
+// adopt modal
+let adoptTargetId = null;
+$('adopt_ok').onclick = async () => {
+  const name = $('adopt_name').value.trim(); if (!name) return toast(t('enterName'));
+  try { await api(`/api/reports/${adoptTargetId}/adopt`, { method: 'POST', body: { name, device: deviceId() } }); $('adoptModal').classList.remove('show'); toast(t('adopted')); await refresh(); }
+  catch (e) { toast('Failed: ' + e.message); }
+};
+$('adopt_cancel').onclick = () => $('adoptModal').classList.remove('show');
+$('adoptModal').onclick = e => { if (e.target === $('adoptModal')) $('adoptModal').classList.remove('show'); };
+$('adopt_name').onkeydown = e => { if (e.key === 'Enter') $('adopt_ok').click(); };
 
 /* ------------------------- Relief ⇄ Rehab mode ------------------------- */
 function applyMode() {
@@ -534,13 +548,15 @@ $('panelFab').onclick = () => { const collapsed = mainEl.classList.toggle('panel
 if (window.innerWidth <= 860) { mainEl.classList.add('panel-collapsed'); $('panelFab').textContent = '☰'; }
 $('shareMap').onclick = () => bp.shareMap();
 // activity / transparency feed
-const ACT_LABEL = { need_report: '🆘', convoy: '🚚', drop_off: '📦', ngo_listed: '🏳️', flood_marked: '🌊', flood_update: '🌊', vote: '✅', contact_reveal: '📞' };
+const ACT_LABEL = { need_report: '🆘', rehab_report: '🔨', convoy: '🚚', drop_off: '📦', ngo_listed: '🏳️', flood_marked: '🌊', flood_update: '🌊', vote: '✅', adopt: '🤝', dispute_cleared: '🚩', contact_reveal: '📞' };
 $('activityBtn').onclick = async () => {
   $('activityModal').classList.add('show');
+  $('actTitle') && ($('actTitle').textContent = (currentMode === 'rehab' ? '🔨 ' : '🆘 ') + t('activityTitle') + ' — ' + (currentMode === 'rehab' ? t('modeRehabOn') : t('modeReliefOn')));
   $('activityList').innerHTML = `<div class="none">${t('loading')}</div>`;
   try {
     const { items } = await api('/api/activity');
-    $('activityList').innerHTML = items.length ? items.map(a => `<div class="act-item">
+    const mine = items.filter(a => (a.mode || 'relief') === currentMode);   // relief vs rehab are different stories
+    $('activityList').innerHTML = mine.length ? mine.map(a => `<div class="act-item">
       <span class="ae">${ACT_LABEL[a.kind] || '•'}</span>
       <span class="at">${esc((a.kind || '').replace(/_/g, ' '))}${a.area ? ' · ' + esc(a.area) : ''}</span>
       <span class="am">${agoText(a.created_at)} · ${esc(a.actor)}</span></div>`).join('')

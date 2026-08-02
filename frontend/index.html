@@ -235,10 +235,23 @@
     </aside>
   </div>
 
+  <!-- Adopt / undertake a rehab need -->
+  <div class="modal" id="adoptModal">
+    <div class="modal-card">
+      <h2 data-i18n="adoptTitle">Take on this rehab work</h2>
+      <p class="sub2" data-i18n="adoptIntro">Enter your group / NGO name. It becomes public — the community confirms when it's delivered, or can dispute it if it doesn't happen.</p>
+      <label data-i18n="groupName">Group / NGO name</label><input id="adopt_name" />
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" id="adopt_ok" style="margin:0" data-i18n="adoptConfirm">🤝 Take it on</button>
+        <button class="btn ghost" id="adopt_cancel" style="margin:0" data-i18n="close">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Public transparency feed -->
   <div class="modal" id="activityModal">
     <div class="modal-card">
-      <h2 data-i18n="activityTitle">🧾 Live activity</h2>
+      <h2 id="actTitle" data-i18n="activityTitle">🧾 Live activity</h2>
       <p class="sub2" data-i18n="activityIntro">Everything happening on Banpani, in the open. No names, no phone numbers, no IP addresses — each person shows only as an anonymous id, so the system stays honest and private at the same time.</p>
       <div id="activityList" class="news-list"></div>
       <button class="btn ghost" id="activity_close" style="margin-top:14px" data-i18n="close">Close</button>
