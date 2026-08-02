@@ -252,7 +252,11 @@ textarea{resize:vertical;min-height:50px}
 .panel-fab{display:none}
 @media(max-width:860px){
   .main{flex-direction:column}
-  .panel{width:100%;height:46dvh;border-left:none;border-top:1px solid var(--line)}
+  .panel{width:100%;height:48dvh;border-left:none;border-top:1px solid var(--line);border-radius:16px 16px 0 0;position:relative;box-shadow:0 -8px 24px rgba(0,0,0,.35)}
+  .panel::before{content:'';position:absolute;top:7px;left:50%;transform:translateX(-50%);width:38px;height:4px;border-radius:2px;background:var(--line);z-index:3}
+  .tabs{padding-top:15px}
+  .btn{padding:15px;font-size:16px}
+  .chip{padding:9px 13px;font-size:13px}
   /* floating toggle for the bottom panel */
   .panel-fab{display:flex;align-items:center;justify-content:center;position:fixed;right:14px;bottom:calc(46dvh + 12px);
     width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;
