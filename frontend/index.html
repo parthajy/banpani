@@ -108,6 +108,7 @@
         <label class="lyr"><input type="checkbox" id="ly_official" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="officialLayer">Affected areas (official)</span></label>
         <label class="lyr"><input type="checkbox" id="ly_flood" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="floodExtent">Flood extent</span></label>
         <label class="lyr"><input type="checkbox" id="ly_needs" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="needs">Needs</span></label>
+        <label class="lyr"><input type="checkbox" id="ly_photos" checked><span class="dot" style="background:#8fbaff"></span> <span data-i18n="photosLayer">Photos</span></label>
         <label class="lyr relief-only"><input type="checkbox" id="ly_cover" checked><span class="dot" style="background:#2f81f7"></span> <span data-i18n="coverage">Coverage / convoys</span></label>
         <label class="lyr sub relief-only"><input type="checkbox" id="ly_routes" checked><span class="dot" style="background:#2f81f7;opacity:.6"></span> <span data-i18n="convoyRoutes">Convoy routes &amp; details</span></label>
         <label class="lyr relief-only"><input type="checkbox" id="ly_ngo" checked><span class="dot" style="background:#28c76f"></span> <span data-i18n="ngosLayer">NGOs & drop-offs</span></label>
@@ -145,6 +146,7 @@
     <aside class="panel">
       <div class="tabs">
         <div class="tab on" data-tab="need" id="tab-need" data-i18n="tNeed">🆘 Need</div>
+        <div class="tab" data-tab="photo" data-i18n="tPhoto">📷 Photo</div>
         <div class="tab relief-only" data-tab="flood" data-i18n="tFlood">🌊 Flood</div>
         <div class="tab relief-only" data-tab="convoy" data-i18n="tConvoy">🚚 Convoy</div>
         <div class="tab relief-only" data-tab="drop" data-i18n="tDrop">📦 Drop-off</div>
@@ -166,6 +168,20 @@
           <select id="n_kind"><option value="affected" data-i18n="affected">I'm affected / here</option><option value="witness" selected data-i18n="witness">I know this is true</option><option value="volunteer" data-i18n="volSelf">I'm a volunteer</option></select>
           <label data-i18n="contactOpt">Contact phone (optional)</label><input id="n_contact" />
           <button class="btn warn" id="n_submit" data-i18n="postNeed">🆘 Post this need</button>
+        </section>
+
+        <section data-body="photo" hidden>
+          <p class="intro" data-i18n="photoIntro">Snap or upload a photo as proof - flooding, a need, or work done. No login. Photo location metadata is removed before upload.</p>
+          <label data-i18n="photoTag">What does it show?</label>
+          <div class="seg fsev" id="p_tag"></div>
+          <label data-i18n="choosePhoto">Photo</label>
+          <input type="file" accept="image/*" capture="environment" id="p_file" />
+          <div id="p_preview" class="photo-preview"></div>
+          <label data-i18n="locSet">Location - tap map or GPS</label>
+          <div class="locpick"><div class="coord" id="p_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="p_gps" data-i18n="gps">📍 GPS</button></div>
+          <label data-i18n="caption">Caption (optional)</label><input id="p_caption" />
+          <button class="btn warn" id="p_submit" data-i18n="uploadPhoto">📷 Upload photo</button>
+          <button class="btn ghost" id="galleryBtn2" data-i18n="viewGallery">🖼️ View photo gallery</button>
         </section>
 
         <section data-body="flood" hidden>
@@ -237,6 +253,16 @@
 
       </div>
     </aside>
+  </div>
+
+  <!-- Photo gallery -->
+  <div class="modal" id="galleryModal">
+    <div class="modal-card" style="max-width:640px">
+      <h2 id="galTitle" data-i18n="galleryTitle">🖼️ Photo gallery</h2>
+      <p class="sub2" data-i18n="galleryIntro">Community photos - proof of flooding, needs and relief work. Tap any to enlarge; flag anything inappropriate.</p>
+      <div id="galleryGrid" class="gallery-grid"></div>
+      <button class="btn ghost" id="gallery_close" style="margin-top:14px" data-i18n="close">Close</button>
+    </div>
   </div>
 
   <!-- Adopt / undertake a rehab need -->

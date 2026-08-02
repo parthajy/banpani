@@ -11,3 +11,6 @@ frontend/report.html
 .DS_Store
 *.log
 node_modules/
+
+# uploaded photos (stored on the server, not in git)
+uploads/

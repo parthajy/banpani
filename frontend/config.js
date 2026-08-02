@@ -37,5 +37,10 @@ window.BANPANI = {
     'Livestock', 'Farming tools', 'Fishing net / boat', 'School kit / books', 'Clothes & bedding',
     'Utensils', 'Well / water repair', 'Medical follow-up', 'Compensation help', 'Cash / debt relief'],
   ACCEPTS: ['Dry food', 'Water', 'Clothes', 'Blankets', 'Medicines', 'Tarpaulin', 'Baby food', 'Cash'],
+  // Photo tags per phase (anyone can snap + upload as proof)
+  PHOTO_TAGS: {
+    relief: [{ k: 'flooded', l: '🌊 Flooded' }, { k: 'need', l: '🆘 Relief needed' }, { k: 'done', l: '✅ Work done' }],
+    rehab: [{ k: 'damage', l: '🔨 Damage' }, { k: 'done', l: '✅ Work done' }],
+  },
   FOCUS: ['rescue', 'food', 'water', 'medical', 'shelter', 'sanitation', 'cattle', 'rebuild'],
 };

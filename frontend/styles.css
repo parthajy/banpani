@@ -59,6 +59,17 @@ header button.link{cursor:pointer;font-family:inherit}
 .act-item .ae{font-size:16px;flex:0 0 auto}
 .act-item .at{flex:1;text-transform:capitalize}
 .act-item .am{font-size:11px;color:var(--muted);white-space:nowrap;font-family:monospace}
+/* photos */
+.photo-preview img{max-width:100%;border-radius:10px;margin-top:8px;display:block}
+input[type=file]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px;font-size:13px}
+.photopop img{width:100%;border-radius:8px;display:block;cursor:zoom-in}
+.photopop .pt{font-size:12px;margin-top:5px}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;max-height:64dvh;overflow:auto}
+.gcell{position:relative;border-radius:10px;overflow:hidden;cursor:pointer;aspect-ratio:1;background:var(--panel2)}
+.gcell img{width:100%;height:100%;object-fit:cover;display:block}
+.gcell span{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;font-size:10.5px;padding:12px 6px 4px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
+.lightbox img{max-width:100%;max-height:100%;border-radius:8px}
 
 .pickpin{font-size:28px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.6));cursor:grab;animation:bob .9s ease-in-out infinite alternate}
 @keyframes bob{from{transform:translateY(0)}to{transform:translateY(-3px)}}

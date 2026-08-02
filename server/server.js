@@ -10,7 +10,7 @@ import http from 'node:http';
 import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, normalize, extname } from 'node:path';
 import { db, all, one, run, now, today, parseRows, decoratedReports, decoratedNgos } from './db.js';
@@ -22,6 +22,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const FRONTEND = join(__dirname, '..', 'frontend');
 const PORT = process.env.PORT || 8080;
 const ADMIN_KEY = process.env.BANPANI_ADMIN_KEY || 'change-me-in-production';
+const UPLOADS = process.env.BANPANI_UPLOADS || join(__dirname, '..', 'uploads');
+try { mkdirSync(UPLOADS, { recursive: true }); } catch {}
 
 /* ----------------------------- helpers ----------------------------- */
 const json = (res, code, obj) => {
@@ -31,7 +33,7 @@ const json = (res, code, obj) => {
   res.end(JSON.stringify(obj));
 };
 const readBody = req => new Promise((resolve, reject) => {
-  let b = ''; req.on('data', c => { b += c; if (b.length > 1e6) req.destroy(); });
+  let b = ''; req.on('data', c => { b += c; if (b.length > 6e6) req.destroy(); });   // 6MB cap (photos are ~300-800KB base64)
   req.on('end', () => { try { resolve(b ? JSON.parse(b) : {}); } catch (e) { reject(e); } });
   req.on('error', reject);
 });
@@ -84,6 +86,7 @@ on('GET', '/api/state', (req, res) => {
     collection_points: parseRows(all('SELECT * FROM collection_points WHERE hidden=0 AND active=1'), ['accepts']),
     ngos: decoratedNgos(),
     flood_polygons: all('SELECT id,geojson,severity,note,source,created_at FROM flood_polygons WHERE hidden=0').map(r => ({ ...r, geojson: JSON.parse(r.geojson) })),
+    photos: all('SELECT id,report_id,lat,lng,tag,mode,caption,file,created_at FROM photos WHERE hidden=0 ORDER BY id DESC LIMIT 300').map(p => ({ ...p, url: '/uploads/' + p.file, file: undefined })),
     flood_reports: all(`SELECT id,place,lat,lng,severity,created_at,updated_at,
       (SELECT COUNT(DISTINCT device) FROM votes v WHERE v.target_type='flood' AND v.target_id=f.id AND v.category='clear') AS clears
       FROM flood_reports f WHERE hidden=0 AND severity!='receded' ORDER BY COALESCE(updated_at,created_at) DESC LIMIT 500`),
@@ -226,6 +229,34 @@ on('POST', '/api/flood-reports/:id/status', async (req, res, params) => {
   json(res, 200, { ok: true, severity: sev });
 });
 
+// Photo upload (no account). Image is a base64 data URL, already resized + EXIF-stripped
+// client-side. Stored on disk; only the URL goes into the DB.
+on('POST', '/api/photos', async (req, res) => {
+  const b = await readBody(req);
+  const m = /^data:image\/(jpeg|jpg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(b.image || '');
+  if (!m) return json(res, 400, { error: 'image (base64 data URL) required' });
+  const buf = Buffer.from(m[2], 'base64');
+  if (buf.length < 100 || buf.length > 5 * 1024 * 1024) return json(res, 400, { error: 'image size out of range' });
+  const mode = b.mode === 'rehab' ? 'rehab' : 'relief';
+  const tag = ['flooded', 'need', 'done', 'damage'].includes(b.tag) ? b.tag : (mode === 'rehab' ? 'damage' : 'need');
+  const r = run(`INSERT INTO photos(created_at,report_id,lat,lng,tag,mode,caption,file,device)
+    VALUES(?,?,?,?,?,?,?,?,?)`, now(), num(b.report_id), num(b.lat), num(b.lng), tag, mode, str(b.caption, 200), '', dev(b));
+  const id = Number(r.lastInsertRowid);
+  const file = `p${id}.${m[1] === 'png' ? 'png' : 'jpg'}`;
+  try { writeFileSync(join(UPLOADS, file), buf); } catch { return json(res, 500, { error: 'save failed' }); }
+  run('UPDATE photos SET file=? WHERE id=?', file, id);
+  log(req, 'photo', 'photo:' + id, { device: dev(b), detail: tag, area: str(b.caption, 120), mode });
+  json(res, 201, { id, url: '/uploads/' + file });
+});
+on('POST', '/api/photos/:id/flag', async (req, res, params) => {
+  const b = await readBody(req);
+  if (!one('SELECT id FROM photos WHERE id=?', params.id)) return json(res, 404, { error: 'not found' });
+  castVote(req, 'photo', +params.id, dev(b), 'flag', 'yes');
+  const n = one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='photo' AND target_id=? AND category='flag'", params.id).c;
+  if (n >= 2) run('UPDATE photos SET hidden=1 WHERE id=?', params.id);
+  json(res, 200, { ok: true, hidden: n >= 2 });
+});
+
 on('POST', '/api/flood/polygons', async (req, res) => {
   const b = await readBody(req);
   if (!b.geojson || b.geojson.type !== 'Polygon') return json(res, 400, { error: 'geojson Polygon required' });
@@ -358,6 +389,15 @@ http.createServer(async (req, res) => {
       const r = await m.handler(req, res, m.params, url);
       if (req.method === 'POST') stateCache = null;   // a write happened - drop the /api/state micro-cache
       return r;
+    }
+    if (url.pathname.startsWith('/uploads/')) {                 // serve uploaded photos
+      const name = url.pathname.slice('/uploads/'.length);
+      if (!/^[\w.-]+$/.test(name)) return json(res, 403, { error: 'bad name' });
+      const full = join(UPLOADS, name);
+      if (!existsSync(full)) return json(res, 404, { error: 'not found' });
+      const buf = await readFile(full);
+      res.writeHead(200, { 'content-type': name.endsWith('.png') ? 'image/png' : 'image/jpeg', 'cache-control': 'public, max-age=604800' });
+      return res.end(buf);
     }
     return await serveStatic(req, res, url.pathname);
   } catch (e) { console.error(e); json(res, 500, { error: 'server error', detail: String(e.message || e) }); }

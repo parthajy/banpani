@@ -61,7 +61,7 @@ map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp
 const h = location.hash.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
 if (h) map.setView([+h[1], +h[2]], 11);
 
-const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map) };
+const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), photos: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map) };
 const floodColor = s => ({ high: '#f0453a', medium: '#f5a623', receding: '#8fbaff' }[s] || '#f0453a');
 
 function pinIcon(status, verify, emoji, gap) {
@@ -291,7 +291,73 @@ function renderNgoList() {
     </div>`;
   }).join('');
 }
-function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderCover(); renderNgo(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
+function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
+
+/* -------------------------------- photos -------------------------------- */
+function photoTagLabel(k) { for (const m of ['relief', 'rehab']) { const f = (C.PHOTO_TAGS[m] || []).find(x => x.k === k); if (f) return f.l; } return k || ''; }
+function renderPhotos() {
+  layers.photos.clearLayers();
+  if (!$('ly_photos').checked) return;
+  for (const p of (STATE.photos || [])) {
+    if ((p.mode || 'relief') !== currentMode || p.lat == null) continue;
+    L.marker([p.lat, p.lng], { icon: emojiIcon('📷') }).addTo(layers.photos)
+      .bindPopup(`<div class="photopop"><img src="${esc(p.url)}" loading="lazy" onclick="bp.enlarge('${esc(p.url)}')"/>
+        <div class="pt">${esc(photoTagLabel(p.tag))}${p.caption ? ' · ' + esc(p.caption) : ''} <span class="pmeta">${agoText(p.created_at)}</span></div>
+        <div class="vbtns"><button onclick="bp.dirTo(${p.lat},${p.lng})">🧭 ${t('directions')}</button><button onclick="bp.flagPhoto(${p.id})">⚑ ${t('flag')}</button></div></div>`, { maxWidth: 260 });
+  }
+}
+// resize + re-encode client-side (shrinks big phone photos AND strips EXIF/GPS metadata)
+function resizePhoto(file, maxDim = 1280, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (Math.max(w, h) > maxDim) { const s = maxDim / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(img.src);
+      resolve(cv.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject; img.src = URL.createObjectURL(file);
+  });
+}
+let photoTag = null, photoData = null;
+function buildPhotoTags() {
+  const el = $('p_tag'); if (!el) return;
+  const tags = C.PHOTO_TAGS[currentMode] || C.PHOTO_TAGS.relief;
+  photoTag = tags[0].k;
+  el.innerHTML = tags.map((t, i) => `<button data-k="${t.k}" class="${i === 0 ? 'on' : ''}">${esc(t.l)}</button>`).join('');
+  el.querySelectorAll('button').forEach(b => b.onclick = () => { el.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); photoTag = b.dataset.k; });
+}
+$('p_file').onchange = async () => {
+  const f = $('p_file').files[0]; if (!f) return;
+  try { photoData = await resizePhoto(f); $('p_preview').innerHTML = `<img src="${photoData}"/>`; }
+  catch { toast('Could not read image'); }
+};
+$('p_gps').onclick = () => useGPS('p');
+$('p_submit').onclick = async () => {
+  if (!photoData) return toast(t('pickPhoto'));
+  if (pending.p.lat == null) return toast(t('setPhotoLoc'));
+  try {
+    await api('/api/photos', { method: 'POST', body: { image: photoData, tag: photoTag, mode: currentMode, lat: pending.p.lat, lng: pending.p.lng, caption: $('p_caption').value.trim(), device: deviceId() } });
+    photoData = null; $('p_file').value = ''; $('p_preview').innerHTML = ''; $('p_caption').value = '';
+    pending.p = {}; $('p_coord').textContent = t('noLoc'); $('p_coord').classList.remove('set'); removeMarker('p');
+    await refresh(); toast(t('photoUploaded'));
+  } catch (e) { toast('Failed: ' + e.message); }
+};
+// gallery
+function openGallery() {
+  $('galleryModal').classList.add('show');
+  const grid = $('galleryGrid');
+  const ps = (STATE.photos || []).filter(p => (p.mode || 'relief') === currentMode);
+  grid.innerHTML = ps.length ? ps.map(p => `<div class="gcell" onclick="bp.enlarge('${esc(p.url)}')"><img src="${esc(p.url)}" loading="lazy"/><span>${esc(photoTagLabel(p.tag))}</span></div>`).join('') : `<div class="none">${t('noPhotos')}</div>`;
+}
+$('galleryBtn2').onclick = openGallery;
+$('gallery_close').onclick = () => $('galleryModal').classList.remove('show');
+$('galleryModal').onclick = e => { if (e.target === $('galleryModal')) $('galleryModal').classList.remove('show'); };
+bp.dirTo = (lat, lng) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+bp.flagPhoto = async (id) => { try { const r = await api(`/api/photos/${id}/flag`, { method: 'POST', body: { device: deviceId() } }); toast(r.hidden ? t('photoRemoved') : t('flagged')); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } };
+bp.enlarge = (url) => { const d = document.createElement('div'); d.className = 'lightbox'; d.innerHTML = `<img src="${url}"/>`; d.onclick = () => d.remove(); document.body.appendChild(d); };
 
 function renderFloodNow() {
   const box = $('floodNowList'), tick = $('floodTicker');
@@ -388,6 +454,7 @@ function applyMode() {
   $('whatNeededLbl') && ($('whatNeededLbl').textContent = rehab ? t('whatRehab') : t('whatNeeded'));
   // swap the item vocabulary
   nItems.clear(); chips('n_items', rehab ? C.REHAB_ITEMS : C.ITEMS, nItems);
+  buildPhotoTags();
   // if a relief-only tab was active, fall back to the Need tab
   if (rehab && ['flood', 'convoy', 'drop', 'ngo'].includes(currentTab())) { document.querySelector('.tab[data-tab="need"]').click(); }
   renderAll();
@@ -406,16 +473,16 @@ $('timeseg').querySelectorAll('button').forEach(b => b.onclick = () => {
   $('timeseg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
   b.classList.add('on'); currentView = b.dataset.v; renderAll();
 });
-['ly_official', 'ly_flood', 'ly_needs', 'ly_cover', 'ly_routes', 'ly_ngo'].forEach(id => $(id).onchange = renderAll);
+['ly_official', 'ly_flood', 'ly_needs', 'ly_photos', 'ly_cover', 'ly_routes', 'ly_ngo'].forEach(id => $(id).onchange = renderAll);
 
 let pickMode = 'need';
-const pending = { need: {}, r: {}, rf: {}, c: {}, f: {} };
+const pending = { need: {}, r: {}, rf: {}, c: {}, f: {}, p: {} };
 let convoyTarget = 'dest';                        // which convoy point a map tap sets
-const modeKeys = { need: ['need'], convoy: ['r', 'rf'], drop: ['c'], flood: ['f'] };
+const modeKeys = { need: ['need'], convoy: ['r', 'rf'], drop: ['c'], flood: ['f'], photo: ['p'] };
 document.querySelectorAll('.tab').forEach(tb => tb.onclick = () => {
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('on')); tb.classList.add('on');
   document.querySelectorAll('[data-body]').forEach(s => s.hidden = s.dataset.body !== tb.dataset.tab);
-  pickMode = { need: 'need', convoy: 'r', drop: 'c', flood: 'f' }[tb.dataset.tab] || null;
+  pickMode = { need: 'need', convoy: 'r', drop: 'c', flood: 'f', photo: 'p' }[tb.dataset.tab] || null;
   $('modehint').classList.toggle('show', !!pickMode);
   syncMarkers(tb.dataset.tab);
 });
@@ -423,7 +490,7 @@ $('modehint').classList.add('show');
 if (window.innerWidth <= 860) { $('overlay').classList.add('min'); $('overlayToggle').firstChild.textContent = '▸ '; }
 
 // Draggable location pickers - one marker per point (need / drop / flood / convoy start+dest).
-const coordId = { need: 'n_coord', r: 'r_coord', rf: 'rf_coord', c: 'c_coord', f: 'f_coord' };
+const coordId = { need: 'n_coord', r: 'r_coord', rf: 'rf_coord', c: 'c_coord', f: 'f_coord', p: 'p_coord' };
 const pickEmoji = { rf: '🚩', r: '🎯' };
 const pickMarkers = {};
 function setReadout(key, lat, lng, gps) {

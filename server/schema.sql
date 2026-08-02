@@ -115,6 +115,23 @@ CREATE TABLE IF NOT EXISTS flood_reports (
 );
 CREATE INDEX IF NOT EXISTS idx_flood_reports ON flood_reports(created_at, hidden);
 
+-- PHOTOS: anyone can upload a photo (no account) tagged flooded / relief-needed / work-done
+-- (relief) or damage / work-done (rehab). Standalone (its own pin) or attached to a report.
+-- Stored on disk; the row keeps the filename. Metadata is stripped client-side before upload.
+CREATE TABLE IF NOT EXISTS photos (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at  TEXT NOT NULL,
+  report_id   INTEGER,                       -- optional: photo attached to a specific need
+  lat         REAL, lng REAL,
+  tag         TEXT,                           -- flooded | need | done | damage
+  mode        TEXT NOT NULL DEFAULT 'relief',
+  caption     TEXT,
+  file        TEXT NOT NULL,                  -- filename under the uploads dir
+  device      TEXT,
+  hidden      INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_photos ON photos(created_at, hidden);
+
 -- VOTES: the community-consensus trust layer. No accounts — one device, one vote per
 -- (target, category). Reports become confirmed/hidden and NGOs earn a badge purely by
 -- how many DIFFERENT people vouch. Derivation happens on read (see db.js).
