@@ -64,6 +64,7 @@
       <a class="link ic-btn" href="report.html" target="_blank"><span class="e">📄</span><span class="t" data-i18n="report6h">Report</span></a>
       <button class="link ic-btn" id="guideBtn"><span class="e">▶</span><span class="t" data-i18n="guide">Guide</span></button>
       <a class="link ic-btn" href="about.html"><span class="e">ℹ️</span><span class="t" data-i18n="about">About</span></a>
+      <a class="link ic-btn" href="privacy.html"><span class="e">🔒</span><span class="t" data-i18n="privacy">Privacy</span></a>
     </div>
     <select id="lang" class="langsel" title="Language" aria-label="Language">
       <option value="en">EN</option>
@@ -161,6 +162,7 @@
 
         <section data-body="need">
           <p class="intro" data-i18n="needIntro">Anyone can report - a stranded family, a neighbour, a volunteer. No login. A volunteer will verify it.</p>
+          <p class="opendata" data-i18n="openDataNote">Reports are published as open data (CC0, public domain) so relief can be coordinated. Never share a phone number publicly — it stays private and is shown only to a verifying volunteer.</p>
           <label data-i18n="place">Place / area</label><input id="n_place" data-ph="place" placeholder="Place / area" />
           <label data-i18n="locSet">Location - tap map or use GPS</label>
           <div class="locpick"><div class="coord" id="n_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="n_gps" data-i18n="gps">📍 GPS</button></div>
@@ -175,6 +177,7 @@
 
         <section data-body="photo" hidden>
           <p class="intro" data-i18n="photoIntro">Snap or upload a photo as proof - flooding, a need, or work done. No login. Photo location metadata is removed before upload.</p>
+          <p class="opendata" data-i18n="openDataPhoto">Photos are published as open data (CC0, public domain). Please don't upload faces or anything that identifies a person.</p>
           <label data-i18n="photoTag">What does it show?</label>
           <div class="seg fsev" id="p_tag"></div>
           <label data-i18n="choosePhoto">Photo</label>

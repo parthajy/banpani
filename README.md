@@ -85,6 +85,12 @@ See **[deploy/README.md](deploy/README.md)** — a $6–12/month DigitalOcean dr
 
 ## License & spirit
 
-MIT — see [LICENSE](LICENSE). This is **not a product or a startup.** Use it, fork it, run it for Bihar or Kerala or wherever the water rises next. Keep it free. Keep the data open. Keep people safe.
+**Code:** MIT — see [LICENSE](LICENSE). Created and maintained by **Partha Borthakur**; code © 2026 Partha Borthakur. There is no CLA — external contributions are accepted under GitHub's inbound=outbound terms, i.e. licensed under this repo's MIT license.
+
+**Data:** community-submitted content (needs, listings, photos) is published as **open data, dedicated to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)**. Third-party data is openly licensed: basemap © OpenStreetMap contributors (ODbL), weather from Open-Meteo, official bulletins from ASDMA (public government data).
+
+**Privacy & do-no-harm:** victim phone numbers are never shown publicly and never appear in any bulk/API response (revealed one-at-a-time via a logged endpoint); no accounts or logins; one vote per device; IP addresses are hashed, never stored raw. Full policy: [privacy.html](frontend/privacy.html). Banpani never asks for or displays any way to collect money — no donations flow through it.
+
+This is **not a product or a startup.** Use it, fork it, run it for Bihar or Kerala or wherever the water rises next. Keep it free. Keep the data open. Keep people safe.
 
 _Contributions welcome. The most valuable ones right now: real ASDMA boundary GeoJSON, a Sentinel-1 flood-extent job, Assamese/Bengali/Bodo translations, and a WhatsApp intake bot._

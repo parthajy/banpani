@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f1419">
+<meta name="description" content="Banpani privacy policy — what we collect, why, and how we protect the people who report.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Privacy · Banpani</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#161d24; --text:#e7edf2; --muted:#9fb0bd;
+    --accent:#4fc3f7; --line:#243039;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:720px;margin:0 auto;padding:24px 20px 64px}
+  a{color:var(--accent)}
+  h1{font-size:1.6rem;margin:.5em 0 .2em}
+  h2{font-size:1.1rem;margin:2em 0 .4em;color:var(--text)}
+  .sub{color:var(--muted);margin-top:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px;margin:1.2em 0}
+  .card p{margin:.4em 0}
+  ul{padding-left:1.2em}
+  li{margin:.35em 0}
+  .back{display:inline-block;margin-bottom:8px;color:var(--muted);text-decoration:none}
+  .back:hover{color:var(--accent)}
+  footer{color:var(--muted);font-size:.85rem;margin-top:3em;border-top:1px solid var(--line);padding-top:1em}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="/">← Back to the map</a>
+  <h1>🔒 Privacy</h1>
+  <p class="sub">Banpani is built so people can be helped without being exposed. This page says exactly what we collect, why, and what never leaves the system.</p>
+
+  <div class="card">
+    <p><strong>The short version:</strong> no accounts, no logins, no names required. The public map shows needs and places — never people. Phone numbers are optional, never shown publicly, and never included in any download or API response.</p>
+  </div>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><strong>Reports:</strong> a location (pin on the map), what's needed, roughly how many people are affected, and any details you type.</li>
+    <li><strong>An optional phone number</strong> — only if you choose to give one, so a relief volunteer can call back. The field is clearly marked optional.</li>
+    <li><strong>Photos</strong> you choose to upload as evidence of flooding or relief work. Location metadata (GPS) is stripped from every photo in your browser before it is uploaded.</li>
+    <li><strong>Convoy, drop-off, and NGO listings</strong> submitted by relief groups, including the group name they enter (which is public by design).</li>
+    <li><strong>Verification votes</strong> (confirm / delivered / not real), limited to one per device.</li>
+  </ul>
+
+  <h2>Why we collect it</h2>
+  <p>One purpose only: <strong>coordinating flood relief and rehabilitation</strong> — so stranded areas are found, effort isn't duplicated, and reports can be verified by the community. We do not use this data for anything else. We do not sell it, share it with advertisers, or profile anyone.</p>
+
+  <h2>What is public and what is not</h2>
+  <div class="card">
+    <p><strong>Public:</strong> the location and content of reports, flood polygons, convoy coverage, drop-off points, NGO listings, photos, and an activity feed where each participant appears only as an anonymous id.</p>
+    <p><strong>Never public:</strong> phone numbers, names (we don't ask for them on reports), and IP addresses. Phone numbers are excluded from all bulk data, downloads, and API responses. A number can be revealed only one at a time, through a logged endpoint, when a volunteer actually needs to coordinate with that report — and every such access is recorded.</p>
+  </div>
+
+  <h2>Consent</h2>
+  <p>Everything you submit, you submit deliberately — there is no background collection, no tracking pixels, and no account to link things to. Giving a phone number is a choice, made at the point of reporting, for the stated purpose of being contacted about that need.</p>
+
+  <h2>Open data</h2>
+  <p>Because Banpani only works if everyone can see the same picture, the non-personal data — needs, flood extent, coverage, listings, photos — is open, dedicated to the public domain under <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">Creative Commons CC0 1.0</a>. It can be read by anyone through the public API and the 6-hourly <a href="/report.html">situation report</a>, and reused for any purpose. Personal identifiers are stripped from all of it by design.</p>
+
+  <h2>Money never touches Banpani</h2>
+  <p>Banpani never asks for, stores, or displays a bank account number, UPI ID, card, or any other way to collect money — not for us, not for anyone listed here. No donation or payment ever flows through this system. This is deliberate: it removes the single most common vector for fraud during a disaster, and it means there is no financial data to protect in the first place.</p>
+
+  <h2>How long we keep it</h2>
+  <p>Reports and coverage data are kept for the duration of the flood event and its rehabilitation phase, because "who was helped where" matters for accountability. Phone numbers are deleted once the event's relief coordination has wound down, and in any case within <strong>3 months</strong> of submission.</p>
+
+  <h2>Your rights</h2>
+  <p>If you want a report, photo, or phone number removed — yours, or one concerning you — use the <strong>✉ Contact</strong> form on the map. A maintainer will act on it. You don't need to prove anything elaborate; if a reasonable person would want it gone, it goes.</p>
+
+  <h2>Where the data lives</h2>
+  <p>The database runs on a single server operated by the maintainer, with the static site served through a content delivery network. The full source code is open, so every claim on this page can be checked against what the system actually does: <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">github.com/parthajy/banpani</a>.</p>
+
+  <h2>Applicable law</h2>
+  <p>Banpani is operated from India and handles personal data in line with the Digital Personal Data Protection Act, 2023, and the Information Technology Act, 2000. The same privacy-by-design principles (data minimisation, purpose limitation) align with the GDPR, so redeployments of this open-source code elsewhere start from a compliant baseline.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the change will be visible in the public commit history of the repository — like everything else here, in the open.</p>
+
+  <footer>
+    Created and maintained by Partha Borthakur · Code © 2026 Partha Borthakur, MIT License · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">GitHub</a> · <a href="/about.html">About Banpani</a> · Last updated: August 2026
+  </footer>
+</main>
+</body>
+</html>

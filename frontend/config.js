@@ -3,7 +3,7 @@ window.BANPANI = {
   API: '',   // '' = same origin (the Node server serves this page too)
 
   TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  TILE_ATTR: '© OpenStreetMap contributors',
+  TILE_ATTR: '© OpenStreetMap contributors · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">Banpani — open source (MIT)</a>',
   TILE_MAXZOOM: 18,
 
   // Locked on Assam - tight bounds + a min zoom where Assam fills the screen, so the
