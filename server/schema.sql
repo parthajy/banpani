@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS reports (
   reporter_kind TEXT DEFAULT 'witness',     -- affected | volunteer | witness
   status       TEXT NOT NULL DEFAULT 'open',      -- open | resolved (resolved/delivered set by consensus votes)
   mode         TEXT NOT NULL DEFAULT 'relief',    -- relief | rehab  (the two phases; same map, different loop)
+  disaster_type TEXT NOT NULL DEFAULT 'flood',     -- which hazard (world-map colour + filter); maps to a DISASTERS family
   adopted_by   TEXT,                         -- rehab: the group/NGO that opted to undertake it
   adopted_at   TEXT,
   device       TEXT,                         -- opaque per-device id, for light rate-limiting

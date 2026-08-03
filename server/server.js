@@ -107,11 +107,14 @@ const geoCache = new Map();
 on('GET', '/api/geocode', async (req, res, params, url) => {
   const q = (url.searchParams.get('q') || '').trim();
   if (q.length < 2) return json(res, 200, { results: [] });
-  const key = q.toLowerCase();
+  const world = url.searchParams.get('world') === '1';          // world map = global search; Assam map = bounded
+  const key = (world ? 'w:' : '') + q.toLowerCase();
   if (geoCache.has(key)) return json(res, 200, { results: geoCache.get(key) });
   try {
-    const u = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=in&bounded=1'
-      + '&viewbox=89.5,28.6,96.3,24.0&q=' + encodeURIComponent(q);
+    const u = world
+      ? 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&q=' + encodeURIComponent(q)
+      : 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=in&bounded=1'
+        + '&viewbox=89.5,28.6,96.3,24.0&q=' + encodeURIComponent(q);
     const r = await fetch(u, { headers: { 'user-agent': 'Banpani/1.0 (https://banpani.org)' } });
     const arr = await r.json();
     const results = (Array.isArray(arr) ? arr : []).map(x => ({ name: x.display_name, lat: +x.lat, lng: +x.lon })).slice(0, 6);
@@ -159,10 +162,11 @@ on('POST', '/api/reports', async (req, res) => {
   const b = await readBody(req);
   if (!str(b.place) || b.lat == null || b.lng == null) return json(res, 400, { error: 'place, lat, lng required' });
   const mode = b.mode === 'rehab' ? 'rehab' : 'relief';
-  const r = run(`INSERT INTO reports(created_at,place,lat,lng,items,people,details,contact,reporter_kind,mode,device)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
+  const dtype = str(b.disaster_type, 40) || 'flood';
+  const r = run(`INSERT INTO reports(created_at,place,lat,lng,items,people,details,contact,reporter_kind,mode,disaster_type,device)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
     num(b.people), str(b.details, 1000), str(b.contact, 60),
-    ['affected', 'volunteer', 'witness'].includes(b.reporter_kind) ? b.reporter_kind : 'witness', mode, dev(b));
+    ['affected', 'volunteer', 'witness'].includes(b.reporter_kind) ? b.reporter_kind : 'witness', mode, dtype, dev(b));
   log(req, mode === 'rehab' ? 'rehab_report' : 'need_report', 'report:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.place, 120), mode });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
@@ -389,9 +393,10 @@ on('GET', '/api/admin/stats', (req, res) => {
     days: Object.values(byDay).sort((a, b) => b.day.localeCompare(a.day)) });
 });
 
+const PRETTY = { '/': '/index.html', '/world': '/world.html' };   // clean URLs → files
 async function serveStatic(req, res, pathname) {
   countView(req, pathname);
-  const full = normalize(join(FRONTEND, pathname === '/' ? '/index.html' : pathname));
+  const full = normalize(join(FRONTEND, PRETTY[pathname] || pathname));
   if (!full.startsWith(FRONTEND)) return json(res, 403, { error: 'forbidden' });
   if (!existsSync(full)) return json(res, 404, { error: 'not found' });
   try {

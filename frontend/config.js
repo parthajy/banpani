@@ -43,4 +43,19 @@ window.BANPANI = {
     rehab: [{ k: 'damage', l: '🔨 Damage' }, { k: 'done', l: '✅ Work done' }],
   },
   FOCUS: ['rescue', 'food', 'water', 'medical', 'shelter', 'sanitation', 'cattle', 'rebuild'],
+
+  // ---- disaster families: the colour system + taxonomy for the world map and the
+  // future multi-disaster engine. A report's disaster_type maps to one family (colour). ----
+  DISASTERS: {
+    water:   { color: '#2E77FF', emoji: '💧', label: 'Water',          types: ['flood', 'flash-flood', 'urban-flood', 'coastal-flood', 'storm-surge', 'tsunami', 'dam-failure', 'glof'] },
+    fire:    { color: '#F5551D', emoji: '🔥', label: 'Fire',           types: ['wildfire', 'urban-fire', 'industrial-fire', 'explosion', 'oil-spill'] },
+    storm:   { color: '#8B5CF6', emoji: '🌪️', label: 'Storm & wind',   types: ['cyclone', 'hurricane', 'typhoon', 'tornado', 'thunderstorm', 'hailstorm', 'blizzard', 'ice-storm', 'dust-storm'] },
+    geo:     { color: '#B4652A', emoji: '⛰️', label: 'Geological',     types: ['earthquake', 'landslide', 'mudslide', 'avalanche', 'volcano', 'sinkhole'] },
+    climate: { color: '#EAB308', emoji: '☀️', label: 'Climate extreme', types: ['heatwave', 'coldwave', 'drought', 'water-scarcity'] },
+    health:  { color: '#12B5A5', emoji: '🦠', label: 'Health',         types: ['pandemic', 'epidemic', 'outbreak'] },
+    tech:    { color: '#D6409F', emoji: '☣️', label: 'Industrial',     types: ['chemical-leak', 'gas-leak', 'nuclear', 'grid-failure', 'water-contamination'] },
+    infra:   { color: '#64748B', emoji: '🏗️', label: 'Infrastructure', types: ['building-collapse', 'bridge-collapse', 'road-washout', 'train', 'ship', 'aircraft', 'tunnel'] },
+    agri:    { color: '#84CC16', emoji: '🌾', label: 'Agriculture',    types: ['locust', 'livestock-disease', 'crop-pest', 'fisheries'] },
+  },
+  WORLD: { center: [20, 60], zoom: 3, minZoom: 2 },
 };

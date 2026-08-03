@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Banpani — Live world disaster map (beta)</title>
+  <meta name="description" content="A live, community-run world map of disasters — floods, fires and more. No accounts, no login. Open source, owned by everyone." />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#0f1419" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
+  <style>
+    #wmap{flex:1;min-height:0;background:#0b0f14;z-index:1}
+    #wsearchbox{top:60px}
+    #wfilters{position:absolute;top:108px;left:10px;right:10px;z-index:600;display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+    #wfilters::-webkit-scrollbar{display:none}
+    .wchip{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:20px;
+      padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;opacity:.55}
+    .wchip::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--c)}
+    .wchip.on{color:var(--text);border-color:var(--c);opacity:1}
+    .wbeta{position:absolute;left:10px;right:10px;bottom:10px;z-index:600;background:var(--panel);border:1px solid var(--line);
+      border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--muted);box-shadow:var(--shadow);line-height:1.5}
+    .wbeta a{color:var(--accent);font-weight:600}
+    .wcount{color:var(--text);font-weight:700}
+    @media(max-width:860px){ #wfilters{top:104px} .wbeta{font-size:11.5px} }
+  </style>
+</head>
+<body>
+  <header>
+    <img class="logo" src="icon.svg" alt="Banpani" width="28" height="28" />
+    <div><h1>Banpani <span style="color:var(--muted);font-weight:400;font-size:13px">· World map</span></h1></div>
+    <div class="spacer"></div>
+    <a class="link" href="/">🆘 Assam relief map</a>
+    <a class="link" href="/about.html">ℹ️ About</a>
+  </header>
+
+  <div id="wmap"></div>
+
+  <div class="searchbox" id="wsearchbox">
+    <input id="wsearch" type="search" autocomplete="off" placeholder="Search any place on Earth…" />
+    <div class="searchresults" id="wresults"></div>
+  </div>
+
+  <div id="wfilters"></div>
+
+  <div class="wbeta" id="wbeta">
+    🌍 <b>Beta.</b> The emerging world view — <span class="wcount" id="wc">…</span> active markers. Today it shows the live
+    <b>Assam flood</b>; as new disasters are reported anywhere, they’ll appear here in their family colour.
+    <a href="/">Go to the Assam relief map →</a>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="config.js"></script>
+  <script src="world.js"></script>
+</body>
+</html>
