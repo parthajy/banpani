@@ -177,3 +177,12 @@ CREATE INDEX IF NOT EXISTS idx_actions ON actions_log(id);
 
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, hidden);
 CREATE INDEX IF NOT EXISTS idx_routes_status ON routes(status, hidden);
+
+-- Cookieless, first-party visitor counter (replaces Google Analytics). Stores ONLY a daily
+-- tally split by mobile/desktop - no IP, no cookie, no per-visitor record, no third party.
+CREATE TABLE IF NOT EXISTS pageviews (
+  day     TEXT NOT NULL,               -- YYYY-MM-DD
+  mobile  INTEGER NOT NULL DEFAULT 0,  -- 1 = mobile UA, 0 = desktop
+  n       INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, mobile)
+);

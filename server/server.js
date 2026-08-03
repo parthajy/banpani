@@ -366,7 +366,31 @@ function matchRoute(method, pathname) {
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
   '.geojson': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon', '.xml': 'application/xml', '.txt': 'text/plain' };
+// Cookieless, first-party visitor count. Only the app shell counts (not assets/API), and we
+// store nothing but a daily mobile/desktop tally - no IP, no cookie, no per-visitor row.
+function countView(req, pathname) {
+  if (pathname !== '/' && pathname !== '/index.html') return;
+  try {
+    const mobile = /Mobi|Android|iPhone|iPad|iPod/i.test(req.headers['user-agent'] || '') ? 1 : 0;
+    run('INSERT INTO pageviews(day,mobile,n) VALUES(?,?,1) ON CONFLICT(day,mobile) DO UPDATE SET n=n+1', today(), mobile);
+  } catch { /* counting must never break page serving */ }
+}
+// Admin-only: the numbers Google Analytics used to give us, now first-party.
+on('GET', '/api/admin/stats', (req, res) => {
+  if (!isAdmin(req)) return json(res, 403, { error: 'forbidden' });
+  const rows = all('SELECT day, mobile, n FROM pageviews ORDER BY day DESC LIMIT 120');
+  const byDay = {}; let m = 0, d = 0;
+  for (const r of rows) {
+    byDay[r.day] = byDay[r.day] || { day: r.day, mobile: 0, desktop: 0 };
+    if (r.mobile) { byDay[r.day].mobile = r.n; m += r.n; } else { byDay[r.day].desktop = r.n; d += r.n; }
+  }
+  const total = m + d;
+  json(res, 200, { total, mobile: m, desktop: d, mobile_pct: total ? Math.round(m / total * 100) : 0,
+    days: Object.values(byDay).sort((a, b) => b.day.localeCompare(a.day)) });
+});
+
 async function serveStatic(req, res, pathname) {
+  countView(req, pathname);
   const full = normalize(join(FRONTEND, pathname === '/' ? '/index.html' : pathname));
   if (!full.startsWith(FRONTEND)) return json(res, 403, { error: 'forbidden' });
   if (!existsSync(full)) return json(res, 404, { error: 'not found' });
