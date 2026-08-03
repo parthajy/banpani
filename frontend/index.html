@@ -285,6 +285,25 @@
   </div>
 
   <!-- Public transparency feed -->
+  <div class="modal" id="certModal">
+    <div class="modal-card" style="text-align:center;max-width:420px">
+      <h2 id="certTitle" data-i18n="certTitleFirst">🎉 You just became a Banpani volunteer!</h2>
+      <p class="sub2" id="certSub" data-i18n="certSubFirst">Your report is on the map. Here's your certificate — share it and pull a friend in.</p>
+      <canvas id="certCanvas" width="1080" height="1080" class="cert-canvas"></canvas>
+      <input id="cert_name" class="cert-name" maxlength="24" data-ph="certNamePh" placeholder="Your name on the certificate (optional)" />
+      <div class="cert-actions">
+        <button class="btn" id="cert_share" data-i18n="certShareBtn">📲 Share</button>
+        <button class="btn ghost" id="cert_dl" data-i18n="certDownload">⬇ Download</button>
+      </div>
+      <div class="cert-social">
+        <button id="cert_wa">WhatsApp</button>
+        <button id="cert_x">X</button>
+        <button id="cert_fb">Facebook</button>
+      </div>
+      <button class="link" id="cert_close" style="margin-top:12px" data-i18n="close">Close</button>
+    </div>
+  </div>
+
   <div class="modal" id="activityModal">
     <div class="modal-card">
       <h2 id="actTitle" data-i18n="activityTitle">🧾 Live activity</h2>

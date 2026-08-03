@@ -342,7 +342,7 @@ $('p_submit').onclick = async () => {
     await api('/api/photos', { method: 'POST', body: { image: photoData, tag: photoTag, mode: currentMode, lat: pending.p.lat, lng: pending.p.lng, caption: $('p_caption').value.trim(), device: deviceId() } });
     photoData = null; $('p_file').value = ''; $('p_preview').innerHTML = ''; $('p_caption').value = '';
     pending.p = {}; $('p_coord').textContent = t('noLoc'); $('p_coord').classList.remove('set'); removeMarker('p');
-    await refresh(); toast(t('photoUploaded'));
+    await refresh(); toast(t('photoUploaded')); maybeCert('');
   } catch (e) { toast('Failed: ' + e.message); }
 };
 // gallery
@@ -440,6 +440,69 @@ $('adopt_ok').onclick = async () => {
 };
 $('adopt_cancel').onclick = () => $('adoptModal').classList.remove('show');
 $('adoptModal').onclick = e => { if (e.target === $('adoptModal')) $('adoptModal').classList.remove('show'); };
+
+/* -------- shareable volunteer certificate (fires on a device's FIRST pin) --------
+   100% client-side: nothing is collected, stored, or sent. The name (optional) only
+   ever touches the canvas. It's a braggable share card to pull more helpers in. */
+const CERT_THEME = { relief: { a: '#0d2b66', b: '#2f7bff', emoji: '🌊', tag: 'FLOOD RELIEF' },
+                     rehab:  { a: '#5a3906', b: '#f59e0b', emoji: '🔨', tag: 'FLOOD REHABILITATION' } };
+let certPlace = '';
+function certWrap(g, text, x, y, maxW, lh) {
+  const words = String(text).split(' '); let line = '', yy = y;
+  for (const w of words) { const test = line ? line + ' ' + w : w;
+    if (g.measureText(test).width > maxW && line) { g.fillText(line, x, yy); line = w; yy += lh; } else line = test; }
+  g.fillText(line, x, yy); return yy;
+}
+function drawCert(name) {
+  const cv = $('certCanvas'); if (!cv || !cv.getContext) return;
+  const g = cv.getContext('2d'), W = cv.width, H = cv.height, th = CERT_THEME[currentMode] || CERT_THEME.relief;
+  const grad = g.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, th.a); grad.addColorStop(1, th.b);
+  g.fillStyle = grad; g.fillRect(0, 0, W, H);
+  const rg = g.createRadialGradient(W / 2, H * 0.4, 40, W / 2, H * 0.4, W * 0.75);
+  rg.addColorStop(0, 'rgba(255,255,255,.16)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(255,255,255,.32)'; g.lineWidth = 3; g.strokeRect(46, 46, W - 92, H - 92);
+  g.textAlign = 'center';
+  g.fillStyle = 'rgba(255,255,255,.95)'; g.font = '800 46px system-ui,-apple-system,sans-serif';
+  g.fillText('B A N P A N I', W / 2, 152);
+  g.font = '600 25px system-ui,sans-serif'; g.fillStyle = 'rgba(255,255,255,.62)';
+  g.fillText(th.tag + ' · VOLUNTEER', W / 2, 196);
+  g.beginPath(); g.arc(W / 2, 338, 92, 0, 6.2832); g.fillStyle = 'rgba(255,255,255,.13)'; g.fill();
+  g.font = '94px system-ui,"Apple Color Emoji","Segoe UI Emoji"'; g.fillText(th.emoji, W / 2, 372);
+  g.fillStyle = '#fff'; g.font = '900 76px system-ui,-apple-system,sans-serif';
+  g.fillText('CERTIFICATE', W / 2, 514);
+  g.font = '500 29px system-ui,sans-serif'; g.fillStyle = 'rgba(255,255,255,.72)';
+  g.fillText('of Community Service', W / 2, 558);
+  g.fillStyle = '#fff'; g.font = 'italic 700 62px Georgia,"Times New Roman",serif';
+  const nm = ((name || '').trim() || t('aVolunteer')).slice(0, 24);
+  g.fillText(nm, W / 2, 674);
+  g.strokeStyle = 'rgba(255,255,255,.38)'; g.lineWidth = 2; g.beginPath(); g.moveTo(W / 2 - 240, 702); g.lineTo(W / 2 + 240, 702); g.stroke();
+  g.font = '400 34px system-ui,sans-serif'; g.fillStyle = 'rgba(255,255,255,.92)';
+  const body = certPlace ? `helped coordinate flood relief in ${certPlace},` : 'helped coordinate flood relief,';
+  const y2 = certWrap(g, body, W / 2, 784, W - 200, 46);
+  g.fillText('because no one should be stranded.', W / 2, y2 + 46);
+  g.font = '800 36px system-ui,sans-serif'; g.fillStyle = '#fff';
+  g.fillText('banpani.org', W / 2, H - 150);
+  g.font = '400 26px system-ui,sans-serif'; g.fillStyle = 'rgba(255,255,255,.72)';
+  g.fillText('No accounts. Just neighbours helping neighbours.', W / 2, H - 106);
+}
+function openCert(place) { certPlace = (place || '').slice(0, 40); drawCert($('cert_name').value); $('certModal').classList.add('show'); }
+function maybeCert(place) { if (!localStorage.getItem('banpani.hero')) { localStorage.setItem('banpani.hero', '1'); openCert(place); } }
+$('cert_name').oninput = () => drawCert($('cert_name').value);
+$('cert_close').onclick = () => $('certModal').classList.remove('show');
+$('certModal').onclick = e => { if (e.target === $('certModal')) $('certModal').classList.remove('show'); };
+const certBlob = () => new Promise(r => $('certCanvas').toBlob(r, 'image/png'));
+async function saveCert() { const b = await certBlob(); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = 'banpani-certificate.png'; a.click(); URL.revokeObjectURL(u); toast(t('certSaved')); }
+$('cert_share').onclick = async () => {
+  try { const b = await certBlob(); const file = new File([b], 'banpani-certificate.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: t('certShareText') }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  saveCert();
+};
+$('cert_dl').onclick = saveCert;
+$('cert_wa').onclick = () => waShare(t('certShareText'));
+$('cert_x').onclick = () => window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(t('certShareText')), '_blank');
+$('cert_fb').onclick = () => window.open('https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fbanpani.org&quote=' + encodeURIComponent(t('certShareText')), '_blank');
 $('adopt_name').onkeydown = e => { if (e.key === 'Enter') $('adopt_ok').click(); };
 
 /* ------------------------- Relief ⇄ Rehab mode ------------------------- */
@@ -537,9 +600,10 @@ $('f_sev').querySelectorAll('button').forEach(b => b.onclick = () => { $('f_sev'
 $('f_submit').onclick = async () => {
   if (pending.f.lat == null) return toast('Set location (tap map or GPS)');
   try {
+    const fPlaceName = $('f_place').value.trim();
     await api('/api/flood-reports', { method: 'POST', body: { place: $('f_place').value.trim(), lat: pending.f.lat, lng: pending.f.lng, severity: fSev, device: deviceId() } });
     $('f_place').value = ''; pending.f = {}; $('f_coord').textContent = t('noLoc'); $('f_coord').classList.remove('set'); removeMarker('f');
-    await refresh(); await renderAdvisory(); toast(t('floodMarked'));
+    await refresh(); await renderAdvisory(); toast(t('floodMarked')); maybeCert(fPlaceName);
   } catch (e) { toast('Failed: ' + e.message); }
 };
 
@@ -563,10 +627,11 @@ $('n_submit').onclick = async () => {
   if (pending.need.lat == null) return toast('Set location (tap map or GPS)');
   if (nItems.size === 0) return toast('Pick at least one item');
   try {
+    const certPlaceName = $('n_place').value.trim();
     await api('/api/reports', { method: 'POST', body: { place: $('n_place').value.trim(), lat: pending.need.lat, lng: pending.need.lng, items: [...nItems], people: $('n_people').value || null, details: $('n_details').value.trim(), reporter_kind: $('n_kind').value, contact: $('n_contact').value.trim(), mode: currentMode, device: deviceId() } });
     ['n_place', 'n_people', 'n_details', 'n_contact'].forEach(i => $(i).value = ''); nItems.clear(); chips('n_items', currentMode === 'rehab' ? C.REHAB_ITEMS : C.ITEMS, nItems);
     pending.need = {}; $('n_coord').textContent = t('noLoc'); $('n_coord').classList.remove('set'); removeMarker('need');
-    await refresh(); toast(t('needPosted'));
+    await refresh(); toast(t('needPosted')); maybeCert(certPlaceName);
   } catch (e) { toast('Failed: ' + e.message); }
 };
 $('r_submit').onclick = async () => {
