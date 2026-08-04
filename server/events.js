@@ -57,11 +57,12 @@ export function eventBySlug(slug) {
     .map(({ contact, device, ...r }) => ({ ...r, has_contact: !!contact }));
   const photos = all('SELECT id,lat,lng,tag,mode,caption,file,created_at FROM photos WHERE hidden=0 AND event_id=? ORDER BY id DESC LIMIT 100', e.id)
     .map(p => ({ ...p, url: '/uploads/' + p.file, file: undefined }));
+  const floods = all("SELECT place,lat,lng,severity FROM flood_reports WHERE hidden=0 AND severity!='receded' AND event_id=? ORDER BY id DESC LIMIT 200", e.id);
   const c = counts(e.id);
   return {
     id: e.id, slug: e.slug, title: e.title, disaster_type: e.disaster_type, family: familyOf(e.disaster_type),
     lat: e.lat, lng: e.lng, source: e.source, modules: JSON.parse(e.modules || '[]'), created_at: e.created_at,
-    reports, photos, count: c, needs: DISASTERS[familyOf(e.disaster_type)]?.needs || [],
+    reports, photos, floods, count: c, needs: DISASTERS[familyOf(e.disaster_type)]?.needs || [],
   };
 }
 

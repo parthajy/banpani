@@ -425,6 +425,7 @@ function eventPage(ev) {
     lat: ev.lat, lng: ev.lng, needs: ev.needs,
     reports: ev.reports.map(r => ({ id: r.id, place: r.place, lat: r.lat, lng: r.lng, items: r.items, details: r.details, confirmations: r.confirmations, created_at: r.created_at })),
     photos: ev.photos.map(p => ({ lat: p.lat, lng: p.lng, url: p.url, tag: p.tag })),
+    floods: (ev.floods || []).map(x => ({ lat: x.lat, lng: x.lng, severity: x.severity, place: x.place })),
   }).replace(/</g, '\\u003c');
   return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">

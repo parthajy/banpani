@@ -23,6 +23,12 @@
         .addTo(layer).bindPopup('<b>' + esc(r.place) + '</b>' + (r.items && r.items.length ? '<br>' + esc(r.items.join(', ')) : ''));
       pts.push([r.lat, r.lng]);
     });
+    (EV.floods || []).forEach(fl => {
+      if (fl.lat == null) return;
+      L.circleMarker([fl.lat, fl.lng], { radius: 6, weight: 1, color: EV.color, opacity: .6, fillColor: EV.color, fillOpacity: .28, dashArray: '2 3' })
+        .addTo(layer).bindPopup('🌊 ' + esc(fl.place || 'Flooded area') + (fl.severity ? ' — ' + esc(fl.severity) : ''));
+      pts.push([fl.lat, fl.lng]);
+    });
     (EV.photos || []).forEach(p => { if (p.lat == null) return; L.marker([p.lat, p.lng]).addTo(layer).bindPopup('<img src="' + esc(p.url) + '" style="width:180px;border-radius:8px">'); });
     if (pts.length > 1) map.fitBounds(pts, { padding: [30, 30], maxZoom: 11 });
   }
@@ -38,6 +44,7 @@
       const e = await (await fetch('/api/event/' + EV.slug)).json();
       EV.reports = (e.reports || []).map(r => ({ id: r.id, place: r.place, lat: r.lat, lng: r.lng, items: r.items, details: r.details, confirmations: r.confirmations, created_at: r.created_at }));
       EV.photos = (e.photos || []).map(p => ({ lat: p.lat, lng: p.lng, url: p.url, tag: p.tag }));
+      EV.floods = (e.floods || []).map(x => ({ lat: x.lat, lng: x.lng, severity: x.severity, place: x.place }));
       if (e.count) { $('st_r').textContent = e.count.reports; $('st_c').textContent = e.count.confirmations; $('st_p').textContent = e.count.people; }
       renderList(); renderMap();
     } catch {}
