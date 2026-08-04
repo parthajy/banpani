@@ -482,6 +482,8 @@ async function serveEventApp(req, res, ev) {
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }
   const inject = '<script>window.EVENT=' + JSON.stringify(cfg).replace(/</g, '\\u003c') + '</script>\n  ';
   html = html
+    // served under /e/<slug>, so relative asset URLs (styles.css, app.js…) must resolve from root
+    .replace('<head>', '<head>\n  <base href="/">')
     .replace('<script src="config.js"></script>', inject + '<script src="config.js"></script>')
     .replace(/<title>[\s\S]*?<\/title>/, '<title>' + htmlEsc(ev.title + ' — ' + f.label + ' relief coordination · Banpani') + '</title>')
     .replace(/(<meta name="description" content=")[^"]*(")/, '$1' + htmlEsc('Live community relief coordination for ' + ev.title + ' — report needs, offers, blocked roads and photos. No accounts, no money, open to everyone.') + '$2');
