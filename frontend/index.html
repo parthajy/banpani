@@ -115,6 +115,9 @@
         <label class="lyr relief-only"><input type="checkbox" id="ly_cover" checked><span class="dot" style="background:#2f81f7"></span> <span data-i18n="coverage">Coverage / convoys</span></label>
         <label class="lyr sub relief-only"><input type="checkbox" id="ly_routes" checked><span class="dot" style="background:#2f81f7;opacity:.6"></span> <span data-i18n="convoyRoutes">Convoy routes &amp; details</span></label>
         <label class="lyr relief-only"><input type="checkbox" id="ly_ngo" checked><span class="dot" style="background:#28c76f"></span> <span data-i18n="ngosLayer">NGOs & drop-offs</span></label>
+        <label class="lyr mod-off" data-module="offers"><input type="checkbox" id="ly_offers" checked><span class="dot" style="background:#10b981"></span> <span data-i18n="offersLayer">Offers / resources</span></label>
+        <label class="lyr mod-off" data-module="blocked"><input type="checkbox" id="ly_blocked" checked><span class="dot" style="background:#ef4444"></span> <span data-i18n="blockedLayer">Blocked roads</span></label>
+        <label class="lyr mod-off" data-module="facilities"><input type="checkbox" id="ly_facilities" checked><span class="dot" style="background:#12b5a5"></span> <span data-i18n="facilitiesLayer">Open / closed</span></label>
         <div class="legend">
           <span><i style="background:#f0453a"></i><span data-i18n="high">high</span></span><span><i style="background:#f5a623"></i><span data-i18n="medium">medium</span></span><span><i style="background:#8fbaff"></i><span data-i18n="receding">receding</span></span>
         </div>
@@ -150,10 +153,13 @@
       <div class="sheet-handle" id="sheetHandle" role="button" aria-label="Drag to resize, tap to expand"></div>
       <div class="tabs">
         <div class="tab on" data-tab="need" id="tab-need" data-i18n="tNeed">🆘 Need</div>
-        <div class="tab" data-tab="photo" data-i18n="tPhoto">📷 Photo</div>
-        <div class="tab relief-only" data-tab="flood" data-i18n="tFlood">🌊 Flood</div>
-        <div class="tab relief-only" data-tab="convoy" data-i18n="tConvoy">🚚 Convoy</div>
-        <div class="tab relief-only" data-tab="drop" data-i18n="tDrop">📦 Drop-off</div>
+        <div class="tab" data-tab="photo" data-module="photos" data-i18n="tPhoto">📷 Photo</div>
+        <div class="tab relief-only" data-tab="flood" data-module="hazard" data-i18n="tFlood">🌊 Flood</div>
+        <div class="tab relief-only" data-tab="convoy" data-module="convoys" data-i18n="tConvoy">🚚 Convoy</div>
+        <div class="tab relief-only" data-tab="drop" data-module="dropoffs" data-i18n="tDrop">📦 Drop-off</div>
+        <div class="tab mod-off" data-tab="offer" data-module="offers" data-i18n="tOffer">🤝 Offers</div>
+        <div class="tab mod-off" data-tab="blocked" data-module="blocked" data-i18n="tBlocked">🚧 Roads</div>
+        <div class="tab mod-off" data-tab="facility" data-module="facilities" data-i18n="tFacility">🏪 Open now</div>
         <div class="tab relief-only" data-tab="ngo" data-i18n="tNgo">🏳️ NGO</div>
         <div class="tab" data-tab="feed" data-i18n="tFeed">📋 Feed</div>
         <button class="tab-collapse" id="panelToggle" title="Hide panel - see the full map">✕</button>
@@ -233,6 +239,45 @@
           <label data-i18n="runBy">Run by</label><input id="c_org" />
           <label data-i18n="contactOpt">Contact</label><input id="c_contact" />
           <button class="btn" id="c_submit" data-i18n="regDrop">📦 Register drop-off</button>
+        </section>
+
+        <section data-body="offer" hidden>
+          <p class="intro" data-i18n="offerIntro">Have something to share — oxygen, water, a boat, beds? Put it on the map so people who need it can find it. This is the supply side.</p>
+          <label data-i18n="offerWhat">What do you have?</label>
+          <div class="seg wrap" id="o_kind">
+            <button data-k="oxygen">🫁 Oxygen</button><button data-k="beds">🛏️ Beds</button><button data-k="water">💧 Water</button>
+            <button data-k="boat">🚤 Boat</button><button data-k="blood">🩸 Blood</button><button data-k="food">🍚 Food</button>
+            <button data-k="power">🔌 Power</button><button data-k="medicine">💊 Medicine</button><button data-k="other">📦 Other</button>
+          </div>
+          <label data-i18n="locSet">Location - tap map or GPS</label>
+          <div class="locpick"><div class="coord" id="o_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="o_gps" data-i18n="gps">📍 GPS</button></div>
+          <label data-i18n="offerNote">Details</label><input id="o_note" data-ph="offerNotePh" placeholder="e.g. 20 cylinders, refilling daily" />
+          <label data-i18n="offerContact">Contact to arrange (private, shown only on request)</label><input id="o_contact" />
+          <button class="btn" id="o_submit" data-i18n="postOffer">🤝 Post offer</button>
+        </section>
+
+        <section data-body="blocked" hidden>
+          <p class="intro" data-i18n="blockedIntro">Mark a road that's blocked or damaged so relief can route around it.</p>
+          <label data-i18n="blockedWhat">What &amp; where</label><input id="bl_label" data-ph="blockedPh" placeholder="e.g. Landslide across NH-37" />
+          <div class="seg" id="bl_kind"><button data-k="blocked" class="on" data-i18n="fullyBlocked">⛔ Fully blocked</button><button data-k="partial" data-i18n="partlyOpen">⚠️ Partly passable</button></div>
+          <label data-i18n="locSet">Location - tap map or GPS</label>
+          <div class="locpick"><div class="coord" id="bl_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="bl_gps" data-i18n="gps">📍 GPS</button></div>
+          <button class="btn warn" id="bl_submit" data-i18n="markBlocked">🚧 Mark blocked road</button>
+        </section>
+
+        <section data-body="facility" hidden>
+          <p class="intro" data-i18n="facilityIntro">Mark a shop, clinic, pharmacy or water point and whether it's open right now — so people know where to go.</p>
+          <label data-i18n="facilityWhat">What is it?</label>
+          <div class="seg wrap" id="fa_kind">
+            <button data-k="shop" class="on">🏪 Shop</button><button data-k="clinic">🏥 Clinic</button><button data-k="pharmacy">💊 Pharmacy</button>
+            <button data-k="hospital">🏨 Hospital</button><button data-k="fuel">⛽ Fuel</button><button data-k="water">🚰 Water</button><button data-k="other">📍 Other</button>
+          </div>
+          <label data-i18n="facilityStatus">Status right now</label>
+          <div class="seg" id="fa_status"><button data-s="open" class="on" data-i18n="statusOpen">✅ Open</button><button data-s="closed" data-i18n="statusClosed">⛔ Closed</button></div>
+          <label data-i18n="facilityName">Name (optional)</label><input id="fa_name" data-ph="facilityNamePh" placeholder="e.g. City Pharmacy" />
+          <label data-i18n="locSet">Location - tap map or GPS</label>
+          <div class="locpick"><div class="coord" id="fa_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="fa_gps" data-i18n="gps">📍 GPS</button></div>
+          <button class="btn" id="fa_submit" data-i18n="postFacility">🏪 Post status</button>
         </section>
 
         <section data-body="ngo" hidden>

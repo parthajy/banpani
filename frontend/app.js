@@ -65,7 +65,9 @@ map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp
 const h = location.hash.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
 if (h) map.setView([+h[1], +h[2]], 11);
 
-const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), photos: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map) };
+const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), photos: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map), offers: L.layerGroup().addTo(map), blocked: L.layerGroup().addTo(map), facilities: L.layerGroup().addTo(map) };
+const freshIcon = (emoji, stale) => L.divIcon({ html: `<div class="fresh-pin ${stale ? 'stale' : ''}">${emoji}</div>`, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
+const freshTxt = m => (m < 60 ? Math.max(1, m) + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd') + ' ago';
 const floodColor = s => ({ high: '#f0453a', medium: '#f5a623', receding: '#8fbaff' }[s] || '#f0453a');
 
 function pinIcon(status, verify, emoji, gap) {
@@ -296,7 +298,41 @@ function renderNgoList() {
     </div>`;
   }).join('');
 }
-function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
+const OFFER_LABEL = { oxygen: '🫁 Oxygen', beds: '🛏️ Beds', water: '💧 Water', boat: '🚤 Boat', blood: '🩸 Blood', food: '🍚 Food', power: '🔌 Power', medicine: '💊 Medicine', other: '📦 Resource' };
+const FAC_LABEL = { shop: '🏪 Shop', clinic: '🏥 Clinic', pharmacy: '💊 Pharmacy', hospital: '🏨 Hospital', fuel: '⛽ Fuel', water: '🚰 Water point', other: '📍 Facility' };
+function renderOffers() {
+  layers.offers.clearLayers();
+  if (!$('ly_offers').checked) return;
+  for (const o of (STATE.offers || [])) {
+    if (o.lat == null) continue;
+    const stale = o.fresh_min >= 480;
+    const pop = `<b>${esc(OFFER_LABEL[o.kind] || '📦')}</b>${o.note ? '<br>' + esc(o.note) : ''}<br><small>${stale ? '⚠ ' : '✅ '}${freshTxt(o.fresh_min)}</small>`
+      + `<div class="vbtns"><button onclick="bp.offConfirm(${o.id})">✅ Still here</button><button onclick="bp.offGone(${o.id})">✖ Gone</button>${o.has_contact ? `<button onclick="bp.offContact(${o.id})">📞 Contact</button>` : ''}</div>`;
+    L.marker([o.lat, o.lng], { icon: freshIcon('📦', stale) }).addTo(layers.offers).bindPopup(pop);
+  }
+}
+function renderBlocked() {
+  layers.blocked.clearLayers();
+  if (!$('ly_blocked').checked) return;
+  for (const x of (STATE.blocked || [])) {
+    if (x.lat == null) continue;
+    const pop = `<b>🚧 ${esc(x.label || 'Blocked road')}</b><br><small>${x.kind === 'partial' ? 'Partly passable' : 'Fully blocked'} · ${freshTxt(x.fresh_min)}</small>`
+      + `<div class="vbtns"><button onclick="bp.blConfirm(${x.id})">✅ Still blocked</button><button onclick="bp.blClear(${x.id})">✔ Cleared</button></div>`;
+    L.marker([x.lat, x.lng], { icon: freshIcon('🚧') }).addTo(layers.blocked).bindPopup(pop);
+  }
+}
+function renderFacilities() {
+  layers.facilities.clearLayers();
+  if (!$('ly_facilities').checked) return;
+  for (const f of (STATE.facilities || [])) {
+    if (f.lat == null) continue;
+    const open = f.status !== 'closed';
+    const pop = `<b>${esc(FAC_LABEL[f.kind] || '📍')}${f.name ? ' · ' + esc(f.name) : ''}</b><br><small>${open ? '✅ Open' : '⛔ Closed'} · ${freshTxt(f.fresh_min)}</small>`
+      + `<div class="vbtns"><button onclick="bp.facSet(${f.id},'open')">✅ Open</button><button onclick="bp.facSet(${f.id},'closed')">⛔ Closed</button></div>`;
+    L.marker([f.lat, f.lng], { icon: freshIcon(open ? '🟢' : '🔴') }).addTo(layers.facilities).bindPopup(pop);
+  }
+}
+function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderOffers(); renderBlocked(); renderFacilities(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
 
 /* -------------------------------- photos -------------------------------- */
 function photoTagLabel(k) { for (const m of ['relief', 'rehab']) { const f = (C.PHOTO_TAGS[m] || []).find(x => x.k === k); if (f) return f.l; } return k || ''; }
@@ -396,6 +432,12 @@ window.bp = {
   dirTo: (lat, lng) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank'),
   flagPhoto: async (id) => { try { const r = await api(`/api/photos/${id}/flag`, { method: 'POST', body: { device: deviceId() } }); toast(r.hidden ? t('photoRemoved') : t('flagged')); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
   enlarge: (url) => { const d = document.createElement('div'); d.className = 'lightbox'; d.innerHTML = `<img src="${url}"/>`; d.onclick = () => d.remove(); document.body.appendChild(d); },
+  offConfirm: async id => { try { await api(`/api/offers/${id}/confirm`, { method: 'POST', body: { device: deviceId() } }); toast('Confirmed available ✅'); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
+  offGone: async id => { try { const r = await api(`/api/offers/${id}/gone`, { method: 'POST', body: { device: deviceId() } }); toast(r.gone ? 'Marked gone' : `Gone vote (${r.votes}/2)`); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
+  offContact: async id => { try { const r = await api(`/api/offers/${id}/contact`); toast(r.contact ? '📞 ' + r.contact : t('noContact')); } catch (e) { toast('Failed: ' + e.message); } },
+  blConfirm: async id => { try { await api(`/api/blocked/${id}/confirm`, { method: 'POST', body: { device: deviceId() } }); toast('Thanks — kept current'); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
+  blClear: async id => { try { const r = await api(`/api/blocked/${id}/clear`, { method: 'POST', body: { device: deviceId() } }); toast(r.cleared ? 'Marked cleared ✔' : `Clear vote (${r.clears}/2)`); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
+  facSet: async (id, status) => { try { await api(`/api/facilities/${id}/status`, { method: 'POST', body: { status, device: deviceId() } }); toast(status === 'open' ? '✅ Marked open' : '⛔ Marked closed'); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
   vote: async (id, category, value) => {
     try {
       const r = await api(`/api/reports/${id}/vote`, { method: 'POST', body: { category, value, device: deviceId() } });
@@ -550,16 +592,16 @@ $('timeseg').querySelectorAll('button').forEach(b => b.onclick = () => {
   $('timeseg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
   b.classList.add('on'); currentView = b.dataset.v; renderAll();
 });
-['ly_official', 'ly_flood', 'ly_needs', 'ly_photos', 'ly_cover', 'ly_routes', 'ly_ngo'].forEach(id => $(id).onchange = renderAll);
+['ly_official', 'ly_flood', 'ly_needs', 'ly_photos', 'ly_cover', 'ly_routes', 'ly_ngo', 'ly_offers', 'ly_blocked', 'ly_facilities'].forEach(id => $(id).onchange = renderAll);
 
 let pickMode = 'need';
-const pending = { need: {}, r: {}, rf: {}, c: {}, f: {}, p: {} };
+const pending = { need: {}, r: {}, rf: {}, c: {}, f: {}, p: {}, o: {}, bl: {}, fa: {} };
 let convoyTarget = 'dest';                        // which convoy point a map tap sets
-const modeKeys = { need: ['need'], convoy: ['r', 'rf'], drop: ['c'], flood: ['f'], photo: ['p'] };
+const modeKeys = { need: ['need'], convoy: ['r', 'rf'], drop: ['c'], flood: ['f'], photo: ['p'], offer: ['o'], blocked: ['bl'], facility: ['fa'] };
 document.querySelectorAll('.tab').forEach(tb => tb.onclick = () => {
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('on')); tb.classList.add('on');
   document.querySelectorAll('[data-body]').forEach(s => s.hidden = s.dataset.body !== tb.dataset.tab);
-  pickMode = { need: 'need', convoy: 'r', drop: 'c', flood: 'f', photo: 'p' }[tb.dataset.tab] || null;
+  pickMode = { need: 'need', convoy: 'r', drop: 'c', flood: 'f', photo: 'p', offer: 'o', blocked: 'bl', facility: 'fa' }[tb.dataset.tab] || null;
   $('modehint').classList.toggle('show', !!pickMode);
   syncMarkers(tb.dataset.tab);
 });
@@ -567,7 +609,7 @@ $('modehint').classList.add('show');
 if (window.innerWidth <= 860) { $('overlay').classList.add('min'); $('overlayToggle').firstChild.textContent = '▸ '; }
 
 // Draggable location pickers - one marker per point (need / drop / flood / convoy start+dest).
-const coordId = { need: 'n_coord', r: 'r_coord', rf: 'rf_coord', c: 'c_coord', f: 'f_coord', p: 'p_coord' };
+const coordId = { need: 'n_coord', r: 'r_coord', rf: 'rf_coord', c: 'c_coord', f: 'f_coord', p: 'p_coord', o: 'o_coord', bl: 'bl_coord', fa: 'fa_coord' };
 const pickEmoji = { rf: '🚩', r: '🎯' };
 const pickMarkers = {};
 function setReadout(key, lat, lng, gps) {
@@ -607,6 +649,7 @@ $('r_gps').onclick = () => useGPS('r');
 $('rf_gps').onclick = () => useGPS('rf');
 $('c_gps').onclick = () => useGPS('c');
 $('f_gps').onclick = () => useGPS('f');
+$('o_gps').onclick = () => useGPS('o'); $('bl_gps').onclick = () => useGPS('bl'); $('fa_gps').onclick = () => useGPS('fa');
 
 // flood severity selector
 let fSev = 'high';
@@ -859,8 +902,49 @@ $('searchInput').oninput = () => {
 $('searchInput').onkeydown = e => { if (e.key === 'Escape') { $('searchResults').classList.remove('show'); $('searchInput').blur(); } };
 document.addEventListener('click', e => { if (!$('searchbox').contains(e.target)) $('searchResults').classList.remove('show'); });
 
+/* ---- new modules: offers / blocked roads / facilities (shown per event recipe) ---- */
+let oKind = 'oxygen', blKind = 'blocked', faKind = 'shop', faStatus = 'open';
+function segPick(elId, attr, setter) { const el = $(elId); if (!el) return; el.querySelectorAll('button').forEach(b => b.onclick = () => { el.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); setter(b.dataset[attr]); }); }
+segPick('o_kind', 'k', v => oKind = v); segPick('bl_kind', 'k', v => blKind = v); segPick('fa_kind', 'k', v => faKind = v); segPick('fa_status', 's', v => faStatus = v);
+$('o_kind') && $('o_kind').querySelector('button').classList.add('on');   // default: first offer kind
+$('o_submit').onclick = async () => {
+  if (pending.o.lat == null) return toast('Set a location — tap the map or GPS');
+  try {
+    await api('/api/offers', { method: 'POST', body: { kind: oKind, note: $('o_note').value.trim(), contact: $('o_contact').value.trim(), lat: pending.o.lat, lng: pending.o.lng, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
+    $('o_note').value = ''; $('o_contact').value = ''; pending.o = {}; $('o_coord').textContent = t('noLoc'); $('o_coord').classList.remove('set'); removeMarker('o');
+    await refresh(); toast('🤝 Offer posted');
+  } catch (e) { toast('Failed: ' + e.message); }
+};
+$('bl_submit').onclick = async () => {
+  if (pending.bl.lat == null) return toast('Set a location — tap the map or GPS');
+  try {
+    await api('/api/blocked', { method: 'POST', body: { label: $('bl_label').value.trim(), kind: blKind, lat: pending.bl.lat, lng: pending.bl.lng, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
+    $('bl_label').value = ''; pending.bl = {}; $('bl_coord').textContent = t('noLoc'); $('bl_coord').classList.remove('set'); removeMarker('bl');
+    await refresh(); toast('🚧 Blocked road marked');
+  } catch (e) { toast('Failed: ' + e.message); }
+};
+$('fa_submit').onclick = async () => {
+  if (pending.fa.lat == null) return toast('Set a location — tap the map or GPS');
+  try {
+    await api('/api/facilities', { method: 'POST', body: { kind: faKind, status: faStatus, name: $('fa_name').value.trim(), lat: pending.fa.lat, lng: pending.fa.lng, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
+    $('fa_name').value = ''; pending.fa = {}; $('fa_coord').textContent = t('noLoc'); $('fa_coord').classList.remove('set'); removeMarker('fa');
+    await refresh(); toast('🏪 Status posted');
+  } catch (e) { toast('Failed: ' + e.message); }
+};
+// show only the tabs / layers this event's recipe enables (the homepage keeps its classic set)
+function gateModules() {
+  if (!EVENT) return;
+  const mods = EVENT.modules || [];
+  document.querySelectorAll('[data-module]').forEach(el => {
+    let on = mods.includes(el.dataset.module);
+    if (el.dataset.module === 'hazard' && EVENT.family !== 'water') on = false;   // Flood tab: water only, for now
+    el.classList.toggle('mod-off', !on);
+  });
+}
+
 (async function () {
   applyI18n();
+  gateModules();
   if (EVENT) {   // event mode: badge the header with this event, and don't auto-fly (bounds already fit)
     const sub = document.querySelector('header .sub'); if (sub) { sub.textContent = EVENT.emoji + ' ' + EVENT.title; sub.removeAttribute('data-i18n'); }
   }

@@ -234,6 +234,22 @@ CREATE TABLE IF NOT EXISTS offers (
   hidden     INTEGER NOT NULL DEFAULT 0
 );
 
+-- MODULE: facility status (pandemic / grid outage) - is this shop / clinic / pharmacy / water
+-- point OPEN or CLOSED right now? Fast-changing, so updated_at is the freshness clock.
+CREATE TABLE IF NOT EXISTS facilities (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  event_id   INTEGER,
+  lat        REAL NOT NULL,
+  lng        REAL NOT NULL,
+  kind       TEXT NOT NULL,                 -- shop | clinic | pharmacy | hospital | fuel | water | other
+  name       TEXT,
+  status     TEXT NOT NULL DEFAULT 'open',  -- open | closed
+  device     TEXT,
+  hidden     INTEGER NOT NULL DEFAULT 0
+);
+
 -- Cookieless, first-party visitor counter (replaces Google Analytics). Stores ONLY a daily
 -- tally split by mobile/desktop - no IP, no cookie, no per-visitor record, no third party.
 CREATE TABLE IF NOT EXISTS pageviews (
