@@ -243,9 +243,10 @@ CREATE TABLE IF NOT EXISTS facilities (
   event_id   INTEGER,
   lat        REAL NOT NULL,
   lng        REAL NOT NULL,
-  kind       TEXT NOT NULL,                 -- shop | clinic | pharmacy | hospital | fuel | water | other
+  kind       TEXT NOT NULL,                 -- pharmacy | grocery | hospital | clinic | testing | ... (per family)
   name       TEXT,
-  status     TEXT NOT NULL DEFAULT 'open',  -- open | closed
+  note       TEXT,                          -- e.g. "has fever meds, out of remdesivir"
+  status     TEXT NOT NULL DEFAULT 'open',  -- open | limited | closed
   device     TEXT,
   hidden     INTEGER NOT NULL DEFAULT 0
 );

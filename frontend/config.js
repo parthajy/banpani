@@ -58,7 +58,7 @@ window.BANPANI = {
     climate: { color: '#EAB308', emoji: '☀️', label: 'Climate extreme', types: ['heatwave', 'coldwave', 'drought', 'water-scarcity'],
       needs: ['Drinking water', 'Cooling / shade', 'ORS / electrolytes', 'Medical', 'Fodder for livestock', 'Food'] },
     health:  { color: '#12B5A5', emoji: '🦠', label: 'Health',         types: ['pandemic', 'epidemic', 'outbreak'],
-      needs: ['Oxygen', 'Medicines', 'Hospital beds', 'Testing', 'Food delivery', 'Sanitation', 'Volunteers'] },
+      needs: ['Oxygen', 'Hospital bed (ICU)', 'Medicines', 'Plasma / blood', 'Testing', 'Ambulance', 'Food / meals', 'Groceries / essentials', 'Home care', 'Vaccination help'] },
     tech:    { color: '#D6409F', emoji: '☣️', label: 'Industrial',     types: ['chemical-leak', 'gas-leak', 'nuclear', 'grid-failure', 'water-contamination'],
       needs: ['Evacuation', 'Clean water', 'Medical / decontamination', 'Masks', 'Shelter', 'Power'] },
     infra:   { color: '#64748B', emoji: '🏗️', label: 'Infrastructure', types: ['building-collapse', 'bridge-collapse', 'road-washout', 'train', 'ship', 'aircraft', 'tunnel'],

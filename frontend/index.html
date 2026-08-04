@@ -244,11 +244,7 @@
         <section data-body="offer" hidden>
           <p class="intro" data-i18n="offerIntro">Have something to share — oxygen, water, a boat, beds? Put it on the map so people who need it can find it. This is the supply side.</p>
           <label data-i18n="offerWhat">What do you have?</label>
-          <div class="seg wrap" id="o_kind">
-            <button data-k="oxygen">🫁 Oxygen</button><button data-k="beds">🛏️ Beds</button><button data-k="water">💧 Water</button>
-            <button data-k="boat">🚤 Boat</button><button data-k="blood">🩸 Blood</button><button data-k="food">🍚 Food</button>
-            <button data-k="power">🔌 Power</button><button data-k="medicine">💊 Medicine</button><button data-k="other">📦 Other</button>
-          </div>
+          <div class="seg wrap" id="o_kind"></div>
           <label data-i18n="locSet">Location - tap map or GPS</label>
           <div class="locpick"><div class="coord" id="o_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="o_gps" data-i18n="gps">📍 GPS</button></div>
           <label data-i18n="offerNote">Details</label><input id="o_note" data-ph="offerNotePh" placeholder="e.g. 20 cylinders, refilling daily" />
@@ -268,13 +264,11 @@
         <section data-body="facility" hidden>
           <p class="intro" data-i18n="facilityIntro">Mark a shop, clinic, pharmacy or water point and whether it's open right now — so people know where to go.</p>
           <label data-i18n="facilityWhat">What is it?</label>
-          <div class="seg wrap" id="fa_kind">
-            <button data-k="shop" class="on">🏪 Shop</button><button data-k="clinic">🏥 Clinic</button><button data-k="pharmacy">💊 Pharmacy</button>
-            <button data-k="hospital">🏨 Hospital</button><button data-k="fuel">⛽ Fuel</button><button data-k="water">🚰 Water</button><button data-k="other">📍 Other</button>
-          </div>
+          <div class="seg wrap" id="fa_kind"></div>
           <label data-i18n="facilityStatus">Status right now</label>
-          <div class="seg" id="fa_status"><button data-s="open" class="on" data-i18n="statusOpen">✅ Open</button><button data-s="closed" data-i18n="statusClosed">⛔ Closed</button></div>
+          <div class="seg" id="fa_status"><button data-s="open" class="on" data-i18n="statusOpen">✅ Open</button><button data-s="limited" data-i18n="statusLimited">🟡 Limited</button><button data-s="closed" data-i18n="statusClosed">⛔ Closed</button></div>
           <label data-i18n="facilityName">Name (optional)</label><input id="fa_name" data-ph="facilityNamePh" placeholder="e.g. City Pharmacy" />
+          <label data-i18n="facilityNote">What's the situation? (optional)</label><input id="fa_note" data-ph="facilityNotePh" placeholder="e.g. has fever meds, out of remdesivir" />
           <label data-i18n="locSet">Location - tap map or GPS</label>
           <div class="locpick"><div class="coord" id="fa_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="fa_gps" data-i18n="gps">📍 GPS</button></div>
           <button class="btn" id="fa_submit" data-i18n="postFacility">🏪 Post status</button>

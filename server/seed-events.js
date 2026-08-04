@@ -39,7 +39,7 @@ const DEMOS = [
   { fam: 'health', type: 'pandemic', title: 'City Outbreak (demo)', lat: 28.58, lng: 77.21,
     needs: [['South Delhi', 28.53, 77.24, ['Oxygen', 'Hospital beds'], 400], ['Rohini', 28.74, 77.06, ['Medicines', 'Food delivery'], 150]],
     offers: [['oxygen', 28.62, 77.22, '30 cylinders, refilling daily'], ['beds', 28.58, 77.20, '8 ICU beds free now']],
-    facilities: [['pharmacy', 28.60, 77.20, 'Apollo Pharmacy', 'open'], ['hospital', 28.57, 77.19, 'City Hospital', 'open'], ['shop', 28.62, 77.23, 'Ration store', 'closed']] },
+    facilities: [['pharmacy', 28.60, 77.20, 'Apollo Pharmacy', 'open'], ['hospital', 28.57, 77.19, 'City Hospital', 'limited'], ['grocery', 28.62, 77.23, 'Ration store', 'closed'], ['oxygen', 28.55, 77.25, 'Oxygen refill point', 'open']] },
   { fam: 'tech', type: 'chemical-leak', title: 'Industrial Gas Leak (demo)', lat: 23.26, lng: 77.41,
     needs: [['Old city', 23.26, 77.41, ['Evacuation', 'Medical / decontamination'], 250]],
     facilities: [['hospital', 23.25, 77.40, 'General Hospital', 'open']] },

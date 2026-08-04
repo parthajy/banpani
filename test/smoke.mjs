@@ -107,7 +107,7 @@ process.on('unhandledRejection', e => failures.push('[' + mode + '] async boot r
 // Concatenate exactly as the three <script> tags load, in order.
 const code = ['config.js', 'i18n.js', 'app.js'].map(f => `\n//== ${f} ==\n` + read(f)).join('\n');
 // A representative event config, to exercise the /e/<slug> event-mode code path too.
-const EVENT_STUB = { id: 1, slug: 'demo-water', title: 'Demo Event', disaster_type: 'flood', family: 'water', color: '#2E77FF', emoji: '💧', center: [26, 92], zoom: 8, minZoom: 5, bounds: [[24, 90], [28, 95]], official: false, items: ['Drinking water', 'Food'], modules: ['needs', 'offers', 'blocked', 'photos'] };
+const EVENT_STUB = { id: 1, slug: 'demo-health', title: 'Demo Event', disaster_type: 'pandemic', family: 'health', color: '#12B5A5', emoji: '🦠', center: [26, 92], zoom: 8, minZoom: 5, bounds: [[24, 90], [28, 95]], official: false, items: ['Oxygen', 'Medicines'], modules: ['needs', 'offers', 'facilities', 'photos'], offerKinds: [['oxygen', '🫁 Oxygen'], ['beds', '🛏️ Beds']], facilityKinds: [['pharmacy', '💊 Pharmacy'], ['grocery', '🛒 Grocery']] };
 
 for (const [name, eventCfg] of [['homepage', null], ['event', EVENT_STUB]]) {
   mode = name;

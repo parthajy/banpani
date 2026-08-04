@@ -4,6 +4,14 @@ const C = window.BANPANI;
 // its bounds, its data, its disaster recipe. Absent = the Assam homepage, exactly as before.
 const EVENT = window.EVENT || null;
 const ITEMS = (EVENT && EVENT.items && EVENT.items.length) ? EVENT.items : C.ITEMS;
+// Tailored per-family option catalogs (Offers supply kinds, Facility types) — injected by the
+// server from disasters.js; fall back to a generic set on the homepage / if an event lacks them.
+const DEFAULT_OFFER_KINDS = [['water', '💧 Water'], ['food', '🍚 Food'], ['medicine', '💊 Medicine'], ['shelter', '🏠 Shelter'], ['transport', '🚗 Transport'], ['other', '📦 Other']];
+const DEFAULT_FACILITY_KINDS = [['shop', '🏪 Shop'], ['pharmacy', '💊 Pharmacy'], ['clinic', '🩺 Clinic'], ['hospital', '🏥 Hospital'], ['water', '🚰 Water point']];
+const OFFER_KINDS = (EVENT && EVENT.offerKinds && EVENT.offerKinds.length) ? EVENT.offerKinds : DEFAULT_OFFER_KINDS;
+const FACILITY_KINDS = (EVENT && EVENT.facilityKinds && EVENT.facilityKinds.length) ? EVENT.facilityKinds : DEFAULT_FACILITY_KINDS;
+const OFFER_LABEL = Object.fromEntries(OFFER_KINDS.map(([k, l]) => [k, l]));
+const FAC_LABEL = Object.fromEntries(FACILITY_KINDS.map(([k, l]) => [k, l]));
 const $ = id => document.getElementById(id);
 
 /* --------------------------- utilities --------------------------- */
@@ -298,8 +306,6 @@ function renderNgoList() {
     </div>`;
   }).join('');
 }
-const OFFER_LABEL = { oxygen: '🫁 Oxygen', beds: '🛏️ Beds', water: '💧 Water', boat: '🚤 Boat', blood: '🩸 Blood', food: '🍚 Food', power: '🔌 Power', medicine: '💊 Medicine', other: '📦 Resource' };
-const FAC_LABEL = { shop: '🏪 Shop', clinic: '🏥 Clinic', pharmacy: '💊 Pharmacy', hospital: '🏨 Hospital', fuel: '⛽ Fuel', water: '🚰 Water point', other: '📍 Facility' };
 function renderOffers() {
   layers.offers.clearLayers();
   if (!$('ly_offers').checked) return;
@@ -326,10 +332,12 @@ function renderFacilities() {
   if (!$('ly_facilities').checked) return;
   for (const f of (STATE.facilities || [])) {
     if (f.lat == null) continue;
-    const open = f.status !== 'closed';
-    const pop = `<b>${esc(FAC_LABEL[f.kind] || '📍')}${f.name ? ' · ' + esc(f.name) : ''}</b><br><small>${open ? '✅ Open' : '⛔ Closed'} · ${freshTxt(f.fresh_min)}</small>`
-      + `<div class="vbtns"><button onclick="bp.facSet(${f.id},'open')">✅ Open</button><button onclick="bp.facSet(${f.id},'closed')">⛔ Closed</button></div>`;
-    L.marker([f.lat, f.lng], { icon: freshIcon(open ? '🟢' : '🔴') }).addTo(layers.facilities).bindPopup(pop);
+    const st = f.status || 'open';
+    const dot = st === 'closed' ? '🔴' : st === 'limited' ? '🟡' : '🟢';
+    const stTxt = st === 'closed' ? '⛔ Closed' : st === 'limited' ? '🟡 Limited' : '✅ Open';
+    const pop = `<b>${esc(FAC_LABEL[f.kind] || '📍 Facility')}${f.name ? ' · ' + esc(f.name) : ''}</b>${f.note ? '<br>' + esc(f.note) : ''}<br><small>${stTxt} · ${freshTxt(f.fresh_min)}</small>`
+      + `<div class="vbtns"><button onclick="bp.facSet(${f.id},'open')">✅ Open</button><button onclick="bp.facSet(${f.id},'limited')">🟡 Limited</button><button onclick="bp.facSet(${f.id},'closed')">⛔ Closed</button></div>`;
+    L.marker([f.lat, f.lng], { icon: freshIcon(dot) }).addTo(layers.facilities).bindPopup(pop);
   }
 }
 function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderOffers(); renderBlocked(); renderFacilities(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
@@ -437,7 +445,7 @@ window.bp = {
   offContact: async id => { try { const r = await api(`/api/offers/${id}/contact`); toast(r.contact ? '📞 ' + r.contact : t('noContact')); } catch (e) { toast('Failed: ' + e.message); } },
   blConfirm: async id => { try { await api(`/api/blocked/${id}/confirm`, { method: 'POST', body: { device: deviceId() } }); toast('Thanks — kept current'); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
   blClear: async id => { try { const r = await api(`/api/blocked/${id}/clear`, { method: 'POST', body: { device: deviceId() } }); toast(r.cleared ? 'Marked cleared ✔' : `Clear vote (${r.clears}/2)`); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
-  facSet: async (id, status) => { try { await api(`/api/facilities/${id}/status`, { method: 'POST', body: { status, device: deviceId() } }); toast(status === 'open' ? '✅ Marked open' : '⛔ Marked closed'); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
+  facSet: async (id, status) => { try { await api(`/api/facilities/${id}/status`, { method: 'POST', body: { status, device: deviceId() } }); toast(status === 'open' ? '✅ Marked open' : status === 'limited' ? '🟡 Marked limited' : '⛔ Marked closed'); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
   vote: async (id, category, value) => {
     try {
       const r = await api(`/api/reports/${id}/vote`, { method: 'POST', body: { category, value, device: deviceId() } });
@@ -903,10 +911,18 @@ $('searchInput').onkeydown = e => { if (e.key === 'Escape') { $('searchResults')
 document.addEventListener('click', e => { if (!$('searchbox').contains(e.target)) $('searchResults').classList.remove('show'); });
 
 /* ---- new modules: offers / blocked roads / facilities (shown per event recipe) ---- */
-let oKind = 'oxygen', blKind = 'blocked', faKind = 'shop', faStatus = 'open';
+let oKind = 'other', blKind = 'blocked', faKind = 'other', faStatus = 'open';
 function segPick(elId, attr, setter) { const el = $(elId); if (!el) return; el.querySelectorAll('button').forEach(b => b.onclick = () => { el.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); setter(b.dataset[attr]); }); }
-segPick('o_kind', 'k', v => oKind = v); segPick('bl_kind', 'k', v => blKind = v); segPick('fa_kind', 'k', v => faKind = v); segPick('fa_status', 's', v => faStatus = v);
-$('o_kind') && $('o_kind').querySelector('button').classList.add('on');   // default: first offer kind
+// build the offer / facility kind chips from THIS event's tailored catalog (first = selected)
+function buildKindSeg(elId, kinds, setter) {
+  const el = $(elId); if (!el) return null;
+  el.innerHTML = kinds.map(([k, l], i) => `<button type="button" data-k="${k}" class="${i === 0 ? 'on' : ''}">${l}</button>`).join('');
+  el.querySelectorAll('button').forEach(b => b.onclick = () => { el.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); setter(b.dataset.k); });
+  return kinds[0] ? kinds[0][0] : null;
+}
+oKind = buildKindSeg('o_kind', OFFER_KINDS, v => oKind = v) || 'other';
+faKind = buildKindSeg('fa_kind', FACILITY_KINDS, v => faKind = v) || 'other';
+segPick('bl_kind', 'k', v => blKind = v); segPick('fa_status', 's', v => faStatus = v);
 $('o_submit').onclick = async () => {
   if (pending.o.lat == null) return toast('Set a location — tap the map or GPS');
   try {
@@ -926,8 +942,8 @@ $('bl_submit').onclick = async () => {
 $('fa_submit').onclick = async () => {
   if (pending.fa.lat == null) return toast('Set a location — tap the map or GPS');
   try {
-    await api('/api/facilities', { method: 'POST', body: { kind: faKind, status: faStatus, name: $('fa_name').value.trim(), lat: pending.fa.lat, lng: pending.fa.lng, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
-    $('fa_name').value = ''; pending.fa = {}; $('fa_coord').textContent = t('noLoc'); $('fa_coord').classList.remove('set'); removeMarker('fa');
+    await api('/api/facilities', { method: 'POST', body: { kind: faKind, status: faStatus, name: $('fa_name').value.trim(), note: $('fa_note').value.trim(), lat: pending.fa.lat, lng: pending.fa.lng, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
+    $('fa_name').value = ''; $('fa_note').value = ''; pending.fa = {}; $('fa_coord').textContent = t('noLoc'); $('fa_coord').classList.remove('set'); removeMarker('fa');
     await refresh(); toast('🏪 Status posted');
   } catch (e) { toast('Failed: ' + e.message); }
 };

@@ -101,7 +101,7 @@ on('GET', '/api/state', (req, res, params, url) => {
       .map(({ contact, ...o }) => ({ ...o, has_contact: !!contact, fresh_min: Math.round((Date.now() - new Date(o.updated_at).getTime()) / 60000) })),
     blocked: all('SELECT id,lat,lng,label,kind,updated_at FROM blocked_roads WHERE hidden=0 AND status=\'blocked\'' + A + ' ORDER BY id DESC LIMIT 300')
       .map(x => ({ ...x, fresh_min: Math.round((Date.now() - new Date(x.updated_at).getTime()) / 60000) })),
-    facilities: all('SELECT id,lat,lng,kind,name,status,updated_at FROM facilities WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 300')
+    facilities: all('SELECT id,lat,lng,kind,name,note,status,updated_at FROM facilities WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 300')
       .map(x => ({ ...x, fresh_min: Math.round((Date.now() - new Date(x.updated_at).getTime()) / 60000) })),
     thresholds: { confirm: 3, resolve: 2, endorse: 5 },
     server_time: now(),
@@ -314,13 +314,12 @@ on('POST', '/api/blocked/:id/clear', async (req, res, params) => {
 });
 
 /* ---- MODULE: offers / available resources (supply side; freshness + consensus retire) ---- */
-const OFFER_KINDS = ['oxygen', 'beds', 'water', 'boat', 'blood', 'food', 'power', 'medicine', 'other'];
 on('POST', '/api/offers', async (req, res) => {
   const b = await readBody(req);
   if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
   const eid = num(b.event_id) || eventForLocation(num(b.lat), num(b.lng));
   const r = run('INSERT INTO offers(created_at,updated_at,event_id,lat,lng,kind,note,contact,device) VALUES(?,?,?,?,?,?,?,?,?)',
-    now(), now(), eid, num(b.lat), num(b.lng), OFFER_KINDS.includes(b.kind) ? b.kind : 'other', str(b.note, 200), str(b.contact, 60), dev(b));
+    now(), now(), eid, num(b.lat), num(b.lng), str(b.kind, 30) || 'other', str(b.note, 200), str(b.contact, 60), dev(b));
   log(req, 'offer', 'offer:' + Number(r.lastInsertRowid), { device: dev(b), detail: str(b.kind, 30), area: coarse(b.lat, b.lng) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
@@ -341,20 +340,20 @@ on('GET', '/api/offers/:id/contact', (req, res, params) => {
   json(res, 200, { contact: row.contact || null });
 });
 
-/* ---- MODULE: facility status (open / closed) ---- */
-const FAC_KINDS = ['shop', 'clinic', 'pharmacy', 'hospital', 'fuel', 'water', 'other'];
+/* ---- MODULE: facility status (open / limited / closed) ---- */
+const FAC_STATUS = s => (['open', 'limited', 'closed'].includes(s) ? s : 'open');
 on('POST', '/api/facilities', async (req, res) => {
   const b = await readBody(req);
   if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
   const eid = num(b.event_id) || eventForLocation(num(b.lat), num(b.lng));
-  const r = run('INSERT INTO facilities(created_at,updated_at,event_id,lat,lng,kind,name,status,device) VALUES(?,?,?,?,?,?,?,?,?)',
-    now(), now(), eid, num(b.lat), num(b.lng), FAC_KINDS.includes(b.kind) ? b.kind : 'other', str(b.name, 120), b.status === 'closed' ? 'closed' : 'open', dev(b));
+  const r = run('INSERT INTO facilities(created_at,updated_at,event_id,lat,lng,kind,name,note,status,device) VALUES(?,?,?,?,?,?,?,?,?,?)',
+    now(), now(), eid, num(b.lat), num(b.lng), str(b.kind, 30) || 'other', str(b.name, 120), str(b.note, 160), FAC_STATUS(b.status), dev(b));
   log(req, 'facility', 'facility:' + Number(r.lastInsertRowid), { device: dev(b), detail: str(b.kind, 30), area: str(b.name, 120) || coarse(b.lat, b.lng) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 on('POST', '/api/facilities/:id/status', async (req, res, params) => {
   const b = await readBody(req);
-  run('UPDATE facilities SET status=?, updated_at=? WHERE id=? AND hidden=0', b.status === 'closed' ? 'closed' : 'open', now(), params.id);
+  run('UPDATE facilities SET status=?, updated_at=? WHERE id=? AND hidden=0', FAC_STATUS(b.status), now(), params.id);
   json(res, 200, { ok: true });
 });
 
@@ -500,6 +499,7 @@ async function serveEventApp(req, res, ev) {
     zoom: isAssam ? 7 : 9, minZoom: isAssam ? 7 : 5,
     bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
     official: isAssam, items: ev.needs || [], modules: ev.modules || [],
+    offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [],
   };
   let html;
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }
