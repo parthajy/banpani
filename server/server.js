@@ -78,26 +78,30 @@ const on = (m, p, h) => routes.push({ method: m, path: p, handler: h });
 // A 4s in-memory micro-cache absorbs traffic spikes (e.g. the FB ad) so a burst can't
 // hammer SQLite - the map still feels live (the client polls every 20s anyway).
 let stateCache = null;
-on('GET', '/api/state', (req, res) => {
-  if (stateCache && Date.now() - stateCache.at < 4000) return writeBody(req, res, 200, Buffer.from(stateCache.s), 'application/json', 'public, max-age=4');
+on('GET', '/api/state', (req, res, params, url) => {
+  const evSlug = url && url.searchParams.get('event');
+  let eid = null;
+  if (evSlug) { const e = one('SELECT id FROM events WHERE slug=?', evSlug); if (!e) return json(res, 404, { error: 'no such event' }); eid = e.id; }
+  if (!eid && stateCache && Date.now() - stateCache.at < 4000) return writeBody(req, res, 200, Buffer.from(stateCache.s), 'application/json', 'public, max-age=4');
+  const A = eid != null ? ' AND event_id=' + eid : '';   // eid is a server-derived integer, safe to inline
   const reports = decoratedReports()
-    .filter(r => r.verify_status !== 'false')
+    .filter(r => r.verify_status !== 'false' && (eid == null || r.event_id === eid))
     .map(({ contact, device, ...r }) => ({ ...r, has_contact: !!contact }));
   const s = JSON.stringify({
     reports,
-    routes: parseRows(all('SELECT * FROM routes WHERE hidden=0 ORDER BY created_at DESC'), ['items']),
-    collection_points: parseRows(all('SELECT * FROM collection_points WHERE hidden=0 AND active=1'), ['accepts']),
+    routes: parseRows(all('SELECT * FROM routes WHERE hidden=0' + A + ' ORDER BY created_at DESC'), ['items']),
+    collection_points: parseRows(all('SELECT * FROM collection_points WHERE hidden=0 AND active=1' + A), ['accepts']),
     ngos: decoratedNgos(),
     flood_polygons: all('SELECT id,geojson,severity,note,source,created_at FROM flood_polygons WHERE hidden=0').map(r => ({ ...r, geojson: JSON.parse(r.geojson) })),
-    photos: all('SELECT id,report_id,lat,lng,tag,mode,caption,file,created_at FROM photos WHERE hidden=0 ORDER BY id DESC LIMIT 300').map(p => ({ ...p, url: '/uploads/' + p.file, file: undefined })),
+    photos: all('SELECT id,report_id,lat,lng,tag,mode,caption,file,created_at FROM photos WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 300').map(p => ({ ...p, url: '/uploads/' + p.file, file: undefined })),
     flood_reports: all(`SELECT id,place,lat,lng,severity,created_at,updated_at,
       (SELECT COUNT(DISTINCT device) FROM votes v WHERE v.target_type='flood' AND v.target_id=f.id AND v.category='clear') AS clears
-      FROM flood_reports f WHERE hidden=0 AND severity!='receded' ORDER BY COALESCE(updated_at,created_at) DESC LIMIT 500`),
+      FROM flood_reports f WHERE hidden=0 AND severity!='receded'${A} ORDER BY COALESCE(updated_at,created_at) DESC LIMIT 500`),
     thresholds: { confirm: 3, resolve: 2, endorse: 5 },
     server_time: now(),
   });
-  stateCache = { at: Date.now(), s };
-  writeBody(req, res, 200, Buffer.from(s), 'application/json', 'public, max-age=4');
+  if (!eid) stateCache = { at: Date.now(), s };   // cache only the hot homepage query
+  writeBody(req, res, 200, Buffer.from(s), 'application/json', eid ? 'no-cache' : 'public, max-age=4');
 });
 
 on('GET', '/api/report', (req, res) => json(res, 200, buildReport()));
@@ -187,7 +191,7 @@ on('POST', '/api/routes', async (req, res) => {
   if (!str(b.name) || b.lat == null || b.lng == null) return json(res, 400, { error: 'name, lat, lng required' });
   const r = run(`INSERT INTO routes(created_at,name,from_place,from_lat,from_lng,lat,lng,items,eta,contact,covered_date,event_id,device)
     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.name), str(b.from_place), num(b.from_lat), num(b.from_lng),
-    num(b.lat), num(b.lng), jarr(b.items), str(b.eta, 120), str(b.contact, 60), str(b.covered_date, 10) || today(), eventForLocation(num(b.lat), num(b.lng)), dev(b));
+    num(b.lat), num(b.lng), jarr(b.items), str(b.eta, 120), str(b.contact, 60), str(b.covered_date, 10) || today(), (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
   log(req, 'convoy', 'route:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.name, 120) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
@@ -197,7 +201,7 @@ on('POST', '/api/collection-points', async (req, res) => {
   if (!str(b.name) || b.lat == null || b.lng == null) return json(res, 400, { error: 'name, lat, lng required' });
   const r = run(`INSERT INTO collection_points(created_at,name,lat,lng,accepts,hours,contact,org,event_id,device)
     VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), str(b.name), num(b.lat), num(b.lng), jarr(b.accepts),
-    str(b.hours, 120), str(b.contact, 60), str(b.org), eventForLocation(num(b.lat), num(b.lng)), dev(b));
+    str(b.hours, 120), str(b.contact, 60), str(b.org), (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
   log(req, 'drop_off', 'cp:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.name, 120) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
@@ -218,7 +222,7 @@ on('POST', '/api/flood-reports', async (req, res) => {
   if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
   const sev = ['high', 'medium', 'receding', 'receded'].includes(b.severity) ? b.severity : 'high';
   const r = run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,event_id,device) VALUES(?,?,?,?,?,?,?,?)',
-    now(), now(), str(b.place, 120), num(b.lat), num(b.lng), sev, eventForLocation(num(b.lat), num(b.lng)), dev(b));
+    now(), now(), str(b.place, 120), num(b.lat), num(b.lng), sev, (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
   log(req, 'flood_marked', 'flood:' + Number(r.lastInsertRowid), { device: dev(b), detail: sev, area: str(b.place, 120) || coarse(b.lat, b.lng) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
@@ -255,7 +259,7 @@ on('POST', '/api/photos', async (req, res) => {
   const mode = b.mode === 'rehab' ? 'rehab' : 'relief';
   const tag = ['flooded', 'need', 'done', 'damage'].includes(b.tag) ? b.tag : (mode === 'rehab' ? 'damage' : 'need');
   const r = run(`INSERT INTO photos(created_at,report_id,lat,lng,tag,mode,caption,file,event_id,device)
-    VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), num(b.report_id), num(b.lat), num(b.lng), tag, mode, str(b.caption, 200), '', eventForLocation(num(b.lat), num(b.lng)), dev(b));
+    VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), num(b.report_id), num(b.lat), num(b.lng), tag, mode, str(b.caption, 200), '', (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
   const id = Number(r.lastInsertRowid);
   const file = `p${id}.${m[1] === 'png' ? 'png' : 'jpg'}`;
   try { writeFileSync(join(UPLOADS, file), buf); } catch { return json(res, 500, { error: 'save failed' }); }
@@ -461,6 +465,29 @@ function timeAgo(iso) {
   if (s < 86400) return Math.round(s / 3600) + 'h ago';
   return Math.round(s / 86400) + 'd ago';
 }
+// Serve the FULL app (index.html + app.js) scoped to one event by injecting window.EVENT
+// before config.js loads. Same battle-tested app, running per-event with its disaster recipe.
+async function serveEventApp(req, res, ev) {
+  const f = DISASTERS[ev.family] || DISASTERS.water;
+  const isAssam = ev.source === 'assam';
+  const cfg = {
+    id: ev.id, slug: ev.slug, title: ev.title, disaster_type: ev.disaster_type, family: ev.family,
+    color: f.color, emoji: f.emoji,
+    center: isAssam ? [26.5, 92.9] : [ev.lat, ev.lng],
+    zoom: isAssam ? 7 : 9, minZoom: isAssam ? 7 : 5,
+    bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
+    official: isAssam, items: ev.needs || [], modules: ev.modules || [],
+  };
+  let html;
+  try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }
+  const inject = '<script>window.EVENT=' + JSON.stringify(cfg).replace(/</g, '\\u003c') + '</script>\n  ';
+  html = html
+    .replace('<script src="config.js"></script>', inject + '<script src="config.js"></script>')
+    .replace(/<title>[\s\S]*?<\/title>/, '<title>' + htmlEsc(ev.title + ' — ' + f.label + ' relief coordination · Banpani') + '</title>')
+    .replace(/(<meta name="description" content=")[^"]*(")/, '$1' + htmlEsc('Live community relief coordination for ' + ev.title + ' — report needs, offers, blocked roads and photos. No accounts, no money, open to everyone.') + '$2');
+  writeBody(req, res, 200, Buffer.from(html), 'text/html; charset=utf-8', 'no-cache');
+}
+
 function eventPage(ev) {
   const f = DISASTERS[ev.family] || DISASTERS.water;
   const c = ev.count || { reports: 0, people: 0, confirmations: 0 };
@@ -606,11 +633,11 @@ http.createServer(async (req, res) => {
       return res.end(buf);
     }
     if (url.pathname === '/sitemap.xml') return writeBody(req, res, 200, Buffer.from(sitemapXml()), 'application/xml', 'public, max-age=3600');
-    if (url.pathname.startsWith('/e/')) {                        // server-rendered event page (SEO)
+    if (url.pathname.startsWith('/e/')) {                        // the FULL app, scoped to one event
       const slug = decodeURIComponent(url.pathname.slice(3)).replace(/\/+$/, '');
       const ev = eventBySlug(slug);
       if (!ev) { res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' }); return res.end(eventNotFound()); }
-      return writeBody(req, res, 200, Buffer.from(eventPage(ev)), 'text/html; charset=utf-8', 'public, max-age=120');
+      return await serveEventApp(req, res, ev);
     }
     return await serveStatic(req, res, url.pathname);
   } catch (e) { console.error(e); json(res, 500, { error: 'server error', detail: String(e.message || e) }); }

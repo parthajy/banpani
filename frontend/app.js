@@ -1,5 +1,9 @@
 /* Banpani - public map app. Vanilla JS + Leaflet. Community-consensus, no accounts. */
 const C = window.BANPANI;
+// When window.EVENT is present (served by /e/<slug>) the SAME app runs scoped to ONE event:
+// its bounds, its data, its disaster recipe. Absent = the Assam homepage, exactly as before.
+const EVENT = window.EVENT || null;
+const ITEMS = (EVENT && EVENT.items && EVENT.items.length) ? EVENT.items : C.ITEMS;
 const $ = id => document.getElementById(id);
 
 /* --------------------------- utilities --------------------------- */
@@ -51,8 +55,8 @@ function isGap(n) {
 }
 
 /* -------------------------------- map --------------------------------- */
-const B = L.latLngBounds(C.BOUNDS);
-const map = L.map('map', { zoomControl: false, minZoom: C.MIN_ZOOM, maxZoom: C.MAX_ZOOM, maxBounds: B, maxBoundsViscosity: 1.0 }).setView(C.CENTER, C.ZOOM);
+const B = L.latLngBounds(EVENT ? EVENT.bounds : C.BOUNDS);
+const map = L.map('map', { zoomControl: false, minZoom: EVENT ? (EVENT.minZoom || 5) : C.MIN_ZOOM, maxZoom: C.MAX_ZOOM, maxBounds: B, maxBoundsViscosity: 1.0 }).setView(EVENT ? EVENT.center : C.CENTER, EVENT ? EVENT.zoom : C.ZOOM);
 L.control.zoom({ position: 'topright' }).addTo(map);   // top-right, away from the View controls
 L.tileLayer(C.TILE_URL, { attribution: C.TILE_ATTR, maxZoom: C.TILE_MAXZOOM, bounds: B }).addTo(map);
 map.setMaxBounds(B);
@@ -73,6 +77,7 @@ const emojiIcon = e => L.divIcon({ html: `<div class="emoji">${e}</div>`, classN
 /* ------------------------------ rendering ----------------------------- */
 let officialFlood = null, officialCamps = { camps: [], updated: '' };
 async function loadOfficialFlood() {
+  if (EVENT && !EVENT.official) { officialFlood = { type: 'FeatureCollection', features: [] }; officialCamps = { camps: [], updated: '' }; return; }
   try { officialFlood = await (await fetch(C.FLOOD_GEOJSON)).json(); } catch { officialFlood = { type: 'FeatureCollection', features: [] }; }
   try { officialCamps = await (await fetch('data/relief-camps.json')).json(); } catch { officialCamps = { camps: [], updated: '' }; }
 }
@@ -339,7 +344,7 @@ $('p_submit').onclick = async () => {
   if (!photoData) return toast(t('pickPhoto'));
   if (pending.p.lat == null) return toast(t('setPhotoLoc'));
   try {
-    await api('/api/photos', { method: 'POST', body: { image: photoData, tag: photoTag, mode: currentMode, lat: pending.p.lat, lng: pending.p.lng, caption: $('p_caption').value.trim(), device: deviceId() } });
+    await api('/api/photos', { method: 'POST', body: { image: photoData, tag: photoTag, mode: currentMode, lat: pending.p.lat, lng: pending.p.lng, caption: $('p_caption').value.trim(), event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
     photoData = null; $('p_file').value = ''; $('p_preview').innerHTML = ''; $('p_caption').value = '';
     pending.p = {}; $('p_coord').textContent = t('noLoc'); $('p_coord').classList.remove('set'); removeMarker('p');
     await refresh(); toast(t('photoUploaded')); maybeCert('');
@@ -516,7 +521,7 @@ function applyMode() {
   $('n_submit').textContent = rehab ? t('postRehab') : t('postNeed');
   $('whatNeededLbl') && ($('whatNeededLbl').textContent = rehab ? t('whatRehab') : t('whatNeeded'));
   // swap the item vocabulary
-  nItems.clear(); chips('n_items', rehab ? C.REHAB_ITEMS : C.ITEMS, nItems);
+  nItems.clear(); chips('n_items', rehab ? C.REHAB_ITEMS : ITEMS, nItems);
   buildPhotoTags();
   // if a relief-only tab was active, fall back to the Need tab
   if (rehab && ['flood', 'convoy', 'drop', 'ngo'].includes(currentTab())) { document.querySelector('.tab[data-tab="need"]').click(); }
@@ -530,11 +535,13 @@ $('modeswitch').querySelectorAll('button').forEach(b => b.onclick = () => {
 });
 
 async function refresh() {
-  STATE = await api('/api/state');
-  // This is the Assam relief map: keep only reports inside Assam bounds so disasters
-  // reported elsewhere on the world map (/world) never pollute this feed / gaps / hotspot.
-  const B = C.BOUNDS;
-  STATE.reports = (STATE.reports || []).filter(r => r.lat >= B[0][0] && r.lat <= B[1][0] && r.lng >= B[0][1] && r.lng <= B[1][1]);
+  STATE = await api('/api/state' + (EVENT ? '?event=' + encodeURIComponent(EVENT.slug) : ''));
+  if (!EVENT) {
+    // Assam homepage: keep only reports inside Assam bounds so disasters reported elsewhere
+    // on the world map never pollute this feed / gaps / hotspot. Event pages come pre-scoped.
+    const bb = C.BOUNDS;
+    STATE.reports = (STATE.reports || []).filter(r => r.lat >= bb[0][0] && r.lat <= bb[1][0] && r.lng >= bb[0][1] && r.lng <= bb[1][1]);
+  }
   renderAll();
 }
 
@@ -608,7 +615,7 @@ $('f_submit').onclick = async () => {
   if (pending.f.lat == null) return toast('Set location (tap map or GPS)');
   try {
     const fPlaceName = $('f_place').value.trim();
-    await api('/api/flood-reports', { method: 'POST', body: { place: $('f_place').value.trim(), lat: pending.f.lat, lng: pending.f.lng, severity: fSev, device: deviceId() } });
+    await api('/api/flood-reports', { method: 'POST', body: { place: $('f_place').value.trim(), lat: pending.f.lat, lng: pending.f.lng, severity: fSev, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
     $('f_place').value = ''; pending.f = {}; $('f_coord').textContent = t('noLoc'); $('f_coord').classList.remove('set'); removeMarker('f');
     await refresh(); await renderAdvisory(); toast(t('floodMarked')); maybeCert(fPlaceName);
   } catch (e) { toast('Failed: ' + e.message); }
@@ -616,7 +623,7 @@ $('f_submit').onclick = async () => {
 
 function chips(elId, arr, set) { const el = $(elId); el.innerHTML = ''; arr.forEach(it => { const c = document.createElement('div'); c.className = 'chip' + (set.has(it) ? ' on' : ''); c.textContent = it; c.onclick = () => { set.has(it) ? set.delete(it) : set.add(it); c.classList.toggle('on'); if (elId === 'r_items') checkOverlap(); }; el.appendChild(c); }); }
 const nItems = new Set(), rItems = new Set(), cItems = new Set(), gFocus = new Set();
-chips('n_items', C.ITEMS, nItems); chips('r_items', C.ITEMS, rItems); chips('c_items', C.ACCEPTS, cItems); chips('g_focus', C.FOCUS, gFocus);
+chips('n_items', ITEMS, nItems); chips('r_items', ITEMS, rItems); chips('c_items', C.ACCEPTS, cItems); chips('g_focus', C.FOCUS, gFocus);
 
 function checkOverlap() {
   const w = $('r_warn'), dest = pending.r;
@@ -635,8 +642,8 @@ $('n_submit').onclick = async () => {
   if (nItems.size === 0) return toast('Pick at least one item');
   try {
     const certPlaceName = $('n_place').value.trim();
-    await api('/api/reports', { method: 'POST', body: { place: $('n_place').value.trim(), lat: pending.need.lat, lng: pending.need.lng, items: [...nItems], people: $('n_people').value || null, details: $('n_details').value.trim(), reporter_kind: $('n_kind').value, contact: $('n_contact').value.trim(), mode: currentMode, device: deviceId() } });
-    ['n_place', 'n_people', 'n_details', 'n_contact'].forEach(i => $(i).value = ''); nItems.clear(); chips('n_items', currentMode === 'rehab' ? C.REHAB_ITEMS : C.ITEMS, nItems);
+    await api('/api/reports', { method: 'POST', body: { place: $('n_place').value.trim(), lat: pending.need.lat, lng: pending.need.lng, items: [...nItems], people: $('n_people').value || null, details: $('n_details').value.trim(), reporter_kind: $('n_kind').value, contact: $('n_contact').value.trim(), mode: currentMode, disaster_type: EVENT ? EVENT.disaster_type : undefined, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
+    ['n_place', 'n_people', 'n_details', 'n_contact'].forEach(i => $(i).value = ''); nItems.clear(); chips('n_items', currentMode === 'rehab' ? C.REHAB_ITEMS : ITEMS, nItems);
     pending.need = {}; $('n_coord').textContent = t('noLoc'); $('n_coord').classList.remove('set'); removeMarker('need');
     await refresh(); toast(t('needPosted')); maybeCert(certPlaceName);
   } catch (e) { toast('Failed: ' + e.message); }
@@ -646,8 +653,8 @@ $('r_submit').onclick = async () => {
   if (pending.r.lat == null) return toast('Set destination');
   if (rItems.size === 0) return toast('Pick what you carry');
   try {
-    await api('/api/routes', { method: 'POST', body: { name: $('r_name').value.trim(), from_place: $('r_from').value.trim(), from_lat: pending.rf.lat ?? null, from_lng: pending.rf.lng ?? null, lat: pending.r.lat, lng: pending.r.lng, items: [...rItems], eta: $('r_eta').value.trim(), contact: $('r_contact').value.trim(), device: deviceId() } });
-    ['r_name', 'r_from', 'r_eta', 'r_contact'].forEach(i => $(i).value = ''); rItems.clear(); chips('r_items', C.ITEMS, rItems);
+    await api('/api/routes', { method: 'POST', body: { name: $('r_name').value.trim(), from_place: $('r_from').value.trim(), from_lat: pending.rf.lat ?? null, from_lng: pending.rf.lng ?? null, lat: pending.r.lat, lng: pending.r.lng, items: [...rItems], eta: $('r_eta').value.trim(), contact: $('r_contact').value.trim(), event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
+    ['r_name', 'r_from', 'r_eta', 'r_contact'].forEach(i => $(i).value = ''); rItems.clear(); chips('r_items', ITEMS, rItems);
     pending.r = {}; pending.rf = {}; $('r_coord').textContent = t('noDest'); $('rf_coord').textContent = t('noStart'); $('r_coord').classList.remove('set'); $('rf_coord').classList.remove('set'); $('r_warn').classList.remove('show'); removeMarker('r'); removeMarker('rf');
     await refresh(); toast(t('convoyAnnounced'));
   } catch (e) { toast('Failed: ' + e.message); }
@@ -656,7 +663,7 @@ $('c_submit').onclick = async () => {
   if (!$('c_name').value.trim()) return toast('Add a name');
   if (pending.c.lat == null) return toast('Set location');
   try {
-    await api('/api/collection-points', { method: 'POST', body: { name: $('c_name').value.trim(), lat: pending.c.lat, lng: pending.c.lng, accepts: [...cItems], hours: $('c_hours').value.trim(), org: $('c_org').value.trim(), contact: $('c_contact').value.trim(), device: deviceId() } });
+    await api('/api/collection-points', { method: 'POST', body: { name: $('c_name').value.trim(), lat: pending.c.lat, lng: pending.c.lng, accepts: [...cItems], hours: $('c_hours').value.trim(), org: $('c_org').value.trim(), contact: $('c_contact').value.trim(), event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
     ['c_name', 'c_hours', 'c_org', 'c_contact'].forEach(i => $(i).value = ''); cItems.clear(); chips('c_items', C.ACCEPTS, cItems);
     pending.c = {}; $('c_coord').textContent = t('noLoc'); $('c_coord').classList.remove('set'); removeMarker('c');
     await refresh(); toast(t('dropRegistered'));
@@ -854,6 +861,9 @@ document.addEventListener('click', e => { if (!$('searchbox').contains(e.target)
 
 (async function () {
   applyI18n();
+  if (EVENT) {   // event mode: badge the header with this event, and don't auto-fly (bounds already fit)
+    const sub = document.querySelector('header .sub'); if (sub) { sub.textContent = EVENT.emoji + ' ' + EVENT.title; sub.removeAttribute('data-i18n'); }
+  }
   applyMode();
   await loadOfficialFlood();
   try { await refresh(); await renderAdvisory(); } catch (e) { toast('Cannot reach server - is it running? ' + e.message); }

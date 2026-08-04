@@ -64,9 +64,11 @@ const navigatorStub = {
   serviceWorker: { register: () => Promise.resolve(), ready: Promise.resolve(chain()) },
 };
 
+function makeWin(eventCfg) {
 const win = {};
 Object.assign(win, {
   BANPANI: undefined,                                     // set by config.js
+  EVENT: eventCfg,                                         // null = homepage; object = /e/<slug> event mode
   document: doc, navigator: navigatorStub, location: { href: 'https://banpani.org/', origin: 'https://banpani.org', search: '', hash: '', pathname: '/', reload() {}, assign() {} },
   localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
   history: { pushState() {}, replaceState() {} },
@@ -95,25 +97,29 @@ Object.assign(win, {
   URL, URLSearchParams, console, JSON, Math, Date, Promise, Object, Array, String, Number, Boolean, RegExp, Map, Set, parseInt, parseFloat, isNaN, encodeURIComponent, decodeURIComponent, Intl,
 });
 win.window = win; win.self = win; win.globalThis = win; win.top = win;
+return win;
+}
 
 const failures = [];
-const ctx = vm.createContext(win);
-process.on('unhandledRejection', e => failures.push('async boot rejected: ' + (e && e.stack || e)));
+let mode = '';
+process.on('unhandledRejection', e => failures.push('[' + mode + '] async boot rejected: ' + (e && e.stack || e)));
 
 // Concatenate exactly as the three <script> tags load, in order.
 const code = ['config.js', 'i18n.js', 'app.js'].map(f => `\n//== ${f} ==\n` + read(f)).join('\n');
-try {
-  vm.runInContext(code, ctx, { filename: 'frontend-bundle.js' });
-} catch (e) {
-  failures.push('load threw: ' + (e && e.stack || e));
-}
+// A representative event config, to exercise the /e/<slug> event-mode code path too.
+const EVENT_STUB = { id: 1, slug: 'demo-water', title: 'Demo Event', disaster_type: 'flood', family: 'water', color: '#2E77FF', emoji: '💧', center: [26, 92], zoom: 8, minZoom: 5, bounds: [[24, 90], [28, 95]], official: false, items: ['Drinking water', 'Food'], modules: ['needs', 'offers', 'blocked', 'photos'] };
 
-// Flush microtasks so a rejected async boot surfaces before we decide.
-await new Promise(r => setImmediate(r));
-await new Promise(r => setImmediate(r));
+for (const [name, eventCfg] of [['homepage', null], ['event', EVENT_STUB]]) {
+  mode = name;
+  const ctx = vm.createContext(makeWin(eventCfg));
+  try { vm.runInContext(code, ctx, { filename: 'bundle-' + name + '.js' }); }
+  catch (e) { failures.push('[' + name + '] load threw: ' + (e && e.stack || e)); }
+  await new Promise(r => setImmediate(r));   // flush microtasks so async-boot rejections surface
+  await new Promise(r => setImmediate(r));
+}
 
 if (failures.length) {
   console.error('✗ smoke test FAILED:\n' + failures.join('\n\n'));
   process.exit(1);
 }
-console.log('✓ smoke test passed — front-end loads clean (' + IDS.size + ' ids checked)');
+console.log('✓ smoke test passed — homepage + event modes load clean (' + IDS.size + ' ids checked)');
