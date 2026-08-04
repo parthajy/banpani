@@ -58,11 +58,16 @@ export function eventBySlug(slug) {
   const photos = all('SELECT id,lat,lng,tag,mode,caption,file,created_at FROM photos WHERE hidden=0 AND event_id=? ORDER BY id DESC LIMIT 100', e.id)
     .map(p => ({ ...p, url: '/uploads/' + p.file, file: undefined }));
   const floods = all("SELECT place,lat,lng,severity FROM flood_reports WHERE hidden=0 AND severity!='receded' AND event_id=? ORDER BY id DESC LIMIT 200", e.id);
+  const nowMs = Date.now();
+  const blocked = all("SELECT id,lat,lng,label,kind,updated_at FROM blocked_roads WHERE hidden=0 AND status='blocked' AND event_id=? ORDER BY id DESC LIMIT 200", e.id)
+    .map(x => ({ ...x, fresh_min: Math.round((nowMs - new Date(x.updated_at).getTime()) / 60000) }));
+  const offers = all("SELECT id,lat,lng,kind,note,contact,updated_at FROM offers WHERE hidden=0 AND status='available' AND event_id=? ORDER BY id DESC LIMIT 200", e.id)
+    .map(({ contact, ...o }) => ({ ...o, has_contact: !!contact, fresh_min: Math.round((nowMs - new Date(o.updated_at).getTime()) / 60000) }));
   const c = counts(e.id);
   return {
     id: e.id, slug: e.slug, title: e.title, disaster_type: e.disaster_type, family: familyOf(e.disaster_type),
     lat: e.lat, lng: e.lng, source: e.source, modules: JSON.parse(e.modules || '[]'), created_at: e.created_at,
-    reports, photos, floods, count: c, needs: DISASTERS[familyOf(e.disaster_type)]?.needs || [],
+    reports, photos, floods, blocked, offers, count: c, needs: DISASTERS[familyOf(e.disaster_type)]?.needs || [],
   };
 }
 

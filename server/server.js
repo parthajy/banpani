@@ -172,7 +172,8 @@ on('POST', '/api/reports', async (req, res) => {
   if (!str(b.place) || b.lat == null || b.lng == null) return json(res, 400, { error: 'place, lat, lng required' });
   const mode = b.mode === 'rehab' ? 'rehab' : 'relief';
   const dtype = str(b.disaster_type, 40) || 'flood';
-  const eventId = createOrJoinEvent(num(b.lat), num(b.lng), dtype, str(b.place), dev(b));   // every report lives in an event
+  // every report lives in an event: honor an explicit event_id (added on an event page), else create-or-join
+  const eventId = num(b.event_id) || createOrJoinEvent(num(b.lat), num(b.lng), dtype, str(b.place), dev(b));
   const r = run(`INSERT INTO reports(created_at,place,lat,lng,items,people,details,contact,reporter_kind,mode,disaster_type,event_id,device)
     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
     num(b.people), str(b.details, 1000), str(b.contact, 60),
@@ -281,6 +282,55 @@ on('POST', '/api/flood/polygons', async (req, res) => {
 });
 
 /* --- community consensus votes (no login; one device, one vote per category) --- */
+/* ---- MODULE: blocked / damaged roads ---- */
+on('POST', '/api/blocked', async (req, res) => {
+  const b = await readBody(req);
+  if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
+  const eid = num(b.event_id) || eventForLocation(num(b.lat), num(b.lng));
+  const r = run('INSERT INTO blocked_roads(created_at,updated_at,event_id,lat,lng,label,kind,device) VALUES(?,?,?,?,?,?,?,?)',
+    now(), now(), eid, num(b.lat), num(b.lng), str(b.label, 160), b.kind === 'partial' ? 'partial' : 'blocked', dev(b));
+  log(req, 'blocked_road', 'blocked:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.label, 120) || coarse(b.lat, b.lng) });
+  json(res, 201, { id: Number(r.lastInsertRowid) });
+});
+on('POST', '/api/blocked/:id/confirm', async (req, res, params) => { run('UPDATE blocked_roads SET updated_at=? WHERE id=? AND hidden=0', now(), params.id); json(res, 200, { ok: true }); });
+on('POST', '/api/blocked/:id/clear', async (req, res, params) => {
+  const b = await readBody(req);
+  const row = one('SELECT * FROM blocked_roads WHERE id=? AND hidden=0', params.id);
+  if (!row) return json(res, 404, { error: 'not found' });
+  castVote(req, 'blocked', +params.id, dev(b), 'clear', 'yes', row.label || coarse(row.lat, row.lng));
+  const clears = one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='blocked' AND target_id=? AND category='clear'", params.id).c;
+  if (clears >= 2) { run("UPDATE blocked_roads SET status='cleared', updated_at=? WHERE id=?", now(), params.id); return json(res, 200, { cleared: true, clears }); }
+  json(res, 200, { cleared: false, clears });
+});
+
+/* ---- MODULE: offers / available resources (supply side; freshness + consensus retire) ---- */
+const OFFER_KINDS = ['oxygen', 'beds', 'water', 'boat', 'blood', 'food', 'power', 'medicine', 'other'];
+on('POST', '/api/offers', async (req, res) => {
+  const b = await readBody(req);
+  if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
+  const eid = num(b.event_id) || eventForLocation(num(b.lat), num(b.lng));
+  const r = run('INSERT INTO offers(created_at,updated_at,event_id,lat,lng,kind,note,contact,device) VALUES(?,?,?,?,?,?,?,?,?)',
+    now(), now(), eid, num(b.lat), num(b.lng), OFFER_KINDS.includes(b.kind) ? b.kind : 'other', str(b.note, 200), str(b.contact, 60), dev(b));
+  log(req, 'offer', 'offer:' + Number(r.lastInsertRowid), { device: dev(b), detail: str(b.kind, 30), area: coarse(b.lat, b.lng) });
+  json(res, 201, { id: Number(r.lastInsertRowid) });
+});
+on('POST', '/api/offers/:id/confirm', async (req, res, params) => { run('UPDATE offers SET updated_at=? WHERE id=? AND hidden=0', now(), params.id); json(res, 200, { ok: true }); });
+on('POST', '/api/offers/:id/gone', async (req, res, params) => {
+  const b = await readBody(req);
+  const row = one('SELECT * FROM offers WHERE id=? AND hidden=0', params.id);
+  if (!row) return json(res, 404, { error: 'not found' });
+  castVote(req, 'offer', +params.id, dev(b), 'gone', 'yes', coarse(row.lat, row.lng));
+  const g = one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='offer' AND target_id=? AND category='gone'", params.id).c;
+  if (g >= 2) { run("UPDATE offers SET status='gone', updated_at=? WHERE id=?", now(), params.id); return json(res, 200, { gone: true, votes: g }); }
+  json(res, 200, { gone: false, votes: g });
+});
+on('GET', '/api/offers/:id/contact', (req, res, params) => {
+  const row = one('SELECT contact,lat,lng FROM offers WHERE id=? AND hidden=0', params.id);
+  if (!row) return json(res, 404, { error: 'not found' });
+  log(req, 'offer_contact', 'offer:' + params.id, { area: coarse(row.lat, row.lng) });
+  json(res, 200, { contact: row.contact || null });
+});
+
 function castVote(req, target_type, id, device, category, value, area, mode = 'relief') {
   run(`INSERT INTO votes(created_at,target_type,target_id,device,category,value) VALUES(?,?,?,?,?,?)
        ON CONFLICT(target_type,target_id,device,category) DO UPDATE SET value=excluded.value, created_at=excluded.created_at`,
@@ -426,6 +476,9 @@ function eventPage(ev) {
     reports: ev.reports.map(r => ({ id: r.id, place: r.place, lat: r.lat, lng: r.lng, items: r.items, details: r.details, confirmations: r.confirmations, created_at: r.created_at })),
     photos: ev.photos.map(p => ({ lat: p.lat, lng: p.lng, url: p.url, tag: p.tag })),
     floods: (ev.floods || []).map(x => ({ lat: x.lat, lng: x.lng, severity: x.severity, place: x.place })),
+    blocked: (ev.blocked || []).map(x => ({ id: x.id, lat: x.lat, lng: x.lng, label: x.label, kind: x.kind, fresh_min: x.fresh_min })),
+    offers: (ev.offers || []).map(o => ({ id: o.id, lat: o.lat, lng: o.lng, kind: o.kind, note: o.note, has_contact: o.has_contact, fresh_min: o.fresh_min })),
+    modules: ev.modules,
   }).replace(/</g, '\\u003c');
   return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -458,6 +511,8 @@ function eventPage(ev) {
 .esheet input,.esheet textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px;margin-bottom:10px;font-size:16px;font-family:inherit}
 .erow{display:flex;gap:8px}.erow button{flex:1;font-weight:700;border-radius:11px;padding:12px;border:none;cursor:pointer}.e-go{background:${f.color};color:#fff}.e-x{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
 .etoast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:2000;background:#1c2530;color:#fff;padding:10px 16px;border-radius:22px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:var(--shadow)}.etoast.show{opacity:1}
+.emoji-pin{font-size:20px;line-height:1;text-align:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}.emoji-pin.stale{opacity:.5;filter:grayscale(1)}
+.leaflet-popup-content .pbtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:5px 8px;font-size:11.5px;font-weight:600;cursor:pointer;margin:4px 4px 0 0}
 .emuted{color:var(--muted);font-size:13px;margin-top:22px;line-height:1.6}.emuted a{color:var(--accent)}</style></head><body>
 <header><img class="logo" src="/icon.svg" width="28" height="28" alt="Banpani"><div><h1 style="font-size:15px;margin:0">Banpani</h1><div class="sub">Coordinating Community Relief</div></div><div class="spacer"></div><a class="link" href="/world">🌍 World map</a></header>
 <div class="wrap">
@@ -466,7 +521,9 @@ function eventPage(ev) {
 <p class="estat"><span id="st_r">${c.reports}</span> report(s) · <span id="st_c">${c.confirmations}</span> confirmed · ~<span id="st_p">${c.people}</span> people affected</p>
 <div class="ebar">
   <button class="prim" id="ev_addneed">＋ Add a need</button>
-  <label id="ev_photolbl">📷 Photo<input type="file" id="ev_photo" accept="image/*" capture="environment" hidden></label>
+  ${ev.modules.includes('blocked') ? '<button id="ev_addblocked">🚧 Blocked road</button>' : ''}
+  ${ev.modules.includes('offers') ? '<button id="ev_addoffer">📦 Offer help</button>' : ''}
+  ${ev.modules.includes('photos') ? '<label id="ev_photolbl">📷 Photo<input type="file" id="ev_photo" accept="image/*" capture="environment" hidden></label>' : ''}
   <a href="/world">🌍 Map</a>
 </div>
 <div id="emap"></div>
@@ -482,6 +539,21 @@ ${photostrip}
   <input id="ev_place" maxlength="80" placeholder="Place name (village, area)">
   <textarea id="ev_details" rows="2" maxlength="500" placeholder="Any details (optional)"></textarea>
   <div class="erow"><button class="e-go" id="ev_submit">Post need</button><button class="e-x" id="ev_cancel">Cancel</button></div>
+</div>
+<div class="esheet" id="bl_sheet">
+  <h3>🚧 Mark a blocked road</h3>
+  <p class="ehint" id="bl_loc">Tap the map where the road is blocked 📍</p>
+  <input id="bl_label" maxlength="160" placeholder="What & where (e.g. Landslide across NH-37)">
+  <div class="echips" id="bl_kind"><button type="button" data-k="blocked" class="on">⛔ Fully blocked</button><button type="button" data-k="partial">⚠️ Partly passable</button></div>
+  <div class="erow"><button class="e-go" id="bl_submit">Mark blocked</button><button class="e-x" id="bl_cancel">Cancel</button></div>
+</div>
+<div class="esheet" id="of_sheet">
+  <h3>📦 Offer a resource</h3>
+  <p class="ehint" id="of_loc">Tap the map where it's available 📍</p>
+  <div class="echips" id="of_kind"></div>
+  <input id="of_note" maxlength="200" placeholder="Details (e.g. 20 oxygen cylinders, refilling daily)">
+  <input id="of_contact" maxlength="60" placeholder="Contact to arrange — kept private, shown only on request">
+  <div class="erow"><button class="e-go" id="of_submit">Post offer</button><button class="e-x" id="of_cancel">Cancel</button></div>
 </div>
 <div class="etoast" id="ev_toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

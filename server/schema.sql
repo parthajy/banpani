@@ -200,6 +200,40 @@ CREATE TABLE IF NOT EXISTS events (
 );
 CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);
 
+-- MODULE: blocked / damaged roads (landslide, flood, quake) so relief routes AROUND them.
+-- updated_at is the freshness clock; consensus 'clear' votes retire it.
+CREATE TABLE IF NOT EXISTS blocked_roads (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  event_id   INTEGER,
+  lat        REAL NOT NULL,
+  lng        REAL NOT NULL,
+  label      TEXT,                          -- "Landslide across NH-37", "Bridge washed out"
+  kind       TEXT NOT NULL DEFAULT 'blocked', -- blocked | partial
+  status     TEXT NOT NULL DEFAULT 'blocked', -- blocked | cleared
+  device     TEXT,
+  hidden     INTEGER NOT NULL DEFAULT 0
+);
+
+-- MODULE: offers / available resources (the SUPPLY side; pandemic oxygen/beds, drought water,
+-- flood boats). Pairs with needs to enable matching. Freshness is everything - updated_at is
+-- the "confirmed available" clock; it decays and must be re-confirmed. Consensus 'gone' retires it.
+CREATE TABLE IF NOT EXISTS offers (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  event_id   INTEGER,
+  lat        REAL NOT NULL,
+  lng        REAL NOT NULL,
+  kind       TEXT NOT NULL,                 -- oxygen | beds | water | boat | blood | food | power | medicine | other
+  note       TEXT,                          -- "20 cylinders", "refilling daily"
+  contact    TEXT,                          -- private; revealed one-at-a-time, never in bulk
+  status     TEXT NOT NULL DEFAULT 'available', -- available | gone
+  device     TEXT,
+  hidden     INTEGER NOT NULL DEFAULT 0
+);
+
 -- Cookieless, first-party visitor counter (replaces Google Analytics). Stores ONLY a daily
 -- tally split by mobile/desktop - no IP, no cookie, no per-visitor record, no third party.
 CREATE TABLE IF NOT EXISTS pageviews (
