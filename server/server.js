@@ -531,7 +531,13 @@ async function serveEventApp(req, res, ev) {
   };
   let html;
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }
-  const inject = '<script>window.EVENT=' + JSON.stringify(cfg).replace(/</g, '\\u003c') + '</script>\n  ';
+  const ld = JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'SpecialAnnouncement',
+    name: ev.title, text: `Live community relief coordination for ${ev.title} (${f.label}). Report needs, offers, blocked roads and photos — no accounts.`,
+    datePosted: ev.created_at, category: 'https://www.wikidata.org/wiki/Q3839081', url: 'https://banpani.org/e/' + ev.slug,
+    ...(ev.lat != null ? { spatialCoverage: { '@type': 'Place', geo: { '@type': 'GeoCoordinates', latitude: ev.lat, longitude: ev.lng } } } : {}),
+  }).replace(/</g, '\\u003c');
+  const inject = '<script>window.EVENT=' + JSON.stringify(cfg).replace(/</g, '\\u003c') + '</script>\n  <script type="application/ld+json">' + ld + '</script>\n  ';
   html = html
     // served under /e/<slug>, so relative asset URLs (styles.css, app.js…) must resolve from root
     .replace('<head>', '<head>\n  <base href="/">')
@@ -541,105 +547,6 @@ async function serveEventApp(req, res, ev) {
   writeBody(req, res, 200, Buffer.from(html), 'text/html; charset=utf-8', 'no-cache');
 }
 
-function eventPage(ev) {
-  const f = DISASTERS[ev.family] || DISASTERS.water;
-  const c = ev.count || { reports: 0, people: 0, confirmations: 0 };
-  const title = `${ev.title} — ${f.label} relief coordination · Banpani`;
-  const desc = `Live community relief for ${ev.title}: ${c.reports} report(s), ${c.confirmations} confirmed, ~${c.people} people affected. Report needs, confirm them, add photos — no accounts, no money.`;
-  const needli = ev.reports.length ? ev.reports.map(r =>
-    `<li data-id="${r.id}"><div class="nl-main"><b>${htmlEsc(r.place)}</b>${(r.items && r.items.length) ? ' · <span class="need">' + htmlEsc(r.items.join(', ')) + '</span>' : ''}${r.details ? ' — ' + htmlEsc(r.details) : ''} <span class="t">${timeAgo(r.created_at)}${r.confirmations ? ' · ✅ ' + r.confirmations : ''}</span></div><button class="nl-ok" data-id="${r.id}">✅ Confirm</button></li>`).join('')
-    : '<li class="nl-empty">No reports yet — be the first to add a need below.</li>';
-  const photostrip = ev.photos.length ? '<div class="pstrip">' + ev.photos.slice(0, 20).map(p => `<a href="${htmlEsc(p.url)}" target="_blank"><img loading="lazy" src="${htmlEsc(p.url)}" alt="${htmlEsc(p.tag || '')}"></a>`).join('') + '</div>' : '';
-  const EV = JSON.stringify({
-    id: ev.id, slug: ev.slug, family: ev.family, color: f.color, label: f.label, emoji: f.emoji, disaster_type: ev.disaster_type,
-    lat: ev.lat, lng: ev.lng, needs: ev.needs,
-    reports: ev.reports.map(r => ({ id: r.id, place: r.place, lat: r.lat, lng: r.lng, items: r.items, details: r.details, confirmations: r.confirmations, created_at: r.created_at })),
-    photos: ev.photos.map(p => ({ lat: p.lat, lng: p.lng, url: p.url, tag: p.tag })),
-    floods: (ev.floods || []).map(x => ({ lat: x.lat, lng: x.lng, severity: x.severity, place: x.place })),
-    blocked: (ev.blocked || []).map(x => ({ id: x.id, lat: x.lat, lng: x.lng, label: x.label, kind: x.kind, fresh_min: x.fresh_min })),
-    offers: (ev.offers || []).map(o => ({ id: o.id, lat: o.lat, lng: o.lng, kind: o.kind, note: o.note, has_contact: o.has_contact, fresh_min: o.fresh_min })),
-    modules: ev.modules,
-  }).replace(/</g, '\\u003c');
-  return `<!doctype html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>${htmlEsc(title)}</title>
-<meta name="description" content="${htmlEsc(desc)}">
-<link rel="canonical" href="https://banpani.org/e/${ev.slug}">
-<meta property="og:title" content="${htmlEsc(ev.title)} — ${htmlEsc(f.label)} relief · Banpani">
-<meta property="og:description" content="${htmlEsc(desc)}">
-<meta property="og:type" content="website"><meta property="og:url" content="https://banpani.org/e/${ev.slug}"><meta property="og:image" content="https://banpani.org/og.png">
-<meta name="theme-color" content="#0f1419"><link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="/styles.css">
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
-<style>body{overflow:auto}.wrap{max-width:760px;margin:0 auto;padding:0 16px 80px}
-.ehead{border-top:6px solid ${f.color};padding:18px 0 2px}
-.ebadge{display:inline-block;background:${f.color};color:#fff;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px}
-.wrap h1{font-size:24px;margin:10px 0 4px}.estat{color:var(--muted);font-size:14px;margin:2px 0 12px}
-.ebar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
-.ebar button,.ebar label,.ebar a{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;cursor:pointer;border-radius:11px;padding:11px 16px;border:1px solid var(--line);background:var(--panel2);color:var(--text);text-decoration:none}
-.ebar .prim{background:${f.color};border-color:${f.color};color:#fff}
-#emap{height:300px;border-radius:14px;border:1px solid var(--line);margin-bottom:16px;background:#0b0f14}
-.rlist{list-style:none;padding:0;margin:0}.rlist li{display:flex;gap:10px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px;color:#c3cdda;line-height:1.5}
-.rlist .nl-main{flex:1}.rlist .need{color:${f.color};font-weight:600}.rlist .t{color:var(--muted);font-size:12px}
-.nl-ok{flex:0 0 auto;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer}
-.nl-ok:hover{color:#fff;border-color:${f.color}}.nl-empty{color:var(--muted)}
-.pstrip{display:flex;gap:8px;overflow-x:auto;margin:6px 0 4px;padding-bottom:4px}.pstrip img{height:96px;width:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
-.esheet{position:fixed;left:0;right:0;bottom:0;z-index:1000;max-width:560px;margin:0 auto;background:var(--panel);border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -12px 34px rgba(0,0,0,.5);padding:16px 16px calc(16px + env(safe-area-inset-bottom));transform:translateY(115%);transition:transform .34s cubic-bezier(.32,.72,0,1)}
-.esheet.show{transform:translateY(0)}.esheet h3{margin:0 0 4px;font-size:15px}.ehint{color:var(--muted);font-size:12.5px;margin:0 0 10px}
-.echips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.echips button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:16px;padding:7px 11px;font-size:12.5px;font-weight:600;cursor:pointer}.echips button.on{background:${f.color};border-color:${f.color};color:#fff}
-.esheet input,.esheet textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px;margin-bottom:10px;font-size:16px;font-family:inherit}
-.erow{display:flex;gap:8px}.erow button{flex:1;font-weight:700;border-radius:11px;padding:12px;border:none;cursor:pointer}.e-go{background:${f.color};color:#fff}.e-x{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
-.etoast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:2000;background:#1c2530;color:#fff;padding:10px 16px;border-radius:22px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:var(--shadow)}.etoast.show{opacity:1}
-.emoji-pin{font-size:20px;line-height:1;text-align:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}.emoji-pin.stale{opacity:.5;filter:grayscale(1)}
-.leaflet-popup-content .pbtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:5px 8px;font-size:11.5px;font-weight:600;cursor:pointer;margin:4px 4px 0 0}
-.emuted{color:var(--muted);font-size:13px;margin-top:22px;line-height:1.6}.emuted a{color:var(--accent)}</style></head><body>
-<header><img class="logo" src="/icon.svg" width="28" height="28" alt="Banpani"><div><h1 style="font-size:15px;margin:0">Banpani</h1><div class="sub">Coordinating Community Relief</div></div><div class="spacer"></div><a class="link" href="/world">🌍 World map</a></header>
-<div class="wrap">
-<div class="ehead"><span class="ebadge">${f.emoji} ${htmlEsc(f.label)}</span></div>
-<h1>${htmlEsc(ev.title)}</h1>
-<p class="estat"><span id="st_r">${c.reports}</span> report(s) · <span id="st_c">${c.confirmations}</span> confirmed · ~<span id="st_p">${c.people}</span> people affected</p>
-<div class="ebar">
-  <button class="prim" id="ev_addneed">＋ Add a need</button>
-  ${ev.modules.includes('blocked') ? '<button id="ev_addblocked">🚧 Blocked road</button>' : ''}
-  ${ev.modules.includes('offers') ? '<button id="ev_addoffer">📦 Offer help</button>' : ''}
-  ${ev.modules.includes('photos') ? '<label id="ev_photolbl">📷 Photo<input type="file" id="ev_photo" accept="image/*" capture="environment" hidden></label>' : ''}
-  <a href="/world">🌍 Map</a>
-</div>
-<div id="emap"></div>
-<h2 style="margin-top:22px">Needs on the ground</h2>
-<ul class="rlist" id="needlist">${needli}</ul>
-${photostrip}
-<p class="emuted">This page is community-powered and updates live. Anyone can add a need or confirm one — no accounts. Banpani never collects money and never shows a victim's phone number publicly. Open source, owned by everyone. <a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a></p>
-</div>
-<div class="esheet" id="ev_sheet">
-  <h3>Add a need here</h3>
-  <p class="ehint" id="ev_loc">Tap the map to set the exact spot 📍</p>
-  <div class="echips" id="ev_needs"></div>
-  <input id="ev_place" maxlength="80" placeholder="Place name (village, area)">
-  <textarea id="ev_details" rows="2" maxlength="500" placeholder="Any details (optional)"></textarea>
-  <div class="erow"><button class="e-go" id="ev_submit">Post need</button><button class="e-x" id="ev_cancel">Cancel</button></div>
-</div>
-<div class="esheet" id="bl_sheet">
-  <h3>🚧 Mark a blocked road</h3>
-  <p class="ehint" id="bl_loc">Tap the map where the road is blocked 📍</p>
-  <input id="bl_label" maxlength="160" placeholder="What & where (e.g. Landslide across NH-37)">
-  <div class="echips" id="bl_kind"><button type="button" data-k="blocked" class="on">⛔ Fully blocked</button><button type="button" data-k="partial">⚠️ Partly passable</button></div>
-  <div class="erow"><button class="e-go" id="bl_submit">Mark blocked</button><button class="e-x" id="bl_cancel">Cancel</button></div>
-</div>
-<div class="esheet" id="of_sheet">
-  <h3>📦 Offer a resource</h3>
-  <p class="ehint" id="of_loc">Tap the map where it's available 📍</p>
-  <div class="echips" id="of_kind"></div>
-  <input id="of_note" maxlength="200" placeholder="Details (e.g. 20 oxygen cylinders, refilling daily)">
-  <input id="of_contact" maxlength="60" placeholder="Contact to arrange — kept private, shown only on request">
-  <div class="erow"><button class="e-go" id="of_submit">Post offer</button><button class="e-x" id="of_cancel">Cancel</button></div>
-</div>
-<div class="etoast" id="ev_toast"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>window.EV=${EV};</script>
-<script src="/event.js"></script></body></html>`;
-}
 const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not found · Banpani</title><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;background:#0f1419;color:#e7edf2;text-align:center;padding:14vh 20px"><h1>🌊 Nothing here (yet)</h1><p style="color:#9fb0bd">This response may have receded, or the link is old.</p><p><a href="/world" style="color:#4fc3f7">Open the world map →</a></p></body>`;
 function sitemapXml() {
   const evs = listEvents().filter(e => e.promoted);

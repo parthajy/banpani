@@ -45,10 +45,11 @@ export function listEvents() {
     const score = c.reports + c.confirmations * 2 + (c.people > 50 ? 2 : c.people > 0 ? 1 : 0);
     return {
       slug: e.slug, title: e.title, family: familyOf(e.disaster_type), disaster_type: e.disaster_type,
-      lat: e.lat, lng: e.lng, source: e.source, modules: JSON.parse(e.modules || '[]'),
+      lat: e.lat, lng: e.lng, source: e.source, modules: JSON.parse(e.modules || '[]'), listed: !!e.listed,
       reports: c.reports, people: c.people, confirmations: c.confirmations, score, promoted: score >= 3,
     };
-  });
+    // (world map shows listed events + any that have earned their place via real activity)
+  }).filter(e => e.listed || e.reports >= 2 || e.confirmations >= 1);
 }
 
 // A single event with its scoped coordination data (for the /e/<slug> page).
@@ -87,9 +88,11 @@ export function createOrJoinEvent(lat, lng, disasterType, place, device) {
   const title = (place && place.trim()) ? place.trim() : (DISASTERS[fam]?.label || 'Response');
   let base = slugify(title) + '-' + fam, slug = base, k = 2;
   while (one('SELECT 1 FROM events WHERE slug=?', slug)) slug = base + '-' + (k++);
+  // Spam control: a brand-new community event is UNLISTED (link-only) until it gains real
+  // activity — listEvents() surfaces it on the world map once it has ≥2 reports or a confirmation.
   const r = run(`INSERT INTO events(created_at,slug,title,disaster_type,lat,lng,radius_km,modules,source,created_by,listed,status)
     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, now(), slug, title, disasterType || fam, lat, lng, 30,
-    JSON.stringify(RECIPES[fam] || ['needs', 'photos']), 'community', device || null, 1, 'active');
+    JSON.stringify(RECIPES[fam] || ['needs', 'photos']), 'community', device || null, 0, 'active');
   return Number(r.lastInsertRowid);
 }
 
