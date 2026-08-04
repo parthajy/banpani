@@ -130,11 +130,16 @@
     };
 
     function fmtCount(s) {
-      if (!s || !s.enabled) return 'Be the very first volunteer in your area 🌱';
-      if (!s.total) return 'Be the very first to join the standing force 🌱';
+      if (!s || !s.total) return 'Be the very first to join the standing force 🌱';
       return `<b>${s.total.toLocaleString()}</b> volunteer${s.total === 1 ? '' : 's'} ready across <b>${s.countries}</b> countr${s.countries === 1 ? 'y' : 'ies'}`;
     }
-    fetch((C.API || '') + '/api/volunteers/summary').then(r => r.json()).then(s => { $('count').innerHTML = fmtCount(s); }).catch(() => { $('count').textContent = ''; });
+    fetch((C.API || '') + '/api/volunteers/summary').then(r => r.json()).then(s => {
+      if (!s.enabled) {   // operator hasn't set the password room up yet — don't take sign-ups we can't key
+        $('count').textContent = 'Sign-up opens very soon — check back shortly 🌱';
+        $('submit').disabled = true; $('submit').textContent = 'Opening soon';
+        $('email').disabled = true;
+      } else { $('count').innerHTML = fmtCount(s); }
+    }).catch(() => { $('count').textContent = ''; });
 
     const msg = (text, kind) => { const m = $('msg'); m.textContent = text; m.className = 'msg show ' + kind; };
     $('form').addEventListener('submit', async e => {

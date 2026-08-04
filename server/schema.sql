@@ -289,3 +289,12 @@ CREATE TABLE IF NOT EXISTS volunteers (
   skills     TEXT,                          -- JSON array (boat, medical, shelter, transport, ...)
   hidden     INTEGER NOT NULL DEFAULT 0
 );
+
+-- Small key/value store for app config that must survive restarts. Used by the volunteer password
+-- room to hold the browser-generated public key + the password-wrapped private key (keystore).
+-- The keystore is useless without the operator's password, which is never stored here.
+CREATE TABLE IF NOT EXISTS app_kv (
+  k          TEXT PRIMARY KEY,
+  v          TEXT,
+  updated_at TEXT
+);

@@ -7,35 +7,31 @@
 // means deliberately running server/volunteer-export.js on a trusted offline machine with that key,
 // decrypting ONLY the region being activated. Lose the key → the list is unreadable forever.
 import { publicEncrypt, constants } from 'node:crypto';
-import { readFileSync, existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import { all, one, run, now } from './db.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-// Public key: env wins (PEM), else the committed server/volunteer-public.pem. Public keys are safe
-// to commit — they can only encrypt. If neither is present the feature is simply disabled.
-const PUBKEY = (() => {
-  if (process.env.BANPANI_VOL_PUBKEY) return process.env.BANPANI_VOL_PUBKEY.replace(/\\n/g, '\n');
-  const p = join(__dirname, 'volunteer-public.pem');
-  return existsSync(p) ? readFileSync(p, 'utf8') : null;
-})();
+// The live public key is the one the operator provisioned from the password room (/parthajy/admin).
+// Until they set a password there, sign-up is OFF — this guarantees every stored email is encrypted
+// to the room's key and therefore always readable in the room (no orphan rows to a stray key).
+function publicKeyPem() {
+  const row = one("SELECT v FROM app_kv WHERE k='vol_pubkey'");
+  return (row && row.v) || null;
+}
 
-export const volunteersEnabled = () => !!PUBKEY;
+export const volunteersEnabled = () => !!publicKeyPem();
 
 // A conservative e-mail check — we never see it again after this, so validate before encrypting.
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
 export const validEmail = e => typeof e === 'string' && EMAIL_RE.test(e.trim());
 
 function encryptEmail(email) {
-  const buf = Buffer.from(String(email).trim().toLowerCase(), 'utf8');   // lowercase so the offline tool can dedupe
-  return publicEncrypt({ key: PUBKEY, padding: constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' }, buf).toString('base64');
+  const buf = Buffer.from(String(email).trim().toLowerCase(), 'utf8');   // lowercase so the room can dedupe
+  return publicEncrypt({ key: publicKeyPem(), padding: constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' }, buf).toString('base64');
 }
 
 // Register a volunteer. Stores ONLY: encrypted email, a COARSE location (rounded ~11km so it's a
 // region not an address), country, and what they can help with. Returns false if the feature is off.
 export function addVolunteer({ email, lat, lng, country, region, families, skills }) {
-  if (!PUBKEY || !validEmail(email)) return false;
+  if (!publicKeyPem() || !validEmail(email)) return false;
   const coarse = v => (v == null || isNaN(+v)) ? null : Math.round(+v * 10) / 10;
   run(`INSERT INTO volunteers(created_at,email_enc,lat,lng,country,region,families,skills)
        VALUES(?,?,?,?,?,?,?,?)`,

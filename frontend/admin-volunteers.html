@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Volunteer room · Banpani</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body{overflow:auto}
+    .wrap{max-width:920px;margin:0 auto;padding:22px 16px 80px}
+    .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 18px;margin:16px 0;max-width:440px}
+    .box.wide{max-width:none}
+    h2{font-size:19px;margin:0 0 6px}
+    label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+    input[type=password],input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px;font-size:16px;font-family:inherit}
+    button{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px}
+    button.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+    button:disabled{opacity:.5}
+    .muted{color:var(--muted);font-size:13px;line-height:1.55}
+    .lock{background:rgba(70,160,110,.10);border:1px solid #2f5f45;border-radius:12px;padding:12px 14px;color:#a9dcc0;font-size:13px;line-height:1.5;margin:12px 0}
+    .warn{background:rgba(240,180,60,.10);border:1px solid #6b5a2a;border-radius:12px;padding:12px 14px;color:#f0d9a0;font-size:13px;line-height:1.5;margin:12px 0}
+    .err{color:#ffb3ad;font-size:13.5px;margin-top:10px;min-height:16px}
+    .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 14px}
+    .bar input{flex:1;min-width:180px;margin:0}
+    .stat{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-size:13px}
+    table{width:100%;border-collapse:collapse;font-size:13.5px}
+    th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+    th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--bg)}
+    td.email{font-family:ui-monospace,monospace;word-break:break-all}
+    .tags{color:var(--muted);font-size:12px}
+    .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+    .hide{display:none}
+  </style>
+</head>
+<body>
+  <header>
+    <img class="logo" src="icon.svg" alt="Banpani" width="30" height="30" />
+    <div><h1>Volunteer room</h1><div class="sub">Standing force · encrypted</div></div>
+    <div class="spacer"></div>
+    <a class="link" href="/world">🌍 World</a>
+  </header>
+
+  <div class="wrap">
+    <!-- Step 1: maintenance key -->
+    <div class="box" id="step_key">
+      <h2>🔐 Enter the room</h2>
+      <p class="muted">This is the maintenance key (same one you use for the admin page).</p>
+      <label for="adminkey">Maintenance key</label>
+      <input id="adminkey" type="password" placeholder="maintenance key" autocomplete="off" />
+      <button id="unlock">Continue →</button>
+      <div class="err" id="keyerr"></div>
+    </div>
+
+    <!-- Step 2a: first-time password setup -->
+    <div class="box hide" id="step_setup">
+      <h2>🔑 Set your volunteer password</h2>
+      <div class="lock">🔒 This password is the <b>only</b> thing that can read volunteer emails. It's never sent to the server — decryption happens right here in your browser. A hacker who breaks into the server gets nothing readable.</div>
+      <div class="warn">⚠️ If you forget this password, the emails can't be recovered — so pick something you'll remember, and save the backup key below.</div>
+      <label for="pw1">New volunteer password</label>
+      <input id="pw1" type="password" placeholder="a strong password you'll remember" autocomplete="new-password" />
+      <label for="pw2">Confirm password</label>
+      <input id="pw2" type="password" placeholder="type it again" autocomplete="new-password" />
+      <button id="doSetup">Set password & open the room</button>
+      <div class="err" id="setuperr"></div>
+    </div>
+
+    <!-- Step 2b: unlock with password -->
+    <div class="box hide" id="step_pw">
+      <h2>🔑 Volunteer password</h2>
+      <p class="muted">Type your password to reveal the volunteer emails (decrypted in your browser).</p>
+      <label for="pw" >Password</label>
+      <input id="pw" type="password" placeholder="your volunteer password" autocomplete="current-password" />
+      <button id="doUnlock">Reveal the room →</button>
+      <div class="err" id="pwerr"></div>
+    </div>
+
+    <!-- The room -->
+    <div class="box wide hide" id="room">
+      <div class="bar">
+        <span class="stat" id="rcount">0 volunteers</span>
+        <input id="filter" type="text" placeholder="Filter by email, country, area, skill…" />
+        <button class="ghost" id="csv" style="margin:0">⬇ Export CSV</button>
+        <button class="ghost" id="backup" style="margin:0">🗝️ Save backup key</button>
+      </div>
+      <div class="tbl-wrap">
+        <table id="tbl"><thead><tr><th>Email</th><th>Country</th><th>Area</th><th>Can help with</th><th>Skills</th><th>Joined</th></tr></thead><tbody id="rows"></tbody></table>
+      </div>
+      <p class="muted" style="margin-top:12px">These emails are decrypted only in your browser, only while this page is open. Reload and they're gone until you type the password again.</p>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+  (function () {
+    const C = window.BANPANI, $ = id => document.getElementById(id);
+    const FAM = C.DISASTERS, ITERS = 210000;
+    let KEY = sessionStorage.getItem('banpani.adminkey') || '';
+    let setupInfo = null;            // { provisioned, keystore, salt, iters }
+    let privKey = null, all = [];    // imported RSA private key + decrypted rows
+
+    const show = id => { for (const s of ['step_key', 'step_setup', 'step_pw', 'room']) $(s).classList.toggle('hide', s !== id); };
+    const api = async (path, opts = {}) => {
+      const r = await fetch((C.API || '') + path, { ...opts, headers: { 'content-type': 'application/json', 'x-admin-key': KEY }, body: opts.body ? JSON.stringify(opts.body) : undefined });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || ('error ' + r.status));
+      return d;
+    };
+    // base64 <-> bytes
+    const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+    const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+    const enc = new TextEncoder(), dec = new TextDecoder();
+
+    async function aesKeyFromPassword(password, salt, iters) {
+      const base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iters, hash: 'SHA-256' }, base,
+        { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    }
+    const pemFromSpki = spki => {
+      const b = b64(spki).match(/.{1,64}/g).join('\n');
+      return '-----BEGIN PUBLIC KEY-----\n' + b + '\n-----END PUBLIC KEY-----\n';
+    };
+
+    // Step 1: unlock the room with the maintenance key
+    $('unlock').onclick = async () => {
+      KEY = $('adminkey').value.trim(); if (!KEY) return ($('keyerr').textContent = 'Enter the key');
+      try {
+        setupInfo = await api('/api/admin/vol-setup');
+        sessionStorage.setItem('banpani.adminkey', KEY);
+        show(setupInfo.provisioned ? 'step_pw' : 'step_setup');
+      } catch (e) { $('keyerr').textContent = e.message === 'admin only' ? 'Wrong maintenance key.' : e.message; }
+    };
+
+    // Step 2a: first-time setup — generate keypair in the browser, wrap the private key with the password
+    $('doSetup').onclick = async () => {
+      const p1 = $('pw1').value, p2 = $('pw2').value;
+      if (p1.length < 8) return ($('setuperr').textContent = 'Use at least 8 characters.');
+      if (p1 !== p2) return ($('setuperr').textContent = 'Passwords do not match.');
+      $('doSetup').disabled = true; $('setuperr').textContent = 'Generating your key… (a few seconds)';
+      try {
+        const pair = await crypto.subtle.generateKey({ name: 'RSA-OAEP', modulusLength: 3072, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['encrypt', 'decrypt']);
+        const spki = await crypto.subtle.exportKey('spki', pair.publicKey);
+        const pkcs8 = await crypto.subtle.exportKey('pkcs8', pair.privateKey);
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const aes = await aesKeyFromPassword(p1, salt, ITERS);
+        const wrapped = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aes, pkcs8);
+        const keystore = b64(iv) + '.' + b64(wrapped);
+        await api('/api/admin/vol-setup', { method: 'POST', body: { pubkey: pemFromSpki(spki), keystore, salt: b64(salt), iters: ITERS } });
+        privKey = pair.privateKey;
+        window._backupPkcs8 = pkcs8;                       // offered via "Save backup key"
+        await loadRoom();
+      } catch (e) { $('setuperr').textContent = 'Setup failed: ' + e.message; $('doSetup').disabled = false; }
+    };
+
+    // Step 2b: unlock with the password — unwrap the private key, decrypt every email
+    async function unlockWithPassword(password) {
+      const salt = unb64(setupInfo.salt);
+      const [ivB, ctB] = setupInfo.keystore.split('.');
+      const aes = await aesKeyFromPassword(password, salt, setupInfo.iters || ITERS);
+      const pkcs8 = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(ivB) }, aes, unb64(ctB)); // throws on wrong password
+      privKey = await crypto.subtle.importKey('pkcs8', pkcs8, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt']);
+      window._backupPkcs8 = pkcs8;
+    }
+    $('doUnlock').onclick = async () => {
+      const p = $('pw').value; if (!p) return;
+      $('doUnlock').disabled = true; $('pwerr').textContent = 'Unlocking…';
+      try { await unlockWithPassword(p); await loadRoom(); }
+      catch (e) { $('pwerr').textContent = 'Wrong password (or corrupted key).'; $('doUnlock').disabled = false; }
+    };
+
+    async function decryptEmail(b64ct) {
+      try { const pt = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, privKey, unb64(b64ct)); return dec.decode(pt); }
+      catch { return '⚠️ (undecryptable — encrypted to a different key)'; }
+    }
+    async function loadRoom() {
+      const { volunteers } = await api('/api/admin/volunteers');
+      all = [];
+      for (const v of volunteers) {
+        let fam = [], sk = []; try { fam = JSON.parse(v.families || '[]'); } catch {} try { sk = JSON.parse(v.skills || '[]'); } catch {}
+        all.push({ email: await decryptEmail(v.email_enc), country: v.country || '', region: v.region || '',
+          families: fam.map(k => (FAM[k] ? FAM[k].emoji + ' ' + FAM[k].label : k)).join(', '), skills: sk.join(', '),
+          joined: (v.created_at || '').slice(0, 10) });
+      }
+      renderRows(all);
+      show('room');
+    }
+    function renderRows(list) {
+      $('rcount').textContent = list.length + ' volunteer' + (list.length === 1 ? '' : 's');
+      const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      $('rows').innerHTML = list.map(v => `<tr><td class="email">${esc(v.email)}</td><td>${esc(v.country)}</td><td>${esc(v.region)}</td><td class="tags">${esc(v.families)}</td><td class="tags">${esc(v.skills)}</td><td>${esc(v.joined)}</td></tr>`).join('')
+        || '<tr><td colspan="6" class="muted" style="padding:18px">No volunteers yet. Share banpani.org/volunteers to build the force.</td></tr>';
+    }
+    $('filter').oninput = e => {
+      const q = e.target.value.toLowerCase().trim();
+      renderRows(!q ? all : all.filter(v => [v.email, v.country, v.region, v.families, v.skills].join(' ').toLowerCase().includes(q)));
+    };
+    $('csv').onclick = () => {
+      const rows = [['email', 'country', 'area', 'can_help_with', 'skills', 'joined'],
+        ...all.map(v => [v.email, v.country, v.region, v.families, v.skills, v.joined])];
+      const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = 'banpani-volunteers.csv'; a.click();
+    };
+    $('backup').onclick = () => {
+      if (!window._backupPkcs8) return;
+      const pem = '-----BEGIN PRIVATE KEY-----\n' + b64(window._backupPkcs8).match(/.{1,64}/g).join('\n') + '\n-----END PRIVATE KEY-----\n';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([pem], { type: 'application/x-pem-file' }));
+      a.download = 'banpani-volunteer-BACKUP-KEY.pem'; a.click();
+      alert('Saved a backup key file. Keep it somewhere safe (e.g. your password manager). It can recover the list if you ever forget your password. Anyone who has this file AND the database could read the emails, so store it privately.');
+    };
+
+    // auto-resume if the maintenance key is already in this session
+    if (KEY) api('/api/admin/vol-setup').then(info => { setupInfo = info; show(info.provisioned ? 'step_pw' : 'step_setup'); }).catch(() => { KEY = ''; sessionStorage.removeItem('banpani.adminkey'); });
+  })();
+  </script>
+</body>
+</html>

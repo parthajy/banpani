@@ -495,6 +495,31 @@ on('POST', '/api/ngos/:id/endorse', async (req, res, params) => {
   json(res, 200, { ok: true, endorsements: n?.endorsements });
 });
 
+/* --- volunteer password room. The server stores the browser-generated public key + the
+   password-WRAPPED private key (keystore). It never sees the password or the plaintext private
+   key — decryption happens entirely in the operator's browser. --- */
+on('GET', '/api/admin/vol-setup', (req, res) => {
+  if (!isAdmin(req)) return json(res, 403, { error: 'admin only' });
+  const g = k => (one('SELECT v FROM app_kv WHERE k=?', k) || {}).v || null;
+  const keystore = g('vol_keystore');
+  json(res, 200, { provisioned: !!keystore, keystore, salt: g('vol_salt'), iters: Number(g('vol_iters')) || 0 });
+});
+on('POST', '/api/admin/vol-setup', async (req, res) => {
+  if (!isAdmin(req)) return json(res, 403, { error: 'admin only' });
+  const b = await readBody(req);
+  if (!b.pubkey || !b.keystore || !b.salt || !b.iters) return json(res, 400, { error: 'missing fields' });
+  const set = (k, v) => run(`INSERT INTO app_kv(k,v,updated_at) VALUES(?,?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v, updated_at=excluded.updated_at`, k, String(v), now());
+  set('vol_pubkey', str(b.pubkey, 4000)); set('vol_keystore', str(b.keystore, 8000));
+  set('vol_salt', str(b.salt, 200)); set('vol_iters', String(Math.min(2000000, Math.max(50000, +b.iters | 0))));
+  log(req, 'vol_room_setup', null, {});
+  json(res, 200, { ok: true });
+});
+// Encrypted rows for the room — email_enc is ciphertext the browser decrypts with the password.
+on('GET', '/api/admin/volunteers', (req, res) => {
+  if (!isAdmin(req)) return json(res, 403, { error: 'admin only' });
+  json(res, 200, { volunteers: all('SELECT id,created_at,email_enc,country,region,lat,lng,families,skills FROM volunteers WHERE hidden=0 ORDER BY id DESC LIMIT 5000') });
+});
+
 /* --- admin: MAINTENANCE ONLY (the site runs without it) --- */
 on('POST', '/api/admin/advisory', async (req, res) => {
   if (!isAdmin(req)) return json(res, 403, { error: 'admin only' });
@@ -616,7 +641,7 @@ function sitemapXml() {
 // Homepage flip: set BANPANI_WORLD_HOME=1 (env) + restart to serve the WORLD map at `/` when
 // Assam winds down. Until then `/` stays the Assam relief map. Assam always lives at
 // /e/assam-floods-2026 too. One flag, reversible — the user's timing call.
-const PRETTY = { '/': process.env.BANPANI_WORLD_HOME === '1' ? '/world.html' : '/index.html', '/world': '/world.html', '/volunteers': '/volunteers.html' };
+const PRETTY = { '/': process.env.BANPANI_WORLD_HOME === '1' ? '/world.html' : '/index.html', '/world': '/world.html', '/volunteers': '/volunteers.html', '/parthajy/admin': '/admin-volunteers.html' };
 async function serveStatic(req, res, pathname) {
   countView(req, pathname);
   const full = normalize(join(FRONTEND, PRETTY[pathname] || pathname));

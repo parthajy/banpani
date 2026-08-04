@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
+Disallow: /admin-volunteers.html
+Disallow: /parthajy/
 
 Sitemap: https://banpani.org/sitemap.xml
