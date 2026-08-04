@@ -53,6 +53,16 @@
     .wtoast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:2000;background:#1c2530;color:#fff;
       padding:10px 16px;border-radius:22px;font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s;max-width:86vw;text-align:center}
     .wtoast.show{opacity:1}
+    /* saved events (client-side bookmarks) */
+    .wsaved{position:fixed;left:0;right:0;bottom:0;z-index:1000;max-width:520px;margin:0 auto;background:var(--panel);
+      border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -12px 34px rgba(0,0,0,.5);
+      padding:18px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(115%);
+      transition:transform .34s cubic-bezier(.32,.72,0,1);max-height:70vh;overflow-y:auto}
+    .wsaved.show{transform:translateY(0)}
+    .wsaved-item{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
+    .wsaved-item a{color:var(--text);font-weight:600;text-decoration:none;flex:1}
+    .wsaved-item .rm{color:var(--muted);cursor:pointer;font-size:17px;background:none;border:none;line-height:1}
+    .wsaved-empty{color:var(--muted);font-size:13px;padding:10px 2px;line-height:1.5}
   </style>
 </head>
 <body>
@@ -60,6 +70,7 @@
     <img class="logo" src="icon.svg" alt="Banpani" width="28" height="28" />
     <div><h1>Banpani <span style="color:var(--muted);font-weight:400;font-size:13px">· World map</span></h1></div>
     <div class="spacer"></div>
+    <a class="link" href="#" id="wsavedBtn">★ Saved</a>
     <a class="link" href="/">🆘 Assam relief map</a>
     <a class="link" href="/about.html">ℹ️ About</a>
   </header>
@@ -91,6 +102,11 @@
       <button class="btn" id="wr_submit">Post to the map</button>
       <button class="btn ghost" id="wr_cancel">Cancel</button>
     </div>
+  </div>
+
+  <div class="wsaved" id="wsavedPanel">
+    <div class="wr-title">★ Saved events <button class="btn ghost" id="wsaved_close" style="float:right;margin:0;padding:5px 11px">Close</button></div>
+    <div id="wsaved_list"></div>
   </div>
 
   <div class="wtoast" id="wtoast"></div>

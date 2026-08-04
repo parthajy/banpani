@@ -67,4 +67,21 @@ window.BANPANI = {
       needs: ['Pesticide / control', 'Veterinary help', 'Fodder', 'Crop protection', 'Compensation'] },
   },
   WORLD: { center: [20, 60], zoom: 3, minZoom: 2 },
+
+  // Saved events — pure client-side bookmarks (localStorage, no account, nothing sent to the server).
+  // Shared by the world map and the per-event page so ★ Save works from either side.
+  saved: {
+    key: 'banpani.saved',
+    list() { try { return JSON.parse(localStorage.getItem(this.key) || '[]'); } catch { return []; } },
+    has(slug) { return this.list().some(e => e.slug === slug); },
+    write(l) { try { localStorage.setItem(this.key, JSON.stringify(l.slice(0, 100))); } catch {} },
+    toggle(ev) {
+      const l = this.list(), i = l.findIndex(e => e.slug === ev.slug);
+      if (i >= 0) l.splice(i, 1);
+      else l.unshift({ slug: ev.slug, title: ev.title, family: ev.family, emoji: ev.emoji || '', ts: Date.now() });
+      this.write(l);
+      return i < 0;   // true = now saved
+    },
+    remove(slug) { this.write(this.list().filter(e => e.slug !== slug)); },
+  },
 };

@@ -1017,6 +1017,15 @@ function gateModules() {
   gateModules();
   if (EVENT) {   // event mode: badge the header with this event, and don't auto-fly (bounds already fit)
     const sub = document.querySelector('header .sub'); if (sub) { sub.textContent = EVENT.emoji + ' ' + EVENT.title; sub.removeAttribute('data-i18n'); }
+    // ★ Save this event — client-side bookmark (no account); mirrors the world map's Saved list
+    const svBtn = $('saveEventBtn');
+    if (svBtn) {
+      const ev = { slug: EVENT.slug, title: EVENT.title, family: EVENT.family, emoji: EVENT.emoji };
+      const paint = () => { const on = C.saved.has(EVENT.slug); svBtn.querySelector('.e').textContent = on ? '★' : '☆'; svBtn.querySelector('.t').textContent = on ? 'Saved' : 'Save'; svBtn.classList.toggle('on', on); };
+      svBtn.hidden = false;
+      svBtn.onclick = () => { const on = C.saved.toggle(ev); toast(on ? '★ Saved — find it on the world map' : 'Removed from Saved'); paint(); };
+      paint();
+    }
     // the "gap" pane is convoy-framed by default; relabel it for supply-matched disasters
     const mods = EVENT.modules || [], gapEl = document.querySelector('[data-i18n="nobody"]');
     if (gapEl && !mods.includes('convoys')) { gapEl.textContent = mods.includes('offers') ? '⚠ No supply nearby' : '⚠ Unattended needs'; gapEl.removeAttribute('data-i18n'); }

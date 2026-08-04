@@ -7,6 +7,9 @@ const FAM = C.DISASTERS;
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function deviceId() { let d = localStorage.getItem('banpani.device'); if (!d) { d = 'd-' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('banpani.device', d); } return d; }
 
+const S = C.saved;              // client-side saved-events store
+const evBySlug = {};            // slug -> minimal event, so a saved bookmark can be rebuilt from a popup
+
 // which family a disaster_type belongs to (accepts a family key directly, else looks it up)
 function familyOf(type) { type = type || 'flood'; if (FAM[type]) return type; for (const k in FAM) if (FAM[k].types.includes(type)) return k; return 'water'; }
 
@@ -38,7 +41,9 @@ async function load() {
     evs.forEach(ev => {
       const f = FAM[ev.family] || FAM.water;
       const radius = 6 + Math.min(16, Math.sqrt(ev.reports || 1) * 3.2);
-      const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a><br><a href="#" onclick="return flagEvent('${esc(ev.slug)}')" style="color:#8a94a6;font-size:12px">⚑ Flag as fake / wrong</a>`;
+      evBySlug[ev.slug] = { slug: ev.slug, title: ev.title, family: ev.family, emoji: f.emoji };
+      const sv = S.has(ev.slug);
+      const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a><br><a href="#" onclick="return toggleSave('${esc(ev.slug)}',this)" style="color:#c9a227;font-size:12px">${sv ? '★ Saved' : '☆ Save'}</a> · <a href="#" onclick="return flagEvent('${esc(ev.slug)}')" style="color:#8a94a6;font-size:12px">⚑ Flag</a>`;
       pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius), family: ev.family });
     });
   } catch {}
@@ -127,6 +132,27 @@ $('wr_submit').onclick = async () => {
     await load(false);
   } catch { toast('Could not post — try again'); }
 };
+
+// Saved events (client-side bookmarks). ★ Save from any popup; the Saved sheet lists them.
+function updateSavedBtn() { const n = S.list().length; $('wsavedBtn').textContent = n ? `★ Saved (${n})` : '★ Saved'; }
+function renderSaved() {
+  const l = S.list(), box = $('wsaved_list');
+  box.innerHTML = l.length
+    ? l.map(e => `<div class="wsaved-item"><a href="/e/${esc(e.slug)}">${esc(e.emoji || '')} ${esc(e.title)}</a><button class="rm" onclick="return unsave('${esc(e.slug)}')" title="Remove">✕</button></div>`).join('')
+    : '<div class="wsaved-empty">No saved events yet. Open any event and tap <b>☆ Save</b> to keep it here — stored only on this device, no account.</div>';
+}
+window.toggleSave = function (slug, el) {
+  const ev = evBySlug[slug]; if (!ev) return false;
+  const nowSaved = S.toggle(ev);
+  if (el) { el.textContent = nowSaved ? '★ Saved' : '☆ Save'; }
+  toast(nowSaved ? '★ Saved — see it under ★ Saved' : 'Removed from Saved');
+  updateSavedBtn(); renderSaved();
+  return false;
+};
+window.unsave = function (slug) { S.remove(slug); updateSavedBtn(); renderSaved(); return false; };
+$('wsavedBtn').onclick = () => { renderSaved(); $('wsavedPanel').classList.toggle('show'); return false; };
+$('wsaved_close').onclick = () => $('wsavedPanel').classList.remove('show');
+updateSavedBtn();
 
 // Community flag: one tap reports an event as fake/duplicate/wrong. Three distinct devices hide it.
 window.flagEvent = async function (slug) {
