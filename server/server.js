@@ -19,6 +19,7 @@ import { updateWeather } from './weather.js';
 import { fetchNews } from './news.js';
 import { clusterEvents, findEvent } from './events.js';
 import { DISASTERS } from './disasters.js';
+import { officialEvents } from './official.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FRONTEND = join(__dirname, '..', 'frontend');
@@ -104,6 +105,8 @@ on('GET', '/api/advisory', (req, res) => json(res, 200, one('SELECT * FROM advis
 on('GET', '/api/news', async (req, res) => { try { json(res, 200, { items: await fetchNews() }); } catch { json(res, 200, { items: [] }); } });
 // Events: nearby same-family reports clustered; `promoted` ones have their own /e/<slug> page.
 on('GET', '/api/events', (req, res) => json(res, 200, { events: clusterEvents({ light: true }) }));
+// Official multi-hazard signals (GDACS) so the world map is never empty when disaster hits.
+on('GET', '/api/official', async (req, res) => { try { json(res, 200, { official: await officialEvents() }); } catch { json(res, 200, { official: [] }); } });
 
 // Place search - proxied to OpenStreetMap Nominatim (bounded to Assam), cached, proper UA
 // (so it respects the usage policy and the key/UA stays server-side).
@@ -511,4 +514,6 @@ http.createServer(async (req, res) => {
   // live with no admin action and no cron required (cron is still fine as a backup).
   updateWeather().catch(e => console.warn('weather update failed:', e.message));
   setInterval(() => updateWeather().catch(() => {}), 3 * 60 * 60 * 1000);
+  // Pre-warm official GDACS signals so the world map is populated on first load.
+  officialEvents().catch(() => {});
 });

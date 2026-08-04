@@ -29,19 +29,30 @@ function render() {
   for (const p of pins) if (active.has(p.family)) { p.marker.addTo(group); shown++; }
   $('wc').textContent = shown;
 }
-// One marker per EVENT (clustered reports), sized by report count; promoted events link to their page.
-async function load(fit = true) {
-  let evs; try { evs = (await (await fetch((C.API || '') + '/api/events')).json()).events || []; } catch { return; }
+// The world map layers two things: community EVENTS (solid dots, one per clustered report
+// group, sized by count) and OFFICIAL signals (dashed rings, from GDACS) so it's never empty.
+async function load() {
   pins.length = 0;
-  evs.forEach(ev => {
-    const f = FAM[ev.family] || FAM.water;
-    const radius = 6 + Math.min(16, Math.sqrt(ev.reports) * 3.2);
-    const link = ev.promoted ? `<br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a>` : '';
-    const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span>${link}`;
-    pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius), family: ev.family });
-  });
+  try {
+    const evs = (await (await fetch((C.API || '') + '/api/events')).json()).events || [];
+    evs.forEach(ev => {
+      const f = FAM[ev.family] || FAM.water;
+      const radius = 6 + Math.min(16, Math.sqrt(ev.reports) * 3.2);
+      const link = ev.promoted ? `<br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a>` : '';
+      const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span> · <small>community</small>${link}`;
+      pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius), family: ev.family });
+    });
+  } catch {}
+  try {
+    const off = (await (await fetch((C.API || '') + '/api/official')).json()).official || [];
+    off.forEach(o => {
+      const f = FAM[o.family] || FAM.water;
+      const m = L.circleMarker([o.lat, o.lng], { radius: 12, weight: 3, color: f.color, opacity: .95, fillColor: f.color, fillOpacity: .1, dashArray: '3 4' })
+        .bindPopup(`<b>🛰️ ${esc(o.title)}</b><br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span> · <b style="text-transform:capitalize">${esc(o.level)}</b> alert<br><small>Official signal — GDACS${o.country ? ' · ' + esc(o.country) : ''}</small><br><a href="${esc(o.url)}" target="_blank" rel="noopener">Official report →</a>`);
+      pins.push({ marker: m, family: o.family, official: true });
+    });
+  } catch {}
   render();
-  if (fit) { const pts = pins.map(p => p.marker.getLatLng()); if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.35), { maxZoom: 8 }); }
 }
 
 // filter / legend chips (also the colour key)
