@@ -263,7 +263,7 @@ on('POST', '/api/photos', async (req, res) => {
   const buf = Buffer.from(m[2], 'base64');
   if (buf.length < 100 || buf.length > 5 * 1024 * 1024) return json(res, 400, { error: 'image size out of range' });
   const mode = b.mode === 'rehab' ? 'rehab' : 'relief';
-  const tag = ['flooded', 'need', 'done', 'damage'].includes(b.tag) ? b.tag : (mode === 'rehab' ? 'damage' : 'need');
+  const tag = str(b.tag, 20) || (mode === 'rehab' ? 'damage' : 'need');
   const r = run(`INSERT INTO photos(created_at,report_id,lat,lng,tag,mode,caption,file,event_id,device)
     VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), num(b.report_id), num(b.lat), num(b.lng), tag, mode, str(b.caption, 200), '', (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
   const id = Number(r.lastInsertRowid);

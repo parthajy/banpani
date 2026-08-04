@@ -39,7 +39,7 @@ window.BANPANI = {
   ACCEPTS: ['Dry food', 'Water', 'Clothes', 'Blankets', 'Medicines', 'Tarpaulin', 'Baby food', 'Cash'],
   // Photo tags per phase (anyone can snap + upload as proof)
   PHOTO_TAGS: {
-    relief: [{ k: 'flooded', l: '🌊 Flooded' }, { k: 'need', l: '🆘 Relief needed' }, { k: 'done', l: '✅ Work done' }],
+    relief: [{ k: 'situation', l: '📸 Situation' }, { k: 'need', l: '🆘 Help needed' }, { k: 'done', l: '✅ Done' }],
     rehab: [{ k: 'damage', l: '🔨 Damage' }, { k: 'done', l: '✅ Work done' }],
   },
   FOCUS: ['rescue', 'food', 'water', 'medical', 'shelter', 'sanitation', 'cattle', 'rebuild'],

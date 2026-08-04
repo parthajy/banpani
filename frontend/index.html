@@ -108,17 +108,17 @@
         </div>
         <div style="height:8px"></div>
         <h3 data-i18n="layers">Layers</h3>
-        <label class="lyr"><input type="checkbox" id="ly_official" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="officialLayer">Affected areas (official)</span></label>
-        <label class="lyr"><input type="checkbox" id="ly_flood" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="floodExtent">Flood extent</span></label>
+        <label class="lyr" data-module="official"><input type="checkbox" id="ly_official" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="officialLayer">Affected areas (official)</span></label>
+        <label class="lyr" data-module="hazard"><input type="checkbox" id="ly_flood" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="floodExtent">Flood extent</span></label>
         <label class="lyr"><input type="checkbox" id="ly_needs" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="needs">Needs</span></label>
         <label class="lyr"><input type="checkbox" id="ly_photos" checked><span class="dot" style="background:#8fbaff"></span> <span data-i18n="photosLayer">Photos</span></label>
-        <label class="lyr relief-only"><input type="checkbox" id="ly_cover" checked><span class="dot" style="background:#2f81f7"></span> <span data-i18n="coverage">Coverage / convoys</span></label>
-        <label class="lyr sub relief-only"><input type="checkbox" id="ly_routes" checked><span class="dot" style="background:#2f81f7;opacity:.6"></span> <span data-i18n="convoyRoutes">Convoy routes &amp; details</span></label>
+        <label class="lyr relief-only" data-module="convoys"><input type="checkbox" id="ly_cover" checked><span class="dot" style="background:#2f81f7"></span> <span data-i18n="coverage">Coverage / convoys</span></label>
+        <label class="lyr sub relief-only" data-module="convoys"><input type="checkbox" id="ly_routes" checked><span class="dot" style="background:#2f81f7;opacity:.6"></span> <span data-i18n="convoyRoutes">Convoy routes &amp; details</span></label>
         <label class="lyr relief-only"><input type="checkbox" id="ly_ngo" checked><span class="dot" style="background:#28c76f"></span> <span data-i18n="ngosLayer">NGOs & drop-offs</span></label>
         <label class="lyr mod-off" data-module="offers"><input type="checkbox" id="ly_offers" checked><span class="dot" style="background:#10b981"></span> <span data-i18n="offersLayer">Offers / resources</span></label>
         <label class="lyr mod-off" data-module="blocked"><input type="checkbox" id="ly_blocked" checked><span class="dot" style="background:#ef4444"></span> <span data-i18n="blockedLayer">Blocked roads</span></label>
         <label class="lyr mod-off" data-module="facilities"><input type="checkbox" id="ly_facilities" checked><span class="dot" style="background:#12b5a5"></span> <span data-i18n="facilitiesLayer">Open / closed</span></label>
-        <div class="legend">
+        <div class="legend" data-module="hazard">
           <span><i style="background:#f0453a"></i><span data-i18n="high">high</span></span><span><i style="background:#f5a623"></i><span data-i18n="medium">medium</span></span><span><i style="background:#8fbaff"></i><span data-i18n="receding">receding</span></span>
         </div>
         <div class="lyr-note" id="officialDate"></div>

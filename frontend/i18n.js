@@ -41,7 +41,7 @@ const STR = {
     open: 'Open', unverif: 'Unverif.', convoys: 'Convoys', gapsStat: 'Gaps',
     gps: '📍 GPS', tapMap: 'Tap map, then drag the pin 📍', searchPlace: 'Search a place…',
     directions: 'Directions', showMap: 'Show on map',
-    tPhoto: '📷 Photo', photoIntro: 'Snap or upload a photo as proof - flooding, a need, or work done. No login. Photo location metadata is removed before upload.',
+    tPhoto: '📷 Photo', photoIntro: 'Snap or upload a photo as proof - the situation, a need, or work done. No login. Photo location metadata is removed before upload.',
     privacy: 'Privacy',
     openDataNote: 'Reports are published as open data (CC0, public domain) so relief can be coordinated. Never post a phone number publicly — it stays private and is shown only to a verifying volunteer.',
     openDataPhoto: 'Photos are published as open data (CC0, public domain). Please don’t upload faces or anything that identifies a person.',

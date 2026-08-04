@@ -952,8 +952,9 @@ function gateModules() {
   if (!EVENT) return;
   const mods = EVENT.modules || [];
   document.querySelectorAll('[data-module]').forEach(el => {
-    let on = mods.includes(el.dataset.module);
-    if (el.dataset.module === 'hazard' && EVENT.family !== 'water') on = false;   // Flood tab: water only, for now
+    const m = el.dataset.module;
+    let on = m === 'official' ? !!EVENT.official : mods.includes(m);
+    if (m === 'hazard' && EVENT.family !== 'water') on = false;   // flood extent / severity: water only, for now
     el.classList.toggle('mod-off', !on);
   });
 }
