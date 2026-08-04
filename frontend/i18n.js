@@ -288,7 +288,22 @@ const STR = {
   },
 };
 
-let LANG = localStorage.getItem('banpani.lang') || 'en';
+// Pick the visitor's language: an explicit saved choice wins; otherwise match their browser's
+// preferred languages against what we support (en/as/hi). A Hindi or Assamese browser opens in that
+// language; everyone else — including English-speaking countries like Ghana (en-GH) — opens in
+// English. No geolocation, no guessing from the map; the user can always override with the picker.
+function detectLang() {
+  const saved = localStorage.getItem('banpani.lang');
+  if (saved && STR[saved]) return saved;
+  const prefs = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || 'en'];
+  for (const p of prefs) {
+    const code = String(p).toLowerCase().split('-')[0];
+    if (STR[code]) return code;          // exact support: 'hi', 'as', 'en'
+    if (code === 'bn') return 'as';      // Bengali & Assamese share a script — closest we have
+  }
+  return 'en';
+}
+let LANG = detectLang();
 if (!STR[LANG]) LANG = 'en';
 window.t = (key) => (STR[LANG] && STR[LANG][key]) || STR.en[key] || key;
 window.getLang = () => LANG;

@@ -24,7 +24,10 @@ const active = new Set(Object.keys(FAM));   // all families visible by default
 const pins = [];                            // { marker, family }
 const group = L.layerGroup().addTo(map);
 
-const dot = (lat, lng, color, popup, radius = 7) => L.circleMarker([lat, lng], { radius, weight: 1.5, color: '#0b0f14', fillColor: color, fillOpacity: .9 }).bindPopup(popup);
+const dot = (lat, lng, color, popup, radius = 7, unconfirmed = false) => L.circleMarker([lat, lng], {
+  radius, weight: unconfirmed ? 2 : 1.5, color: unconfirmed ? color : '#0b0f14',
+  fillColor: color, fillOpacity: unconfirmed ? .3 : .9, dashArray: unconfirmed ? '2 3' : null,
+}).bindPopup(popup);
 
 function render() {
   group.clearLayers();
@@ -43,8 +46,10 @@ async function load() {
       const radius = 6 + Math.min(16, Math.sqrt(ev.reports || 1) * 3.2);
       evBySlug[ev.slug] = { slug: ev.slug, title: ev.title, family: ev.family, emoji: f.emoji };
       const sv = S.has(ev.slug);
-      const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a><br><a href="#" onclick="return toggleSave('${esc(ev.slug)}',this)" style="color:#c9a227;font-size:12px">${sv ? '★ Saved' : '☆ Save'}</a> · <a href="#" onclick="return flagEvent('${esc(ev.slug)}')" style="color:#8a94a6;font-size:12px">⚑ Flag</a>`;
-      pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius), family: ev.family });
+      const unconf = ev.unconfirmed
+        ? `<br><span style="color:#c9a227;font-size:12px">⏳ Unconfirmed — needs a 2nd report or a confirmation to be verified.</span>` : '';
+      const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}${unconf}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a><br><a href="#" onclick="return toggleSave('${esc(ev.slug)}',this)" style="color:#c9a227;font-size:12px">${sv ? '★ Saved' : '☆ Save'}</a> · <a href="#" onclick="return flagEvent('${esc(ev.slug)}')" style="color:#8a94a6;font-size:12px">⚑ Flag</a>`;
+      pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius, ev.unconfirmed), family: ev.family });
     });
   } catch {}
   try {

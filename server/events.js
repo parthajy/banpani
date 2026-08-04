@@ -43,13 +43,18 @@ export function listEvents() {
   return all("SELECT * FROM events WHERE hidden=0 AND status='active'").map(e => {
     const c = counts(e.id);
     const score = c.reports + c.confirmations * 2 + (c.people > 50 ? 2 : c.people > 0 ? 1 : 0);
+    // "earned its place" = listed, or has a 2nd report / a confirmation. Everything else is shown
+    // too, but flagged UNCONFIRMED so the world map can render it faded — a first report must be
+    // visible immediately (that's the whole promise), while spam is held back by the per-device
+    // create rate-limit and community flag-to-hide, not by hiding genuine reports.
+    const active = !!e.listed || c.reports >= 2 || c.confirmations >= 1;
     return {
       slug: e.slug, title: e.title, family: familyOf(e.disaster_type), disaster_type: e.disaster_type,
       lat: e.lat, lng: e.lng, source: e.source, modules: JSON.parse(e.modules || '[]'), listed: !!e.listed,
       reports: c.reports, people: c.people, confirmations: c.confirmations, score, promoted: score >= 3,
+      unconfirmed: !active,
     };
-    // (world map shows listed events + any that have earned their place via real activity)
-  }).filter(e => e.listed || e.reports >= 2 || e.confirmations >= 1);
+  });
 }
 
 // A single event with its scoped coordination data (for the /e/<slug> page).
