@@ -18,7 +18,7 @@ import { buildReport } from './report.js';
 import { updateWeather } from './weather.js';
 import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation } from './events.js';
-import { DISASTERS } from './disasters.js';
+import { DISASTERS, familyOf } from './disasters.js';
 import { officialEvents } from './official.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -65,9 +65,9 @@ const clientIp = req => (req.headers['x-real-ip'] || (req.headers['x-forwarded-f
 const ipHash = req => createHash('sha256').update(IP_SALT + '|' + clientIp(req)).digest('hex');
 // Comprehensive action log. Every write goes through this. `area` is a coarse public
 // label (place name / rounded location); nothing sensitive (no raw IP, no phone) is stored.
-const log = (req, kind, target, { detail = null, device = null, area = null, mode = 'relief' } = {}) =>
-  run('INSERT INTO actions_log(created_at,kind,target,detail,device,ip_hash,area,mode) VALUES(?,?,?,?,?,?,?,?)',
-    now(), kind, target || null, detail, device, ipHash(req), area, mode);
+const log = (req, kind, target, { detail = null, device = null, area = null, mode = 'relief', event_id = null } = {}) =>
+  run('INSERT INTO actions_log(created_at,kind,target,detail,device,ip_hash,area,mode,event_id) VALUES(?,?,?,?,?,?,?,?,?)',
+    now(), kind, target || null, detail, device, ipHash(req), area, mode, event_id);
 const coarse = (lat, lng) => (lat != null && lng != null) ? `${(+lat).toFixed(2)},${(+lng).toFixed(2)}` : null;
 
 /* -------------------------------- routes -------------------------------- */
@@ -112,7 +112,20 @@ on('GET', '/api/state', (req, res, params, url) => {
 
 on('GET', '/api/report', (req, res) => json(res, 200, buildReport()));
 on('GET', '/api/advisory', (req, res) => json(res, 200, one('SELECT * FROM advisory WHERE id=1') || {}));
-on('GET', '/api/news', async (req, res) => { try { json(res, 200, { items: await fetchNews() }); } catch { json(res, 200, { items: [] }); } });
+// News keywords per family; an event's feed = its place (title) + the family's terms.
+const NEWS_TERMS = { water: 'flood', fire: 'wildfire fire', storm: 'cyclone storm', geo: 'earthquake landslide', climate: 'drought heatwave', health: 'outbreak OR pandemic OR virus', tech: 'chemical OR gas leak', infra: 'collapse', agri: 'locust' };
+function newsQueryFor(title, family) {
+  const place = String(title || '').replace(/\(demo\)/ig, '').replace(/\b20\d\d\b/g, '').trim();
+  return [`${place} ${NEWS_TERMS[family] || ''}`.replace(/\s+/g, ' ').trim()];
+}
+on('GET', '/api/news', async (req, res, params, url) => {
+  try {
+    const slug = url && url.searchParams.get('event');
+    let queries;
+    if (slug) { const e = one('SELECT title,disaster_type FROM events WHERE slug=?', slug); if (e) queries = newsQueryFor(e.title, familyOf(e.disaster_type)); }
+    json(res, 200, { items: await fetchNews(queries) });
+  } catch { json(res, 200, { items: [] }); }
+});
 // Events: first-class persisted responses (for the world map). `promoted` = SEO-worthy.
 on('GET', '/api/events', (req, res) => json(res, 200, { events: listEvents() }));
 // A single event with its scoped coordination data (drives the /e/<slug> coordination page).
@@ -144,9 +157,12 @@ on('GET', '/api/geocode', async (req, res, params, url) => {
 
 // Public transparency feed: what the community has been doing, REDACTED - no raw IP,
 // no phone numbers. Each actor is an anonymous short id derived from the hashed IP.
-on('GET', '/api/activity', (req, res) => {
+on('GET', '/api/activity', (req, res, params, url) => {
+  const slug = url && url.searchParams.get('event');
+  let A = '';
+  if (slug) { const e = one('SELECT id FROM events WHERE slug=?', slug); A = ' AND event_id=' + (e ? e.id : -1); }
   const rows = all(`SELECT created_at,kind,area,ip_hash,device,mode FROM actions_log
-    WHERE kind NOT LIKE 'admin_%' ORDER BY id DESC LIMIT 200`);
+    WHERE kind NOT LIKE 'admin_%'${A} ORDER BY id DESC LIMIT 200`);
   json(res, 200, {
     items: rows.map(r => ({
       kind: r.kind, area: r.area, created_at: r.created_at, mode: r.mode || 'relief',
@@ -188,7 +204,7 @@ on('POST', '/api/reports', async (req, res) => {
     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
     num(b.people), str(b.details, 1000), str(b.contact, 60),
     ['affected', 'volunteer', 'witness'].includes(b.reporter_kind) ? b.reporter_kind : 'witness', mode, dtype, eventId, dev(b));
-  log(req, mode === 'rehab' ? 'rehab_report' : 'need_report', 'report:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.place, 120), mode });
+  log(req, mode === 'rehab' ? 'rehab_report' : 'need_report', 'report:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.place, 120), mode, event_id: eventId });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 
@@ -264,13 +280,14 @@ on('POST', '/api/photos', async (req, res) => {
   if (buf.length < 100 || buf.length > 5 * 1024 * 1024) return json(res, 400, { error: 'image size out of range' });
   const mode = b.mode === 'rehab' ? 'rehab' : 'relief';
   const tag = str(b.tag, 20) || (mode === 'rehab' ? 'damage' : 'need');
+  const eid = num(b.event_id) || eventForLocation(num(b.lat), num(b.lng));
   const r = run(`INSERT INTO photos(created_at,report_id,lat,lng,tag,mode,caption,file,event_id,device)
-    VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), num(b.report_id), num(b.lat), num(b.lng), tag, mode, str(b.caption, 200), '', (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
+    VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), num(b.report_id), num(b.lat), num(b.lng), tag, mode, str(b.caption, 200), '', eid, dev(b));
   const id = Number(r.lastInsertRowid);
   const file = `p${id}.${m[1] === 'png' ? 'png' : 'jpg'}`;
   try { writeFileSync(join(UPLOADS, file), buf); } catch { return json(res, 500, { error: 'save failed' }); }
   run('UPDATE photos SET file=? WHERE id=?', file, id);
-  log(req, 'photo', 'photo:' + id, { device: dev(b), detail: tag, area: str(b.caption, 120), mode });
+  log(req, 'photo', 'photo:' + id, { device: dev(b), detail: tag, area: str(b.caption, 120), mode, event_id: eid });
   json(res, 201, { id, url: '/uploads/' + file });
 });
 on('POST', '/api/photos/:id/flag', async (req, res, params) => {
@@ -299,7 +316,7 @@ on('POST', '/api/blocked', async (req, res) => {
   const eid = num(b.event_id) || eventForLocation(num(b.lat), num(b.lng));
   const r = run('INSERT INTO blocked_roads(created_at,updated_at,event_id,lat,lng,label,kind,device) VALUES(?,?,?,?,?,?,?,?)',
     now(), now(), eid, num(b.lat), num(b.lng), str(b.label, 160), b.kind === 'partial' ? 'partial' : 'blocked', dev(b));
-  log(req, 'blocked_road', 'blocked:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.label, 120) || coarse(b.lat, b.lng) });
+  log(req, 'blocked_road', 'blocked:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.label, 120) || coarse(b.lat, b.lng), event_id: eid });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 on('POST', '/api/blocked/:id/confirm', async (req, res, params) => { run('UPDATE blocked_roads SET updated_at=? WHERE id=? AND hidden=0', now(), params.id); json(res, 200, { ok: true }); });
@@ -320,7 +337,7 @@ on('POST', '/api/offers', async (req, res) => {
   const eid = num(b.event_id) || eventForLocation(num(b.lat), num(b.lng));
   const r = run('INSERT INTO offers(created_at,updated_at,event_id,lat,lng,kind,note,contact,device) VALUES(?,?,?,?,?,?,?,?,?)',
     now(), now(), eid, num(b.lat), num(b.lng), str(b.kind, 30) || 'other', str(b.note, 200), str(b.contact, 60), dev(b));
-  log(req, 'offer', 'offer:' + Number(r.lastInsertRowid), { device: dev(b), detail: str(b.kind, 30), area: coarse(b.lat, b.lng) });
+  log(req, 'offer', 'offer:' + Number(r.lastInsertRowid), { device: dev(b), detail: str(b.kind, 30), area: coarse(b.lat, b.lng), event_id: eid });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 on('POST', '/api/offers/:id/confirm', async (req, res, params) => { run('UPDATE offers SET updated_at=? WHERE id=? AND hidden=0', now(), params.id); json(res, 200, { ok: true }); });
@@ -348,7 +365,7 @@ on('POST', '/api/facilities', async (req, res) => {
   const eid = num(b.event_id) || eventForLocation(num(b.lat), num(b.lng));
   const r = run('INSERT INTO facilities(created_at,updated_at,event_id,lat,lng,kind,name,note,status,device) VALUES(?,?,?,?,?,?,?,?,?,?)',
     now(), now(), eid, num(b.lat), num(b.lng), str(b.kind, 30) || 'other', str(b.name, 120), str(b.note, 160), FAC_STATUS(b.status), dev(b));
-  log(req, 'facility', 'facility:' + Number(r.lastInsertRowid), { device: dev(b), detail: str(b.kind, 30), area: str(b.name, 120) || coarse(b.lat, b.lng) });
+  log(req, 'facility', 'facility:' + Number(r.lastInsertRowid), { device: dev(b), detail: str(b.kind, 30), area: str(b.name, 120) || coarse(b.lat, b.lng), event_id: eid });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 on('POST', '/api/facilities/:id/status', async (req, res, params) => {

@@ -823,7 +823,7 @@ $('activityBtn').onclick = async () => {
   $('actTitle') && ($('actTitle').textContent = (currentMode === 'rehab' ? '🔨 ' : '🆘 ') + t('activityTitle') + ' — ' + (currentMode === 'rehab' ? t('modeRehabOn') : t('modeReliefOn')));
   $('activityList').innerHTML = `<div class="none">${t('loading')}</div>`;
   try {
-    const { items } = await api('/api/activity');
+    const { items } = await api('/api/activity' + (EVENT ? '?event=' + encodeURIComponent(EVENT.slug) : ''));
     const mine = items.filter(a => (a.mode || 'relief') === currentMode);   // relief vs rehab are different stories
     $('activityList').innerHTML = mine.length ? mine.map(a => `<div class="act-item">
       <span class="ae">${ACT_LABEL[a.kind] || '•'}</span>
@@ -850,7 +850,7 @@ $('newsBtn').onclick = async () => {
   $('newsModal').classList.add('show');
   $('newsList').innerHTML = `<div class="none">${t('loading')}</div>`;
   try {
-    const { items } = await api('/api/news');
+    const { items } = await api('/api/news' + (EVENT ? '?event=' + encodeURIComponent(EVENT.slug) : ''));
     $('newsList').innerHTML = items.length ? items.map(n => `<a class="news-item" href="${esc(n.link)}" target="_blank" rel="noopener">
       <div class="nt">${esc(n.title)}</div><div class="nm">${esc(n.source || '')}${n.pubDate ? ' · ' + agoText(n.pubDate) : ''}</div></a>`).join('')
       : `<div class="none">${t('newsNone')}</div>`;

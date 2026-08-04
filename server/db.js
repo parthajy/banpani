@@ -34,6 +34,7 @@ for (const stmt of [
   'ALTER TABLE photos ADD COLUMN event_id INTEGER',
   'ALTER TABLE flood_reports ADD COLUMN event_id INTEGER',
   'ALTER TABLE facilities ADD COLUMN note TEXT',
+  'ALTER TABLE actions_log ADD COLUMN event_id INTEGER',
 ]) { try { db.exec(stmt); } catch { /* column already exists */ } }
 
 // Assam is event #1. Create it once (idempotent) and adopt every pre-existing coordination
