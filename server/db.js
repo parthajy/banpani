@@ -28,7 +28,24 @@ for (const stmt of [
   'ALTER TABLE reports ADD COLUMN adopted_at TEXT',
   "ALTER TABLE reports ADD COLUMN disaster_type TEXT NOT NULL DEFAULT 'flood'",
   "ALTER TABLE actions_log ADD COLUMN mode TEXT NOT NULL DEFAULT 'relief'",
+  'ALTER TABLE reports ADD COLUMN event_id INTEGER',
+  'ALTER TABLE routes ADD COLUMN event_id INTEGER',
+  'ALTER TABLE collection_points ADD COLUMN event_id INTEGER',
+  'ALTER TABLE photos ADD COLUMN event_id INTEGER',
+  'ALTER TABLE flood_reports ADD COLUMN event_id INTEGER',
 ]) { try { db.exec(stmt); } catch { /* column already exists */ } }
+
+// Assam is event #1. Create it once (idempotent) and adopt every pre-existing coordination
+// row that has no event yet, so nothing is orphaned when events become first-class.
+(function seedAssamEvent() {
+  const ts = new Date().toISOString();
+  const full = JSON.stringify(['needs', 'offers', 'convoys', 'dropoffs', 'blocked', 'shelters', 'hazard', 'photos', 'gaps']);
+  db.prepare(`INSERT OR IGNORE INTO events(created_at,slug,title,disaster_type,lat,lng,radius_km,modules,source,listed,status)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?)`).run(ts, 'assam-floods-2026', 'Assam Floods 2026', 'flood', 26.5, 92.9, 400, full, 'assam', 1, 'active');
+  const row = db.prepare("SELECT id FROM events WHERE slug='assam-floods-2026'").get();
+  if (row) for (const t of ['reports', 'routes', 'collection_points', 'photos', 'flood_reports'])
+    db.prepare(`UPDATE ${t} SET event_id=? WHERE event_id IS NULL`).run(row.id);
+})();
 
 export const now = () => new Date().toISOString();
 export const today = () => new Date().toISOString().slice(0, 10);

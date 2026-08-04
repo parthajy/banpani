@@ -17,7 +17,7 @@ import { db, all, one, run, now, today, parseRows, decoratedReports, decoratedNg
 import { buildReport } from './report.js';
 import { updateWeather } from './weather.js';
 import { fetchNews } from './news.js';
-import { clusterEvents, findEvent } from './events.js';
+import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation } from './events.js';
 import { DISASTERS } from './disasters.js';
 import { officialEvents } from './official.js';
 
@@ -103,8 +103,10 @@ on('GET', '/api/state', (req, res) => {
 on('GET', '/api/report', (req, res) => json(res, 200, buildReport()));
 on('GET', '/api/advisory', (req, res) => json(res, 200, one('SELECT * FROM advisory WHERE id=1') || {}));
 on('GET', '/api/news', async (req, res) => { try { json(res, 200, { items: await fetchNews() }); } catch { json(res, 200, { items: [] }); } });
-// Events: nearby same-family reports clustered; `promoted` ones have their own /e/<slug> page.
-on('GET', '/api/events', (req, res) => json(res, 200, { events: clusterEvents({ light: true }) }));
+// Events: first-class persisted responses (for the world map). `promoted` = SEO-worthy.
+on('GET', '/api/events', (req, res) => json(res, 200, { events: listEvents() }));
+// A single event with its scoped coordination data (drives the /e/<slug> coordination page).
+on('GET', '/api/event/:slug', (req, res, params) => { const e = eventBySlug(params.slug); e ? json(res, 200, e) : json(res, 404, { error: 'no such event' }); });
 // Official multi-hazard signals (GDACS) so the world map is never empty when disaster hits.
 on('GET', '/api/official', async (req, res) => { try { json(res, 200, { official: await officialEvents() }); } catch { json(res, 200, { official: [] }); } });
 
@@ -170,10 +172,11 @@ on('POST', '/api/reports', async (req, res) => {
   if (!str(b.place) || b.lat == null || b.lng == null) return json(res, 400, { error: 'place, lat, lng required' });
   const mode = b.mode === 'rehab' ? 'rehab' : 'relief';
   const dtype = str(b.disaster_type, 40) || 'flood';
-  const r = run(`INSERT INTO reports(created_at,place,lat,lng,items,people,details,contact,reporter_kind,mode,disaster_type,device)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
+  const eventId = createOrJoinEvent(num(b.lat), num(b.lng), dtype, str(b.place), dev(b));   // every report lives in an event
+  const r = run(`INSERT INTO reports(created_at,place,lat,lng,items,people,details,contact,reporter_kind,mode,disaster_type,event_id,device)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.place), num(b.lat), num(b.lng), jarr(b.items),
     num(b.people), str(b.details, 1000), str(b.contact, 60),
-    ['affected', 'volunteer', 'witness'].includes(b.reporter_kind) ? b.reporter_kind : 'witness', mode, dtype, dev(b));
+    ['affected', 'volunteer', 'witness'].includes(b.reporter_kind) ? b.reporter_kind : 'witness', mode, dtype, eventId, dev(b));
   log(req, mode === 'rehab' ? 'rehab_report' : 'need_report', 'report:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.place, 120), mode });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
@@ -181,9 +184,9 @@ on('POST', '/api/reports', async (req, res) => {
 on('POST', '/api/routes', async (req, res) => {
   const b = await readBody(req);
   if (!str(b.name) || b.lat == null || b.lng == null) return json(res, 400, { error: 'name, lat, lng required' });
-  const r = run(`INSERT INTO routes(created_at,name,from_place,from_lat,from_lng,lat,lng,items,eta,contact,covered_date,device)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.name), str(b.from_place), num(b.from_lat), num(b.from_lng),
-    num(b.lat), num(b.lng), jarr(b.items), str(b.eta, 120), str(b.contact, 60), str(b.covered_date, 10) || today(), dev(b));
+  const r = run(`INSERT INTO routes(created_at,name,from_place,from_lat,from_lng,lat,lng,items,eta,contact,covered_date,event_id,device)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, now(), str(b.name), str(b.from_place), num(b.from_lat), num(b.from_lng),
+    num(b.lat), num(b.lng), jarr(b.items), str(b.eta, 120), str(b.contact, 60), str(b.covered_date, 10) || today(), eventForLocation(num(b.lat), num(b.lng)), dev(b));
   log(req, 'convoy', 'route:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.name, 120) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
@@ -191,9 +194,9 @@ on('POST', '/api/routes', async (req, res) => {
 on('POST', '/api/collection-points', async (req, res) => {
   const b = await readBody(req);
   if (!str(b.name) || b.lat == null || b.lng == null) return json(res, 400, { error: 'name, lat, lng required' });
-  const r = run(`INSERT INTO collection_points(created_at,name,lat,lng,accepts,hours,contact,org,device)
-    VALUES(?,?,?,?,?,?,?,?,?)`, now(), str(b.name), num(b.lat), num(b.lng), jarr(b.accepts),
-    str(b.hours, 120), str(b.contact, 60), str(b.org), dev(b));
+  const r = run(`INSERT INTO collection_points(created_at,name,lat,lng,accepts,hours,contact,org,event_id,device)
+    VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), str(b.name), num(b.lat), num(b.lng), jarr(b.accepts),
+    str(b.hours, 120), str(b.contact, 60), str(b.org), eventForLocation(num(b.lat), num(b.lng)), dev(b));
   log(req, 'drop_off', 'cp:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.name, 120) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
@@ -213,8 +216,8 @@ on('POST', '/api/flood-reports', async (req, res) => {
   const b = await readBody(req);
   if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
   const sev = ['high', 'medium', 'receding', 'receded'].includes(b.severity) ? b.severity : 'high';
-  const r = run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,device) VALUES(?,?,?,?,?,?,?)',
-    now(), now(), str(b.place, 120), num(b.lat), num(b.lng), sev, dev(b));
+  const r = run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,event_id,device) VALUES(?,?,?,?,?,?,?,?)',
+    now(), now(), str(b.place, 120), num(b.lat), num(b.lng), sev, eventForLocation(num(b.lat), num(b.lng)), dev(b));
   log(req, 'flood_marked', 'flood:' + Number(r.lastInsertRowid), { device: dev(b), detail: sev, area: str(b.place, 120) || coarse(b.lat, b.lng) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
@@ -250,8 +253,8 @@ on('POST', '/api/photos', async (req, res) => {
   if (buf.length < 100 || buf.length > 5 * 1024 * 1024) return json(res, 400, { error: 'image size out of range' });
   const mode = b.mode === 'rehab' ? 'rehab' : 'relief';
   const tag = ['flooded', 'need', 'done', 'damage'].includes(b.tag) ? b.tag : (mode === 'rehab' ? 'damage' : 'need');
-  const r = run(`INSERT INTO photos(created_at,report_id,lat,lng,tag,mode,caption,file,device)
-    VALUES(?,?,?,?,?,?,?,?,?)`, now(), num(b.report_id), num(b.lat), num(b.lng), tag, mode, str(b.caption, 200), '', dev(b));
+  const r = run(`INSERT INTO photos(created_at,report_id,lat,lng,tag,mode,caption,file,event_id,device)
+    VALUES(?,?,?,?,?,?,?,?,?,?)`, now(), num(b.report_id), num(b.lat), num(b.lng), tag, mode, str(b.caption, 200), '', eventForLocation(num(b.lat), num(b.lng)), dev(b));
   const id = Number(r.lastInsertRowid);
   const file = `p${id}.${m[1] === 'png' ? 'png' : 'jpg'}`;
   try { writeFileSync(join(UPLOADS, file), buf); } catch { return json(res, 500, { error: 'save failed' }); }
@@ -410,11 +413,19 @@ function timeAgo(iso) {
 }
 function eventPage(ev) {
   const f = DISASTERS[ev.family] || DISASTERS.water;
+  const c = ev.count || { reports: 0, people: 0, confirmations: 0 };
   const title = `${ev.title} — ${f.label} relief coordination · Banpani`;
-  const desc = `Live community relief for ${ev.title}: ${ev.reports} report(s), ${ev.confirmations} community-confirmed, ~${ev.people} people affected. Coordinate help — no accounts, no money, open to everyone.`;
-  const items = ev.members.slice(0, 80).map(m =>
-    `<li><b>${htmlEsc(m.place)}</b>${(m.items && m.items.length) ? ' · <span class="need">' + htmlEsc(m.items.join(', ')) + '</span>' : ''}${m.details ? ' — ' + htmlEsc(m.details) : ''} <span class="t">${timeAgo(m.created_at)}</span></li>`).join('');
-  const pts = JSON.stringify(ev.members.filter(m => m.lat != null).map(m => [m.lat, m.lng]));
+  const desc = `Live community relief for ${ev.title}: ${c.reports} report(s), ${c.confirmations} confirmed, ~${c.people} people affected. Report needs, confirm them, add photos — no accounts, no money.`;
+  const needli = ev.reports.length ? ev.reports.map(r =>
+    `<li data-id="${r.id}"><div class="nl-main"><b>${htmlEsc(r.place)}</b>${(r.items && r.items.length) ? ' · <span class="need">' + htmlEsc(r.items.join(', ')) + '</span>' : ''}${r.details ? ' — ' + htmlEsc(r.details) : ''} <span class="t">${timeAgo(r.created_at)}${r.confirmations ? ' · ✅ ' + r.confirmations : ''}</span></div><button class="nl-ok" data-id="${r.id}">✅ Confirm</button></li>`).join('')
+    : '<li class="nl-empty">No reports yet — be the first to add a need below.</li>';
+  const photostrip = ev.photos.length ? '<div class="pstrip">' + ev.photos.slice(0, 20).map(p => `<a href="${htmlEsc(p.url)}" target="_blank"><img loading="lazy" src="${htmlEsc(p.url)}" alt="${htmlEsc(p.tag || '')}"></a>`).join('') + '</div>' : '';
+  const EV = JSON.stringify({
+    id: ev.id, slug: ev.slug, family: ev.family, color: f.color, label: f.label, emoji: f.emoji, disaster_type: ev.disaster_type,
+    lat: ev.lat, lng: ev.lng, needs: ev.needs,
+    reports: ev.reports.map(r => ({ id: r.id, place: r.place, lat: r.lat, lng: r.lng, items: r.items, details: r.details, confirmations: r.confirmations, created_at: r.created_at })),
+    photos: ev.photos.map(p => ({ lat: p.lat, lng: p.lng, url: p.url, tag: p.tag })),
+  }).replace(/</g, '\\u003c');
   return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>${htmlEsc(title)}</title>
@@ -427,35 +438,58 @@ function eventPage(ev) {
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="/styles.css">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
-<style>body{overflow:auto}.wrap{max-width:760px;margin:0 auto;padding:0 16px 60px}
+<style>body{overflow:auto}.wrap{max-width:760px;margin:0 auto;padding:0 16px 80px}
 .ehead{border-top:6px solid ${f.color};padding:18px 0 2px}
 .ebadge{display:inline-block;background:${f.color};color:#fff;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px}
-.wrap h1{font-size:24px;margin:10px 0 4px}.estat{color:var(--muted);font-size:14px;margin:2px 0 14px}
+.wrap h1{font-size:24px;margin:10px 0 4px}.estat{color:var(--muted);font-size:14px;margin:2px 0 12px}
+.ebar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.ebar button,.ebar label,.ebar a{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;cursor:pointer;border-radius:11px;padding:11px 16px;border:1px solid var(--line);background:var(--panel2);color:var(--text);text-decoration:none}
+.ebar .prim{background:${f.color};border-color:${f.color};color:#fff}
 #emap{height:300px;border-radius:14px;border:1px solid var(--line);margin-bottom:16px;background:#0b0f14}
-.rlist{list-style:none;padding:0;margin:0}.rlist li{padding:10px 2px;border-bottom:1px solid var(--line);font-size:14px;color:#c3cdda;line-height:1.5}
-.rlist .need{color:${f.color};font-weight:600}.rlist .t{color:var(--muted);font-size:12px}
-.ecta{display:inline-block;color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:11px;margin:6px 8px 0 0;background:var(--accent)}
+.rlist{list-style:none;padding:0;margin:0}.rlist li{display:flex;gap:10px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px;color:#c3cdda;line-height:1.5}
+.rlist .nl-main{flex:1}.rlist .need{color:${f.color};font-weight:600}.rlist .t{color:var(--muted);font-size:12px}
+.nl-ok{flex:0 0 auto;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.nl-ok:hover{color:#fff;border-color:${f.color}}.nl-empty{color:var(--muted)}
+.pstrip{display:flex;gap:8px;overflow-x:auto;margin:6px 0 4px;padding-bottom:4px}.pstrip img{height:96px;width:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.esheet{position:fixed;left:0;right:0;bottom:0;z-index:1000;max-width:560px;margin:0 auto;background:var(--panel);border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -12px 34px rgba(0,0,0,.5);padding:16px 16px calc(16px + env(safe-area-inset-bottom));transform:translateY(115%);transition:transform .34s cubic-bezier(.32,.72,0,1)}
+.esheet.show{transform:translateY(0)}.esheet h3{margin:0 0 4px;font-size:15px}.ehint{color:var(--muted);font-size:12.5px;margin:0 0 10px}
+.echips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.echips button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:16px;padding:7px 11px;font-size:12.5px;font-weight:600;cursor:pointer}.echips button.on{background:${f.color};border-color:${f.color};color:#fff}
+.esheet input,.esheet textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px;margin-bottom:10px;font-size:16px;font-family:inherit}
+.erow{display:flex;gap:8px}.erow button{flex:1;font-weight:700;border-radius:11px;padding:12px;border:none;cursor:pointer}.e-go{background:${f.color};color:#fff}.e-x{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.etoast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:2000;background:#1c2530;color:#fff;padding:10px 16px;border-radius:22px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:var(--shadow)}.etoast.show{opacity:1}
 .emuted{color:var(--muted);font-size:13px;margin-top:22px;line-height:1.6}.emuted a{color:var(--accent)}</style></head><body>
 <header><img class="logo" src="/icon.svg" width="28" height="28" alt="Banpani"><div><h1 style="font-size:15px;margin:0">Banpani</h1><div class="sub">Coordinating Community Relief</div></div><div class="spacer"></div><a class="link" href="/world">🌍 World map</a></header>
 <div class="wrap">
 <div class="ehead"><span class="ebadge">${f.emoji} ${htmlEsc(f.label)}</span></div>
 <h1>${htmlEsc(ev.title)}</h1>
-<p class="estat">${ev.reports} report(s) · ${ev.confirmations} community-confirmed · ~${ev.people} people affected · updated ${timeAgo(ev.lastUpdate)}</p>
-<div id="emap"></div>
-<a class="ecta" style="background:${f.color}" href="/world">🌍 Open on the map</a><a class="ecta" href="/world">➕ Report something here</a>
-<h2 style="margin-top:26px">On-the-ground reports</h2>
-<ul class="rlist">${items || '<li>No detailed reports yet — be the first to add one.</li>'}</ul>
-<p class="emuted">This page is community-powered and updates live. Banpani never collects money and never shows a victim's phone number publicly. Open source, owned by everyone. <a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a></p>
+<p class="estat"><span id="st_r">${c.reports}</span> report(s) · <span id="st_c">${c.confirmations}</span> confirmed · ~<span id="st_p">${c.people}</span> people affected</p>
+<div class="ebar">
+  <button class="prim" id="ev_addneed">＋ Add a need</button>
+  <label id="ev_photolbl">📷 Photo<input type="file" id="ev_photo" accept="image/*" capture="environment" hidden></label>
+  <a href="/world">🌍 Map</a>
 </div>
+<div id="emap"></div>
+<h2 style="margin-top:22px">Needs on the ground</h2>
+<ul class="rlist" id="needlist">${needli}</ul>
+${photostrip}
+<p class="emuted">This page is community-powered and updates live. Anyone can add a need or confirm one — no accounts. Banpani never collects money and never shows a victim's phone number publicly. Open source, owned by everyone. <a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a></p>
+</div>
+<div class="esheet" id="ev_sheet">
+  <h3>Add a need here</h3>
+  <p class="ehint" id="ev_loc">Tap the map to set the exact spot 📍</p>
+  <div class="echips" id="ev_needs"></div>
+  <input id="ev_place" maxlength="80" placeholder="Place name (village, area)">
+  <textarea id="ev_details" rows="2" maxlength="500" placeholder="Any details (optional)"></textarea>
+  <div class="erow"><button class="e-go" id="ev_submit">Post need</button><button class="e-x" id="ev_cancel">Cancel</button></div>
+</div>
+<div class="etoast" id="ev_toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>var pts=${pts};var m=L.map('emap',{scrollWheelZoom:false}).setView([${ev.lat},${ev.lng}],9);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(m);
-var g=[];pts.forEach(function(p){L.circleMarker(p,{radius:7,color:'#0b0f14',weight:1.5,fillColor:'${f.color}',fillOpacity:.9}).addTo(m);g.push(p);});
-if(g.length>1)m.fitBounds(g,{padding:[30,30],maxZoom:11});</script></body></html>`;
+<script>window.EV=${EV};</script>
+<script src="/event.js"></script></body></html>`;
 }
 const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not found · Banpani</title><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;background:#0f1419;color:#e7edf2;text-align:center;padding:14vh 20px"><h1>🌊 Nothing here (yet)</h1><p style="color:#9fb0bd">This response may have receded, or the link is old.</p><p><a href="/world" style="color:#4fc3f7">Open the world map →</a></p></body>`;
 function sitemapXml() {
-  const evs = clusterEvents({ light: true }).filter(e => e.promoted);
+  const evs = listEvents().filter(e => e.promoted);
   const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
     .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
@@ -501,7 +535,7 @@ http.createServer(async (req, res) => {
     if (url.pathname === '/sitemap.xml') return writeBody(req, res, 200, Buffer.from(sitemapXml()), 'application/xml', 'public, max-age=3600');
     if (url.pathname.startsWith('/e/')) {                        // server-rendered event page (SEO)
       const slug = decodeURIComponent(url.pathname.slice(3)).replace(/\/+$/, '');
-      const ev = findEvent(slug);
+      const ev = eventBySlug(slug);
       if (!ev) { res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' }); return res.end(eventNotFound()); }
       return writeBody(req, res, 200, Buffer.from(eventPage(ev)), 'text/html; charset=utf-8', 'public, max-age=120');
     }

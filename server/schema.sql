@@ -179,6 +179,27 @@ CREATE INDEX IF NOT EXISTS idx_actions ON actions_log(id);
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, hidden);
 CREATE INDEX IF NOT EXISTS idx_routes_status ON routes(status, hidden);
 
+-- EVENTS are first-class: a disaster at a place, with its own coordination space + a recipe
+-- of enabled modules. They are created explicitly ("Start a response") OR implicitly when a
+-- report has no nearby event to join. All coordination rows (reports, routes, ...) carry event_id.
+CREATE TABLE IF NOT EXISTS events (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at    TEXT NOT NULL,
+  slug          TEXT NOT NULL UNIQUE,
+  title         TEXT NOT NULL,
+  disaster_type TEXT NOT NULL DEFAULT 'flood',   -- maps to a DISASTERS family
+  lat           REAL,
+  lng           REAL,
+  radius_km     REAL NOT NULL DEFAULT 30,        -- reports within this radius auto-join
+  modules       TEXT NOT NULL DEFAULT '[]',      -- JSON array of enabled module keys (the recipe)
+  source        TEXT NOT NULL DEFAULT 'community', -- community | official | assam
+  created_by    TEXT,
+  listed        INTEGER NOT NULL DEFAULT 1,      -- spam control (0 = link-only until it has activity)
+  status        TEXT NOT NULL DEFAULT 'active',  -- active | archived
+  hidden        INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);
+
 -- Cookieless, first-party visitor counter (replaces Google Analytics). Stores ONLY a daily
 -- tally split by mobile/desktop - no IP, no cookie, no per-visitor record, no third party.
 CREATE TABLE IF NOT EXISTS pageviews (
