@@ -25,6 +25,30 @@
     .wbeta a{color:var(--accent);font-weight:600}
     .wcount{color:var(--text);font-weight:700}
     @media(max-width:860px){ #wfilters{top:104px} .wbeta{font-size:11.5px} }
+    /* report-from-anywhere */
+    .wfab{position:absolute;right:16px;bottom:74px;z-index:650;background:var(--accent);color:#fff;border:none;border-radius:26px;
+      padding:13px 18px;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
+    .wfab:active{transform:scale(.95)}
+    .whint{position:absolute;top:150px;left:50%;transform:translateX(-50%);z-index:640;background:var(--accent);color:#fff;
+      padding:8px 15px;border-radius:20px;font-size:13px;font-weight:600;display:none;box-shadow:var(--shadow)}
+    .whint.show{display:block}
+    .wreport{position:fixed;left:0;right:0;bottom:0;z-index:1000;max-width:520px;margin:0 auto;background:var(--panel);
+      border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -12px 34px rgba(0,0,0,.5);
+      padding:18px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(115%);transition:transform .34s cubic-bezier(.32,.72,0,1)}
+    .wreport.show{transform:translateY(0)}
+    .wr-title{font-weight:700;margin-bottom:10px;font-size:15px}
+    .wr-fam{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+    .wr-fam button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:18px;
+      padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+    .wr-fam button::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--c)}
+    .wr-fam button.on{color:var(--text);border-color:var(--c)}
+    .wreport input,.wreport textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+      border-radius:10px;padding:12px;margin-bottom:10px;font-size:16px;font-family:inherit}
+    .wr-actions{display:flex;gap:8px}
+    .wr-actions .btn{flex:1;margin:0}
+    .wtoast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:2000;background:#1c2530;color:#fff;
+      padding:10px 16px;border-radius:22px;font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s;max-width:86vw;text-align:center}
+    .wtoast.show{opacity:1}
   </style>
 </head>
 <body>
@@ -46,10 +70,25 @@
   <div id="wfilters"></div>
 
   <div class="wbeta" id="wbeta">
-    🌍 <b>Beta.</b> The emerging world view — <span class="wcount" id="wc">…</span> active markers. Today it shows the live
-    <b>Assam flood</b>; as new disasters are reported anywhere, they’ll appear here in their family colour.
-    <a href="/">Go to the Assam relief map →</a>
+    🌍 <b>Beta.</b> The emerging world view — <span class="wcount" id="wc">…</span> active markers. Report a disaster anywhere;
+    it appears in its family colour. No accounts. <a href="/">Assam relief map →</a>
   </div>
+
+  <button class="wfab" id="wreportBtn">＋ Report</button>
+  <div class="whint" id="whint">Tap the map where it’s happening 📍</div>
+
+  <div class="wreport" id="wreportPanel">
+    <div class="wr-title">Report a disaster here</div>
+    <div class="wr-fam" id="wr_fam"></div>
+    <input id="wr_place" maxlength="80" placeholder="Place name (village, town, area)" />
+    <textarea id="wr_details" rows="2" maxlength="600" placeholder="What’s happening / what’s needed? (optional)"></textarea>
+    <div class="wr-actions">
+      <button class="btn" id="wr_submit">Post to the map</button>
+      <button class="btn ghost" id="wr_cancel">Cancel</button>
+    </div>
+  </div>
+
+  <div class="wtoast" id="wtoast"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="config.js"></script>

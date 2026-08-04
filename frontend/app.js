@@ -529,7 +529,14 @@ $('modeswitch').querySelectorAll('button').forEach(b => b.onclick = () => {
   toast(currentMode === 'rehab' ? t('modeRehabOn') : t('modeReliefOn'));
 });
 
-async function refresh() { STATE = await api('/api/state'); renderAll(); }
+async function refresh() {
+  STATE = await api('/api/state');
+  // This is the Assam relief map: keep only reports inside Assam bounds so disasters
+  // reported elsewhere on the world map (/world) never pollute this feed / gaps / hotspot.
+  const B = C.BOUNDS;
+  STATE.reports = (STATE.reports || []).filter(r => r.lat >= B[0][0] && r.lat <= B[1][0] && r.lng >= B[0][1] && r.lng <= B[1][1]);
+  renderAll();
+}
 
 /* ------------------------------ controls ------------------------------ */
 $('timeseg').querySelectorAll('button').forEach(b => b.onclick = () => {
