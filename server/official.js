@@ -23,7 +23,7 @@ export async function officialEvents() {
       if (prev && rank[prev.level] >= rank[level]) continue;   // keep the most-severe episode
       byId.set(id, {
         source: 'GDACS', family: fam, level, lat: c[1], lng: c[0],
-        title: p.name || p.eventname || ('Event in ' + (p.country || 'unknown')),
+        title: ((p.name || p.eventname || ('Event in ' + (p.country || 'unknown'))).replace(/,\s*,.*$/, '').slice(0, 64)).replace(/[,\s]+$/, ''),
         country: p.country || '', date: p.todate || p.fromdate || '',
         url: 'https://www.gdacs.org/report.aspx?eventid=' + (p.eventid || '') + '&eventtype=' + p.eventtype,
       });

@@ -85,17 +85,28 @@ $('wsearch').oninput = () => {
 document.addEventListener('click', e => { if (!$('wsearchbox').contains(e.target)) $('wresults').classList.remove('show'); });
 
 /* ---------------- report a disaster from anywhere ---------------- */
-let placing = false, repMarker = null, repFam = null;
+let placing = false, repMarker = null, repFam = null, repNeeds = new Set();
 $('wr_fam').innerHTML = Object.entries(FAM).map(([k, v]) => `<button type="button" data-k="${k}" style="--c:${v.color}">${v.emoji} ${v.label}</button>`).join('');
 $('wr_fam').querySelectorAll('button').forEach(b => b.onclick = () => {
   $('wr_fam').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); repFam = b.dataset.k;
+  buildNeeds(repFam);   // recipe: show this family's relevant needs
 });
+// per-family need chips (the "disasters are recipes" mechanic)
+function buildNeeds(fam) {
+  repNeeds.clear();
+  const needs = (FAM[fam] && FAM[fam].needs) || [];
+  $('wr_needs').innerHTML = needs.map(n => `<button type="button" data-n="${esc(n)}">${esc(n)}</button>`).join('');
+  $('wr_needs').querySelectorAll('button').forEach(b => b.onclick = () => {
+    const n = b.dataset.n;
+    if (repNeeds.has(n)) { repNeeds.delete(n); b.classList.remove('on'); } else { repNeeds.add(n); b.classList.add('on'); }
+  });
+}
 $('wreportBtn').onclick = () => { placing = true; $('whint').classList.add('show'); };
 map.on('click', e => { if (!placing) return; placing = false; $('whint').classList.remove('show'); openReport(e.latlng); });
 function openReport(ll) {
   if (repMarker) repMarker.remove();
   repMarker = L.marker(ll, { draggable: true }).addTo(map);
-  repFam = null; $('wr_fam').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+  repFam = null; repNeeds.clear(); $('wr_fam').querySelectorAll('button').forEach(x => x.classList.remove('on')); $('wr_needs').innerHTML = '';
   $('wr_place').value = ''; $('wr_details').value = '';
   $('wreportPanel').classList.add('show');
 }
@@ -109,7 +120,7 @@ $('wr_submit').onclick = async () => {
   try {
     const res = await fetch((C.API || '') + '/api/reports', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ place: $('wr_place').value.trim(), lat: ll.lat, lng: ll.lng, disaster_type: FAM[repFam].types[0], details: $('wr_details').value.trim(), device: deviceId() })
+      body: JSON.stringify({ place: $('wr_place').value.trim(), lat: ll.lat, lng: ll.lng, disaster_type: FAM[repFam].types[0], items: [...repNeeds], details: $('wr_details').value.trim(), device: deviceId() })
     });
     if (!res.ok) throw 0;
     $('wreportPanel').classList.remove('show'); repMarker.remove(); repMarker = null;
