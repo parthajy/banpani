@@ -21,6 +21,7 @@ import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation } from './
 import { DISASTERS, familyOf, HAZARD } from './disasters.js';
 import { officialEvents } from './official.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale } from './geo.js';
+import { volunteersEnabled, validEmail, addVolunteer, volunteerSummary } from './volunteers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FRONTEND = join(__dirname, '..', 'frontend');
@@ -151,6 +152,24 @@ on('POST', '/api/events/:slug/flag', async (req, res, params) => {
   const flags = one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='event' AND target_id=? AND category='flag'", e.id).c;
   if (flags >= 3) { run('UPDATE events SET hidden=1 WHERE id=?', e.id); return json(res, 200, { hidden: true, flags }); }
   json(res, 200, { hidden: false, flags });
+});
+// Standing volunteer registry. Email is encrypted with a public key the server CANNOT reverse
+// (see volunteers.js) — we store it, but nobody online (operator included) can read it. Coarse
+// location + families only. Rate-limited by hashed IP so it can't be scripted into a spam list.
+on('GET', '/api/volunteers/summary', (req, res) => json(res, 200, { enabled: volunteersEnabled(), ...volunteerSummary() }));
+on('POST', '/api/volunteer', async (req, res) => {
+  if (!volunteersEnabled()) return json(res, 503, { error: 'volunteer sign-up is not configured' });
+  const b = await readBody(req);
+  if (!validEmail(b.email)) return json(res, 400, { error: 'please enter a valid email' });
+  const cutoff = new Date(Date.now() - 864e5).toISOString();
+  const recent = one("SELECT COUNT(*) c FROM actions_log WHERE kind='volunteer_signup' AND ip_hash=? AND created_at > ?", ipHash(req), cutoff)?.c || 0;
+  if (recent >= 5) return json(res, 429, { error: 'too many sign-ups from here today' });
+  const country = b.country || (b.lat != null ? await countryOf(b.lat, b.lng) : null);
+  const ok = addVolunteer({ email: b.email, lat: b.lat, lng: b.lng, country, region: b.region, families: b.families, skills: b.skills });
+  if (!ok) return json(res, 400, { error: 'could not register' });
+  // Log the ACT (for rate-limiting + a public count) but never the email — area is coarse only.
+  log(req, 'volunteer_signup', null, { device: dev(b), area: country || coarse(b.lat, b.lng) });
+  json(res, 200, { ok: true, ...volunteerSummary() });
 });
 // Official multi-hazard signals (GDACS) so the world map is never empty when disaster hits.
 on('GET', '/api/official', async (req, res) => { try { json(res, 200, { official: await officialEvents() }); } catch { json(res, 200, { official: [] }); } });
@@ -587,7 +606,7 @@ async function serveEventApp(req, res, ev) {
 const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not found · Banpani</title><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;background:#0f1419;color:#e7edf2;text-align:center;padding:14vh 20px"><h1>🌊 Nothing here (yet)</h1><p style="color:#9fb0bd">This response may have receded, or the link is old.</p><p><a href="/world" style="color:#4fc3f7">Open the world map →</a></p></body>`;
 function sitemapXml() {
   const evs = listEvents().filter(e => e.promoted);
-  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
+  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
     .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
     + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')
@@ -597,7 +616,7 @@ function sitemapXml() {
 // Homepage flip: set BANPANI_WORLD_HOME=1 (env) + restart to serve the WORLD map at `/` when
 // Assam winds down. Until then `/` stays the Assam relief map. Assam always lives at
 // /e/assam-floods-2026 too. One flag, reversible — the user's timing call.
-const PRETTY = { '/': process.env.BANPANI_WORLD_HOME === '1' ? '/world.html' : '/index.html', '/world': '/world.html' };
+const PRETTY = { '/': process.env.BANPANI_WORLD_HOME === '1' ? '/world.html' : '/index.html', '/world': '/world.html', '/volunteers': '/volunteers.html' };
 async function serveStatic(req, res, pathname) {
   countView(req, pathname);
   const full = normalize(join(FRONTEND, PRETTY[pathname] || pathname));

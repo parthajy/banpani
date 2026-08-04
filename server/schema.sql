@@ -273,3 +273,19 @@ CREATE TABLE IF NOT EXISTS pageviews (
   n       INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, mobile)
 );
+
+-- STANDING VOLUNTEER REGISTRY. email_enc is RSA-OAEP ciphertext the LIVE SERVER CANNOT DECRYPT
+-- (it holds only the public key). lat/lng are coarse (~11km) for density maps, never an address.
+-- Decryption happens only offline, deliberately, via server/volunteer-export.js. See volunteers.js.
+CREATE TABLE IF NOT EXISTS volunteers (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL,
+  email_enc  TEXT NOT NULL,                 -- base64 RSA-OAEP ciphertext; unreadable without the offline private key
+  lat        REAL,                          -- COARSE (rounded ~0.1 deg)
+  lng        REAL,                          -- COARSE
+  country    TEXT,                          -- ISO2, for aggregate "N volunteers in your country"
+  region     TEXT,                          -- free label the volunteer picked (state / area)
+  families   TEXT,                          -- JSON array of disaster families they can help with
+  skills     TEXT,                          -- JSON array (boat, medical, shelter, transport, ...)
+  hidden     INTEGER NOT NULL DEFAULT 0
+);

@@ -14,3 +14,8 @@ node_modules/
 
 # uploaded photos (stored on the server, not in git)
 uploads/
+*private*.pem
+volunteer-private.pem
+*.db
+*.db-wal
+*.db-shm

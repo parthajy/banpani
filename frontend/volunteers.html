@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Become a disaster-response volunteer · Banpani</title>
+  <meta name="description" content="Join the standing volunteer network. When a flood, fire, cyclone or outbreak hits your area, you'll be alerted so help arrives faster. Free, no account, and your email is encrypted so even we can't read it." />
+  <link rel="canonical" href="https://banpani.org/volunteers.html" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f1419" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Banpani" />
+  <meta property="og:title" content="Be the force before the disaster — become a Banpani volunteer" />
+  <meta property="og:description" content="Sign up once. When disaster strikes near you, you're alerted. No account, no cost — and your email is encrypted so even we can't read it." />
+  <meta property="og:url" content="https://banpani.org/volunteers.html" />
+  <meta property="og:image" content="https://banpani.org/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Become a Banpani disaster-response volunteer" />
+  <meta name="twitter:description" content="Join the standing force. Alerted when disaster hits your area. Email encrypted so even we can't read it." />
+  <meta name="twitter:image" content="https://banpani.org/og.png" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Banpani","url":"https://banpani.org","description":"Community-run disaster-relief coordination. Volunteers sign up to be alerted and mobilised when disaster strikes near them.","email":"","sameAs":["https://github.com/parthajy/banpani"]}</script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
+  <style>
+    body{overflow:auto}
+    .wrap{max-width:640px;margin:0 auto;padding:24px 18px 80px}
+    .hero{text-align:center;padding:14px 0 6px}
+    .hero h2{font-size:26px;line-height:1.2;margin:6px 0}
+    .hero .lead{font-size:16px;color:#c3cdda;line-height:1.55;margin:10px 0}
+    .count{display:inline-block;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:7px 15px;font-size:14px;margin:6px 0;color:var(--text)}
+    .count b{color:#5db4ff}
+    form{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 16px;margin:18px 0}
+    label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+    label:first-child{margin-top:0}
+    input,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:13px;font-size:16px;font-family:inherit}
+    .row{display:flex;gap:8px}
+    .row>*{flex:1}
+    .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+    .chip{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:18px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+    .chip::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--c,#888)}
+    .chip.on{color:var(--text);border-color:var(--c,var(--accent))}
+    .gps{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:6px}
+    .gps.on{border-color:#3ea66d;color:#8fe0b0}
+    .submit{background:var(--accent);color:#fff;border:none;border-radius:11px;padding:14px;font-size:16px;font-weight:700;width:100%;margin-top:18px;cursor:pointer}
+    .submit:disabled{opacity:.5}
+    .note{font-size:13px;color:var(--muted);line-height:1.55;margin-top:12px}
+    .lock{background:rgba(70,160,110,.10);border:1px solid #2f5f45;border-radius:12px;padding:13px 15px;color:#a9dcc0;font-size:13.5px;line-height:1.55;margin:16px 0}
+    .lock b{color:#c9f0d8}
+    .msg{text-align:center;font-size:15px;padding:10px;border-radius:10px;margin-top:12px;display:none}
+    .msg.show{display:block}
+    .msg.ok{background:rgba(70,160,110,.14);color:#a9dcc0}
+    .msg.err{background:rgba(240,69,58,.12);color:#ffb3ad}
+    .done h3{font-size:20px;margin:8px 0}
+  </style>
+</head>
+<body>
+  <header>
+    <img class="logo" src="icon.svg" alt="Banpani" width="30" height="30" />
+    <div><h1>Banpani <span style="color:var(--muted);font-weight:400;font-size:13px">· Volunteer</span></h1></div>
+    <div class="spacer"></div>
+    <a class="link" href="/world">🌍 World map</a>
+    <a class="link" href="/about.html">ℹ️ About</a>
+  </header>
+
+  <div class="wrap">
+    <div class="hero">
+      <h2>Be the force <em>before</em> the disaster</h2>
+      <p class="lead">When a flood, fire, cyclone or outbreak hits your area, minutes matter. Sign up once and you'll be alerted — so a ready force is already there when it happens, not scrambling after.</p>
+      <div class="count" id="count">Loading the standing force…</div>
+    </div>
+
+    <div class="lock">🔒 <b>Your email is encrypted the moment you send it</b>, with a key that lives offline — not on our servers. That means <b>no one online, including us, can read the volunteer list</b>. It can only ever be used, offline and deliberately, to send you an alert when disaster strikes near you. No account, no password, no spam, never sold.</div>
+
+    <form id="form" autocomplete="on">
+      <label for="email">Your email</label>
+      <input id="email" type="email" inputmode="email" placeholder="you@example.com" required />
+
+      <label for="country">Your country</label>
+      <select id="country" required><option value="">Select your country…</option></select>
+
+      <label for="region">Your state / area <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input id="region" type="text" maxlength="80" placeholder="e.g. Assam, or your city" />
+      <button type="button" class="gps" id="gps">📍 Use my location for finer alerts (optional)</button>
+
+      <label>What can you help with? <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <div class="chips" id="families"></div>
+
+      <label for="skills">Skills / resources <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input id="skills" type="text" maxlength="120" placeholder="e.g. boat, first aid, transport, shelter space" />
+
+      <button type="submit" class="submit" id="submit">🙋 Join the standing force</button>
+      <div class="msg" id="msg"></div>
+      <p class="note">One email when a disaster is confirmed near you — nothing else. You can ask us to remove you any time. Banpani is free, open-source and owned by no one.</p>
+    </form>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+  (function () {
+    const C = window.BANPANI, $ = id => document.getElementById(id);
+    // Broad country list (ISO2). "Other" lets anyone anywhere still join; density just won't group them.
+    const COUNTRIES = [['AF','Afghanistan'],['AR','Argentina'],['AU','Australia'],['BD','Bangladesh'],['BE','Belgium'],['BR','Brazil'],['CA','Canada'],['CN','China'],['CO','Colombia'],['EG','Egypt'],['ET','Ethiopia'],['FR','France'],['DE','Germany'],['GH','Ghana'],['GR','Greece'],['ID','Indonesia'],['IN','India'],['IR','Iran'],['IQ','Iraq'],['IE','Ireland'],['IT','Italy'],['JP','Japan'],['KE','Kenya'],['MY','Malaysia'],['MX','Mexico'],['MM','Myanmar'],['NP','Nepal'],['NL','Netherlands'],['NZ','New Zealand'],['NG','Nigeria'],['PK','Pakistan'],['PH','Philippines'],['PL','Poland'],['PT','Portugal'],['RU','Russia'],['SA','Saudi Arabia'],['SG','Singapore'],['ZA','South Africa'],['KR','South Korea'],['ES','Spain'],['LK','Sri Lanka'],['SD','Sudan'],['SE','Sweden'],['CH','Switzerland'],['TZ','Tanzania'],['TH','Thailand'],['TR','Turkey'],['UG','Uganda'],['UA','Ukraine'],['AE','UAE'],['GB','United Kingdom'],['US','United States'],['VN','Vietnam'],['YE','Yemen'],['ZM','Zambia'],['ZW','Zimbabwe'],['OT','Other / not listed']];
+    const sel = $('country');
+    for (const [code, name] of COUNTRIES) { const o = document.createElement('option'); o.value = code; o.textContent = name; sel.appendChild(o); }
+
+    // families (from the shared disaster catalog) — what kind of disaster the volunteer can help with
+    const fams = new Set();
+    const fbox = $('families');
+    for (const [key, f] of Object.entries(C.DISASTERS)) {
+      const b = document.createElement('div');
+      b.className = 'chip'; b.style.setProperty('--c', f.color);
+      b.textContent = f.emoji + ' ' + f.label;
+      b.onclick = () => { b.classList.toggle('on'); b.classList.contains('on') ? fams.add(key) : fams.delete(key); };
+      fbox.appendChild(b);
+    }
+
+    // optional finer location — coarse coords only (server rounds them further)
+    let coords = null;
+    $('gps').onclick = () => {
+      if (!navigator.geolocation) return;
+      $('gps').textContent = '📍 Locating…';
+      navigator.geolocation.getCurrentPosition(
+        p => { coords = { lat: p.coords.latitude, lng: p.coords.longitude }; $('gps').textContent = '📍 Location added ✓'; $('gps').classList.add('on'); },
+        () => { $('gps').textContent = '📍 Could not get location — country is enough'; },
+        { enableHighAccuracy: false, timeout: 8000 }
+      );
+    };
+
+    function fmtCount(s) {
+      if (!s || !s.enabled) return 'Be the very first volunteer in your area 🌱';
+      if (!s.total) return 'Be the very first to join the standing force 🌱';
+      return `<b>${s.total.toLocaleString()}</b> volunteer${s.total === 1 ? '' : 's'} ready across <b>${s.countries}</b> countr${s.countries === 1 ? 'y' : 'ies'}`;
+    }
+    fetch((C.API || '') + '/api/volunteers/summary').then(r => r.json()).then(s => { $('count').innerHTML = fmtCount(s); }).catch(() => { $('count').textContent = ''; });
+
+    const msg = (text, kind) => { const m = $('msg'); m.textContent = text; m.className = 'msg show ' + kind; };
+    $('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = $('email').value.trim();
+      if (!email || !sel.value) return msg('Please add your email and country.', 'err');
+      $('submit').disabled = true; $('submit').textContent = 'Joining…';
+      try {
+        const body = { email, country: sel.value === 'OT' ? null : sel.value, region: $('region').value.trim(),
+          families: [...fams], skills: $('skills').value.trim() ? [$('skills').value.trim()] : [],
+          device: localStorage.getItem('banpani.device') || '' };
+        if (coords) { body.lat = coords.lat; body.lng = coords.lng; }
+        const res = await fetch((C.API || '') + '/api/volunteer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error || 'Something went wrong');
+        $('form').innerHTML = '<div class="done" style="text-align:center"><h3>🎉 You\'re in the standing force!</h3><p style="color:#c3cdda">Thank you. If disaster strikes near you, you\'ll be among the first alerted. Your email is already encrypted — no one online can read it.</p><p style="margin-top:14px"><a class="link" href="/world">🌍 See the live world map</a></p><p style="margin-top:10px;color:var(--muted);font-size:13px">Pull a friend in — the bigger the force, the faster help arrives:</p><p><a class="link" href="https://wa.me/?text=' + encodeURIComponent('I just joined Banpani\'s disaster-response volunteer force — you get alerted when disaster hits your area, no account, email encrypted. Join 👉 https://banpani.org/volunteers.html') + '" target="_blank" rel="noopener">↗ Share on WhatsApp</a></p></div>';
+        $('count').innerHTML = fmtCount(j);
+      } catch (err) {
+        msg(err.message || 'Could not join — please try again.', 'err');
+        $('submit').disabled = false; $('submit').textContent = '🙋 Join the standing force';
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
