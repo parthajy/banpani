@@ -103,6 +103,8 @@ on('GET', '/api/state', (req, res, params, url) => {
       .map(x => ({ ...x, fresh_min: Math.round((Date.now() - new Date(x.updated_at).getTime()) / 60000) })),
     facilities: all('SELECT id,lat,lng,kind,name,note,status,updated_at FROM facilities WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 300')
       .map(x => ({ ...x, fresh_min: Math.round((Date.now() - new Date(x.updated_at).getTime()) / 60000) })),
+    evac: all('SELECT id,from_lat,from_lng,to_lat,to_lng,label,updated_at FROM evac_routes WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 200')
+      .map(x => ({ ...x, fresh_min: Math.round((Date.now() - new Date(x.updated_at).getTime()) / 60000) })),
     thresholds: { confirm: 3, resolve: 2, endorse: 5 },
     server_time: now(),
   });
@@ -309,6 +311,27 @@ on('POST', '/api/flood/polygons', async (req, res) => {
 });
 
 /* --- community consensus votes (no login; one device, one vote per category) --- */
+/* ---- MODULE: evacuation routes (danger → safe) ---- */
+on('POST', '/api/evac', async (req, res) => {
+  const b = await readBody(req);
+  if (b.from_lat == null || b.from_lng == null || b.to_lat == null || b.to_lng == null) return json(res, 400, { error: 'from/to lat,lng required' });
+  const eid = num(b.event_id) || eventForLocation(num(b.from_lat), num(b.from_lng));
+  const r = run('INSERT INTO evac_routes(created_at,updated_at,event_id,from_lat,from_lng,to_lat,to_lng,label,device) VALUES(?,?,?,?,?,?,?,?,?)',
+    now(), now(), eid, num(b.from_lat), num(b.from_lng), num(b.to_lat), num(b.to_lng), str(b.label, 160), dev(b));
+  log(req, 'evac_route', 'evac:' + Number(r.lastInsertRowid), { device: dev(b), area: str(b.label, 120) || coarse(b.from_lat, b.from_lng), event_id: eid });
+  json(res, 201, { id: Number(r.lastInsertRowid) });
+});
+on('POST', '/api/evac/:id/confirm', async (req, res, params) => { run('UPDATE evac_routes SET updated_at=? WHERE id=? AND hidden=0', now(), params.id); json(res, 200, { ok: true }); });
+on('POST', '/api/evac/:id/close', async (req, res, params) => {
+  const b = await readBody(req);
+  const row = one('SELECT * FROM evac_routes WHERE id=? AND hidden=0', params.id);
+  if (!row) return json(res, 404, { error: 'not found' });
+  castVote(req, 'evac', +params.id, dev(b), 'close', 'yes', coarse(row.from_lat, row.from_lng));
+  const v = one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='evac' AND target_id=? AND category='close'", params.id).c;
+  if (v >= 2) { run('UPDATE evac_routes SET hidden=1 WHERE id=?', params.id); return json(res, 200, { closed: true, votes: v }); }
+  json(res, 200, { closed: false, votes: v });
+});
+
 /* ---- MODULE: blocked / damaged roads ---- */
 on('POST', '/api/blocked', async (req, res) => {
   const b = await readBody(req);

@@ -20,9 +20,9 @@ const assamId = () => one("SELECT id FROM events WHERE slug='assam-floods-2026'"
 // Only BUILT modules: needs · offers · convoys · dropoffs · blocked · facilities · hazard · photos · gaps.
 // (Shelters/evac-centres are surfaced via the Facilities module; search-&-rescue via needs.)
 export const RECIPES = {
-  water:   ['needs', 'offers', 'convoys', 'dropoffs', 'blocked', 'facilities', 'hazard', 'photos', 'gaps'],
-  fire:    ['needs', 'offers', 'facilities', 'hazard', 'photos', 'gaps'],
-  storm:   ['needs', 'offers', 'convoys', 'dropoffs', 'facilities', 'hazard', 'photos', 'gaps'],
+  water:   ['needs', 'offers', 'convoys', 'dropoffs', 'blocked', 'facilities', 'hazard', 'evac', 'photos', 'gaps'],
+  fire:    ['needs', 'offers', 'facilities', 'hazard', 'evac', 'photos', 'gaps'],
+  storm:   ['needs', 'offers', 'convoys', 'dropoffs', 'facilities', 'hazard', 'evac', 'photos', 'gaps'],
   geo:     ['needs', 'offers', 'blocked', 'facilities', 'hazard', 'photos', 'gaps'],
   climate: ['needs', 'offers', 'facilities', 'photos'],
   health:  ['needs', 'offers', 'facilities', 'photos'],

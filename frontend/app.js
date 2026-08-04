@@ -94,7 +94,7 @@ map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp
 const h = location.hash.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
 if (h) map.setView([+h[1], +h[2]], 11);
 
-const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), photos: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map), offers: L.layerGroup().addTo(map), blocked: L.layerGroup().addTo(map), facilities: L.layerGroup().addTo(map) };
+const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), photos: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map), offers: L.layerGroup().addTo(map), blocked: L.layerGroup().addTo(map), facilities: L.layerGroup().addTo(map), evac: L.layerGroup().addTo(map) };
 const freshIcon = (emoji, stale) => L.divIcon({ html: `<div class="fresh-pin ${stale ? 'stale' : ''}">${emoji}</div>`, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
 const freshTxt = m => (m < 60 ? Math.max(1, m) + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd') + ' ago';
 const floodColor = s => ({ high: '#f0453a', medium: '#f5a623', receding: '#8fbaff' }[s] || '#f0453a');
@@ -363,7 +363,18 @@ function renderFacilities() {
     L.marker([f.lat, f.lng], { icon: freshIcon(dot) }).addTo(layers.facilities).bindPopup(pop);
   }
 }
-function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderOffers(); renderBlocked(); renderFacilities(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
+function renderEvac() {
+  layers.evac.clearLayers();
+  if (!$('ly_evac').checked) return;
+  for (const e of (STATE.evac || [])) {
+    if (e.from_lat == null || e.to_lat == null) continue;
+    L.polyline([[e.from_lat, e.from_lng], [e.to_lat, e.to_lng]], { color: '#22c55e', weight: 4, opacity: .85, dashArray: '9 7' }).addTo(layers.evac)
+      .bindPopup(`<b>🏃 Escape route</b>${e.label ? '<br>' + esc(e.label) : ''}<br><small>seen ${freshTxt(e.fresh_min)}</small><div class="vbtns"><button onclick="bp.evacConfirm(${e.id})">✅ Still safe</button><button onclick="bp.evacClose(${e.id})">✖ Blocked</button></div>`);
+    L.marker([e.from_lat, e.from_lng], { icon: freshIcon('⚠️') }).addTo(layers.evac).bindPopup('⚠️ Evacuate from here');
+    L.marker([e.to_lat, e.to_lng], { icon: freshIcon('🏁') }).addTo(layers.evac).bindPopup('🏁 Safe: ' + esc(e.label || 'this way'));
+  }
+}
+function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderOffers(); renderBlocked(); renderFacilities(); renderEvac(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
 
 /* -------------------------------- photos -------------------------------- */
 function photoTagLabel(k) { for (const m of ['relief', 'rehab']) { const f = (C.PHOTO_TAGS[m] || []).find(x => x.k === k); if (f) return f.l; } return k || ''; }
@@ -469,6 +480,8 @@ window.bp = {
   blConfirm: async id => { try { await api(`/api/blocked/${id}/confirm`, { method: 'POST', body: { device: deviceId() } }); toast('Thanks — kept current'); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
   blClear: async id => { try { const r = await api(`/api/blocked/${id}/clear`, { method: 'POST', body: { device: deviceId() } }); toast(r.cleared ? 'Marked cleared ✔' : `Clear vote (${r.clears}/2)`); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
   facSet: async (id, status) => { try { await api(`/api/facilities/${id}/status`, { method: 'POST', body: { status, device: deviceId() } }); toast(status === 'open' ? '✅ Marked open' : status === 'limited' ? '🟡 Marked limited' : '⛔ Marked closed'); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
+  evacConfirm: async id => { try { await api(`/api/evac/${id}/confirm`, { method: 'POST', body: { device: deviceId() } }); toast('Thanks — kept current'); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
+  evacClose: async id => { try { const r = await api(`/api/evac/${id}/close`, { method: 'POST', body: { device: deviceId() } }); toast(r.closed ? 'Marked blocked' : `Blocked vote (${r.votes}/2)`); map.closePopup(); await refresh(); } catch (e) { toast('Failed: ' + e.message); } },
   vote: async (id, category, value) => {
     try {
       const r = await api(`/api/reports/${id}/vote`, { method: 'POST', body: { category, value, device: deviceId() } });
@@ -623,16 +636,16 @@ $('timeseg').querySelectorAll('button').forEach(b => b.onclick = () => {
   $('timeseg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
   b.classList.add('on'); currentView = b.dataset.v; renderAll();
 });
-['ly_official', 'ly_flood', 'ly_needs', 'ly_photos', 'ly_cover', 'ly_routes', 'ly_ngo', 'ly_offers', 'ly_blocked', 'ly_facilities'].forEach(id => $(id).onchange = renderAll);
+['ly_official', 'ly_flood', 'ly_needs', 'ly_photos', 'ly_cover', 'ly_routes', 'ly_ngo', 'ly_offers', 'ly_blocked', 'ly_facilities', 'ly_evac'].forEach(id => $(id).onchange = renderAll);
 
 let pickMode = 'need';
-const pending = { need: {}, r: {}, rf: {}, c: {}, f: {}, p: {}, o: {}, bl: {}, fa: {} };
+const pending = { need: {}, r: {}, rf: {}, c: {}, f: {}, p: {}, o: {}, bl: {}, fa: {}, ef: {}, et: {} };
 let convoyTarget = 'dest';                        // which convoy point a map tap sets
-const modeKeys = { need: ['need'], convoy: ['r', 'rf'], drop: ['c'], flood: ['f'], photo: ['p'], offer: ['o'], blocked: ['bl'], facility: ['fa'] };
+const modeKeys = { need: ['need'], convoy: ['r', 'rf'], drop: ['c'], flood: ['f'], photo: ['p'], offer: ['o'], blocked: ['bl'], facility: ['fa'], evac: ['ef', 'et'] };
 document.querySelectorAll('.tab').forEach(tb => tb.onclick = () => {
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('on')); tb.classList.add('on');
   document.querySelectorAll('[data-body]').forEach(s => s.hidden = s.dataset.body !== tb.dataset.tab);
-  pickMode = { need: 'need', convoy: 'r', drop: 'c', flood: 'f', photo: 'p', offer: 'o', blocked: 'bl', facility: 'fa' }[tb.dataset.tab] || null;
+  pickMode = { need: 'need', convoy: 'r', drop: 'c', flood: 'f', photo: 'p', offer: 'o', blocked: 'bl', facility: 'fa', evac: 'ev' }[tb.dataset.tab] || null;
   $('modehint').classList.toggle('show', !!pickMode);
   syncMarkers(tb.dataset.tab);
 });
@@ -640,7 +653,7 @@ $('modehint').classList.add('show');
 if (window.innerWidth <= 860) { $('overlay').classList.add('min'); $('overlayToggle').firstChild.textContent = '▸ '; }
 
 // Draggable location pickers - one marker per point (need / drop / flood / convoy start+dest).
-const coordId = { need: 'n_coord', r: 'r_coord', rf: 'rf_coord', c: 'c_coord', f: 'f_coord', p: 'p_coord', o: 'o_coord', bl: 'bl_coord', fa: 'fa_coord' };
+const coordId = { need: 'n_coord', r: 'r_coord', rf: 'rf_coord', c: 'c_coord', f: 'f_coord', p: 'p_coord', o: 'o_coord', bl: 'bl_coord', fa: 'fa_coord', ef: 'ef_coord', et: 'et_coord' };
 const pickEmoji = { rf: '🚩', r: '🎯' };
 const pickMarkers = {};
 function setReadout(key, lat, lng, gps) {
@@ -662,7 +675,12 @@ function syncMarkers(tab) {
   keep.forEach(k => { if (pending[k]?.lat != null) placeMarker(k, pending[k].lat, pending[k].lng); });
 }
 function setPick(key, lat, lng, gps) { pending[key] = { lat, lng }; setReadout(key, lat, lng, gps); placeMarker(key, lat, lng); if (key === 'r') checkOverlap(); }
-function activeKey() { return pickMode === 'r' ? (convoyTarget === 'start' ? 'rf' : 'r') : pickMode; }
+let evacTarget = 'from';
+function activeKey() {
+  if (pickMode === 'r') return convoyTarget === 'start' ? 'rf' : 'r';
+  if (pickMode === 'ev') return evacTarget === 'from' ? 'ef' : 'et';
+  return pickMode;
+}
 
 map.on('click', e => { if (pickMode) setPick(activeKey(), e.latlng.lat, e.latlng.lng); });
 function useGPS(key) {
@@ -681,6 +699,8 @@ $('rf_gps').onclick = () => useGPS('rf');
 $('c_gps').onclick = () => useGPS('c');
 $('f_gps').onclick = () => useGPS('f');
 $('o_gps').onclick = () => useGPS('o'); $('bl_gps').onclick = () => useGPS('bl'); $('fa_gps').onclick = () => useGPS('fa');
+$('ef_gps').onclick = () => useGPS('ef'); $('et_gps').onclick = () => useGPS('et');
+$('evacTarget').querySelectorAll('button').forEach(b => b.onclick = () => { $('evacTarget').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); evacTarget = b.dataset.t; });
 
 // flood severity selector
 let fSev = 'high';
@@ -968,6 +988,17 @@ $('fa_submit').onclick = async () => {
     await api('/api/facilities', { method: 'POST', body: { kind: faKind, status: faStatus, name: $('fa_name').value.trim(), note: $('fa_note').value.trim(), lat: pending.fa.lat, lng: pending.fa.lng, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
     $('fa_name').value = ''; $('fa_note').value = ''; pending.fa = {}; $('fa_coord').textContent = t('noLoc'); $('fa_coord').classList.remove('set'); removeMarker('fa');
     await refresh(); toast('🏪 Status posted');
+  } catch (e) { toast('Failed: ' + e.message); }
+};
+$('evac_submit').onclick = async () => {
+  if (pending.ef.lat == null) return toast('Set the danger point (tap the map)');
+  if (pending.et.lat == null) return toast('Set the safe point (tap the map)');
+  try {
+    await api('/api/evac', { method: 'POST', body: { from_lat: pending.ef.lat, from_lng: pending.ef.lng, to_lat: pending.et.lat, to_lng: pending.et.lng, label: $('evac_label').value.trim(), event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
+    $('evac_label').value = ''; pending.ef = {}; pending.et = {};
+    $('ef_coord').textContent = t('evacNoFrom'); $('et_coord').textContent = t('evacNoTo'); $('ef_coord').classList.remove('set'); $('et_coord').classList.remove('set');
+    removeMarker('ef'); removeMarker('et');
+    await refresh(); toast('🏃 Escape route added');
   } catch (e) { toast('Failed: ' + e.message); }
 };
 // show only the tabs / layers this event's recipe enables (the homepage keeps its classic set)

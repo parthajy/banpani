@@ -107,7 +107,7 @@ process.on('unhandledRejection', e => failures.push('[' + mode + '] async boot r
 // Concatenate exactly as the three <script> tags load, in order.
 const code = ['config.js', 'i18n.js', 'app.js'].map(f => `\n//== ${f} ==\n` + read(f)).join('\n');
 // A representative event config, to exercise the /e/<slug> event-mode code path too.
-const EVENT_STUB = { id: 1, slug: 'demo-fire', title: 'Demo Fire', disaster_type: 'wildfire', family: 'fire', color: '#F5551D', emoji: '🔥', center: [39, -121], zoom: 8, minZoom: 5, bounds: [[38, -122], [40, -120]], official: false, items: ['Evacuation help', 'Shelter'], modules: ['needs', 'offers', 'facilities', 'hazard', 'photos', 'gaps'], offerKinds: [['shelter', '🏠 Shelter'], ['transport', '🚗 Transport']], facilityKinds: [['shelter', '⛺ Shelter'], ['clinic', '🩺 Clinic']], hazardLabel: 'Fire zone', hazardSev: [['high', 'Active'], ['medium', 'Spreading'], ['receding', 'Contained'], ['receded', 'Out']] };
+const EVENT_STUB = { id: 1, slug: 'demo-fire', title: 'Demo Fire', disaster_type: 'wildfire', family: 'fire', color: '#F5551D', emoji: '🔥', center: [39, -121], zoom: 8, minZoom: 5, bounds: [[38, -122], [40, -120]], official: false, items: ['Evacuation help', 'Shelter'], modules: ['needs', 'offers', 'facilities', 'hazard', 'evac', 'photos', 'gaps'], offerKinds: [['shelter', '🏠 Shelter'], ['transport', '🚗 Transport']], facilityKinds: [['shelter', '⛺ Shelter'], ['clinic', '🩺 Clinic']], hazardLabel: 'Fire zone', hazardSev: [['high', 'Active'], ['medium', 'Spreading'], ['receding', 'Contained'], ['receded', 'Out']] };
 
 for (const [name, eventCfg] of [['homepage', null], ['event', EVENT_STUB]]) {
   mode = name;

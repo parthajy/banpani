@@ -234,6 +234,20 @@ CREATE TABLE IF NOT EXISTS offers (
   hidden     INTEGER NOT NULL DEFAULT 0
 );
 
+-- MODULE: evacuation routes (fire / tsunami / flood / storm) - a directional escape path from a
+-- danger point TO a safe point, so people know which way to go. updated_at = freshness clock.
+CREATE TABLE IF NOT EXISTS evac_routes (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  event_id   INTEGER,
+  from_lat   REAL NOT NULL, from_lng REAL NOT NULL,   -- danger / start
+  to_lat     REAL NOT NULL, to_lng   REAL NOT NULL,   -- safe / destination
+  label      TEXT,                                    -- "Toward High School shelter, avoid the bridge"
+  device     TEXT,
+  hidden     INTEGER NOT NULL DEFAULT 0
+);
+
 -- MODULE: facility status (pandemic / grid outage) - is this shop / clinic / pharmacy / water
 -- point OPEN or CLOSED right now? Fast-changing, so updated_at is the freshness clock.
 CREATE TABLE IF NOT EXISTS facilities (

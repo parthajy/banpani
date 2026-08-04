@@ -30,6 +30,7 @@ const DEMOS = [
     needs: [['Paradise', 39.75, -121.6, ['Evacuation help', 'Shelter'], 200], ['Magalia', 39.81, -121.58, ['Masks / clean air'], 80]],
     offers: [['shelter', 39.76, -121.61, 'Community hall — 50 spaces'], ['transport', 39.78, -121.59, 'Van for evacuation'], ['masks', 39.80, -121.57, 'N95 masks available']],
     hazard: [['Fire front', 39.78, -121.60, 'high'], ['Spot fire', 39.73, -121.55, 'medium'], ['Contained edge', 39.82, -121.64, 'receding']],
+    evac: [[39.78, -121.60, 39.74, -121.63, 'Toward High School shelter — avoid the bridge'], [39.73, -121.55, 39.74, -121.62, 'To Feather River Clinic']],
     facilities: [['shelter', 39.74, -121.63, 'High School shelter', 'open'], ['clinic', 39.74, -121.62, 'Feather River Clinic', 'limited']] },
   { fam: 'storm', type: 'cyclone', title: 'Odisha Cyclone (demo)', lat: 19.30, lng: 84.80,
     needs: [['Gopalpur', 19.26, 84.90, ['Shelter', 'Drinking water'], 150], ['Berhampur', 19.31, 84.79, ['Tarpaulin / roofing', 'Food'], 90]],
@@ -81,6 +82,8 @@ for (const d of DEMOS) {
     run('INSERT INTO facilities(created_at,updated_at,event_id,lat,lng,kind,name,status,device) VALUES(?,?,?,?,?,?,?,?,?)', now(), now(), eid, lat, lng, kind, name, status, 'demo');
   for (const [place, lat, lng, severity] of (d.hazard || []))
     run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,event_id,device) VALUES(?,?,?,?,?,?,?,?)', now(), now(), place, lat, lng, severity, eid, 'demo');
+  for (const [fl, fg, tl, tg, label] of (d.evac || []))
+    run('INSERT INTO evac_routes(created_at,updated_at,event_id,from_lat,from_lng,to_lat,to_lng,label,device) VALUES(?,?,?,?,?,?,?,?,?)', now(), now(), eid, fl, fg, tl, tg, label, 'demo');
   console.log('seeded', d.title.padEnd(34), '-> /e/demo-' + d.fam);
 }
 console.log('\ndone -', DEMOS.length, 'demo events. Remove later with: node --experimental-sqlite server/seed-events.js clear');

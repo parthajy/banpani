@@ -118,6 +118,7 @@
         <label class="lyr mod-off" data-module="offers"><input type="checkbox" id="ly_offers" checked><span class="dot" style="background:#10b981"></span> <span data-i18n="offersLayer">Offers / resources</span></label>
         <label class="lyr mod-off" data-module="blocked"><input type="checkbox" id="ly_blocked" checked><span class="dot" style="background:#ef4444"></span> <span data-i18n="blockedLayer">Blocked roads</span></label>
         <label class="lyr mod-off" data-module="facilities"><input type="checkbox" id="ly_facilities" checked><span class="dot" style="background:#12b5a5"></span> <span data-i18n="facilitiesLayer">Open / closed</span></label>
+        <label class="lyr mod-off" data-module="evac"><input type="checkbox" id="ly_evac" checked><span class="dot" style="background:#22c55e"></span> <span data-i18n="evacLayer">Escape routes</span></label>
         <div class="legend" data-module="hazard">
           <span><i style="background:#f0453a"></i><span data-i18n="high">high</span></span><span><i style="background:#f5a623"></i><span data-i18n="medium">medium</span></span><span><i style="background:#8fbaff"></i><span data-i18n="receding">receding</span></span>
         </div>
@@ -160,6 +161,7 @@
         <div class="tab mod-off" data-tab="offer" data-module="offers" data-i18n="tOffer">🤝 Offers</div>
         <div class="tab mod-off" data-tab="blocked" data-module="blocked" data-i18n="tBlocked">🚧 Roads</div>
         <div class="tab mod-off" data-tab="facility" data-module="facilities" data-i18n="tFacility">🏪 Open now</div>
+        <div class="tab mod-off" data-tab="evac" data-module="evac" data-i18n="tEvac">🏃 Escape</div>
         <div class="tab relief-only" data-tab="ngo" data-i18n="tNgo">🏳️ NGO</div>
         <div class="tab" data-tab="feed" data-i18n="tFeed">📋 Feed</div>
         <button class="tab-collapse" id="panelToggle" title="Hide panel - see the full map">✕</button>
@@ -272,6 +274,16 @@
           <label data-i18n="locSet">Location - tap map or GPS</label>
           <div class="locpick"><div class="coord" id="fa_coord" data-i18n="noLoc">No location set</div><button class="btn sm" id="fa_gps" data-i18n="gps">📍 GPS</button></div>
           <button class="btn" id="fa_submit" data-i18n="postFacility">🏪 Post status</button>
+        </section>
+
+        <section data-body="evac" hidden>
+          <p class="intro" data-i18n="evacIntro">Mark an escape route — from a danger point to a safe place — so people know which way to go.</p>
+          <label data-i18n="evacSet">Set the route: pick each point, then tap the map</label>
+          <div class="seg" id="evacTarget"><button data-t="from" class="on" data-i18n="evacFrom">⚠️ From (danger)</button><button data-t="to" data-i18n="evacTo">🏁 To (safe)</button></div>
+          <div class="locpick"><div class="coord" id="ef_coord" data-i18n="evacNoFrom">Danger point not set</div><button class="btn sm" id="ef_gps" data-i18n="gps">📍 GPS</button></div>
+          <div class="locpick"><div class="coord" id="et_coord" data-i18n="evacNoTo">Safe point not set</div><button class="btn sm" id="et_gps" data-i18n="gps">📍 GPS</button></div>
+          <label data-i18n="evacNote">Note (optional)</label><input id="evac_label" data-ph="evacNotePh" placeholder="e.g. Toward High School, avoid the bridge" />
+          <button class="btn warn" id="evac_submit" data-i18n="addEvac">🏃 Add escape route</button>
         </section>
 
         <section data-body="ngo" hidden>
