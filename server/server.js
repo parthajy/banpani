@@ -20,6 +20,7 @@ import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation } from './events.js';
 import { DISASTERS, familyOf, HAZARD } from './disasters.js';
 import { officialEvents } from './official.js';
+import { countryOf, helplinesFor as helplinesForCountry, newsLocale } from './geo.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FRONTEND = join(__dirname, '..', 'frontend');
@@ -125,9 +126,16 @@ function newsQueryFor(title, family) {
 on('GET', '/api/news', async (req, res, params, url) => {
   try {
     const slug = url && url.searchParams.get('event');
-    let queries;
-    if (slug) { const e = one('SELECT title,disaster_type FROM events WHERE slug=?', slug); if (e) queries = newsQueryFor(e.title, familyOf(e.disaster_type)); }
-    json(res, 200, { items: await fetchNews(queries) });
+    let queries, locale;
+    if (slug) {
+      const e = one('SELECT title,disaster_type,lat,lng,source FROM events WHERE slug=?', slug);
+      if (e) {
+        queries = newsQueryFor(e.title, familyOf(e.disaster_type));
+        // Assam keeps its India feed; elsewhere pull the event's own country's coverage.
+        if (e.source !== 'assam') locale = newsLocale(await countryOf(e.lat, e.lng));
+      }
+    }
+    json(res, 200, { items: await fetchNews(queries, locale) });
   } catch { json(res, 200, { items: [] }); }
 });
 // Events: first-class persisted responses (for the world map). `promoted` = SEO-worthy.
@@ -540,21 +548,14 @@ function timeAgo(iso) {
   if (s < 86400) return Math.round(s / 3600) + 'h ago';
   return Math.round(s / 86400) + 'd ago';
 }
-// Event helplines. Assam keeps its specific set (app falls back to C.HELPLINES); elsewhere show a
-// universal emergency line + a family-appropriate one, clearly labelled (per-country is a TODO).
-function helplinesFor(ev) {
-  if (ev.source === 'assam') return null;
-  const hl = [{ label: 'Emergency — 112 (or your local number)', tel: '112' }];
-  if (ev.family === 'health') hl.push({ label: 'Health helpline (India 104)', tel: '104' });
-  else if (ev.family === 'fire') hl.push({ label: 'Fire (India 101)', tel: '101' });
-  else if (['water', 'storm', 'geo'].includes(ev.family)) hl.push({ label: 'Disaster relief (India NDRF)', tel: '18001801551' });
-  return hl;
-}
 // Serve the FULL app (index.html + app.js) scoped to one event by injecting window.EVENT
 // before config.js loads. Same battle-tested app, running per-event with its disaster recipe.
 async function serveEventApp(req, res, ev) {
   const f = DISASTERS[ev.family] || DISASTERS.water;
   const isAssam = ev.source === 'assam';
+  // Country-aware helplines: Assam keeps its own set (app falls back to C.HELPLINES); every other
+  // event resolves its coordinates to a country and shows that country's emergency + family line.
+  const cc = isAssam ? null : await countryOf(ev.lat, ev.lng);
   const cfg = {
     id: ev.id, slug: ev.slug, title: ev.title, disaster_type: ev.disaster_type, family: ev.family,
     color: f.color, emoji: f.emoji,
@@ -562,7 +563,7 @@ async function serveEventApp(req, res, ev) {
     zoom: isAssam ? 7 : 9, minZoom: isAssam ? 7 : 5,
     bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
     official: isAssam, items: ev.needs || [], modules: ev.modules || [],
-    offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: helplinesFor(ev),
+    offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: isAssam ? null : helplinesForCountry(ev.family, cc),
     hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
   };
   let html;
