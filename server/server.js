@@ -504,6 +504,16 @@ function timeAgo(iso) {
   if (s < 86400) return Math.round(s / 3600) + 'h ago';
   return Math.round(s / 86400) + 'd ago';
 }
+// Event helplines. Assam keeps its specific set (app falls back to C.HELPLINES); elsewhere show a
+// universal emergency line + a family-appropriate one, clearly labelled (per-country is a TODO).
+function helplinesFor(ev) {
+  if (ev.source === 'assam') return null;
+  const hl = [{ label: 'Emergency — 112 (or your local number)', tel: '112' }];
+  if (ev.family === 'health') hl.push({ label: 'Health helpline (India 104)', tel: '104' });
+  else if (ev.family === 'fire') hl.push({ label: 'Fire (India 101)', tel: '101' });
+  else if (['water', 'storm', 'geo'].includes(ev.family)) hl.push({ label: 'Disaster relief (India NDRF)', tel: '18001801551' });
+  return hl;
+}
 // Serve the FULL app (index.html + app.js) scoped to one event by injecting window.EVENT
 // before config.js loads. Same battle-tested app, running per-event with its disaster recipe.
 async function serveEventApp(req, res, ev) {
@@ -516,7 +526,7 @@ async function serveEventApp(req, res, ev) {
     zoom: isAssam ? 7 : 9, minZoom: isAssam ? 7 : 5,
     bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
     official: isAssam, items: ev.needs || [], modules: ev.modules || [],
-    offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [],
+    offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: helplinesFor(ev),
   };
   let html;
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }

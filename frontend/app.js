@@ -872,7 +872,7 @@ $('m_send').onclick = async () => {
 };
 // helplines dropdown
 $('helpBtn').onclick = () => $('helpMenu').classList.toggle('show');
-$('helpMenu').innerHTML = C.HELPLINES.map(h => `<a href="tel:${h.tel}">☎ ${esc(h.label)}</a>`).join('');
+$('helpMenu').innerHTML = ((EVENT && EVENT.helplines) ? EVENT.helplines : C.HELPLINES).map(h => `<a href="tel:${h.tel}">☎ ${esc(h.label)}</a>`).join('');
 // hamburger menu (mobile)
 $('menuBtn').onclick = e => { e.stopPropagation(); $('hdrActions').classList.toggle('show'); };
 document.addEventListener('click', e => { if (!$('hdrActions').contains(e.target) && e.target !== $('menuBtn')) $('hdrActions').classList.remove('show'); });
@@ -990,6 +990,11 @@ function gateModules() {
     // the "gap" pane is convoy-framed by default; relabel it for supply-matched disasters
     const mods = EVENT.modules || [], gapEl = document.querySelector('[data-i18n="nobody"]');
     if (gapEl && !mods.includes('convoys')) { gapEl.textContent = mods.includes('offers') ? '⚠ No supply nearby' : '⚠ Unattended needs'; gapEl.removeAttribute('data-i18n'); }
+    if (EVENT.family !== 'water') {   // "Relief / Rehab" is flood framing → neutral for other disasters
+      const rb = document.querySelector('.modeswitch [data-mode="relief"]'), hb = document.querySelector('.modeswitch [data-mode="rehab"]');
+      if (rb) { rb.textContent = '🆘 Response'; rb.removeAttribute('data-i18n'); }
+      if (hb) { hb.textContent = '🌱 Recovery'; hb.removeAttribute('data-i18n'); }
+    }
   }
   applyMode();
   await loadOfficialFlood();
