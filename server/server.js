@@ -580,7 +580,10 @@ function sitemapXml() {
     + `\n</urlset>`;
 }
 
-const PRETTY = { '/': '/index.html', '/world': '/world.html' };   // clean URLs → files
+// Homepage flip: set BANPANI_WORLD_HOME=1 (env) + restart to serve the WORLD map at `/` when
+// Assam winds down. Until then `/` stays the Assam relief map. Assam always lives at
+// /e/assam-floods-2026 too. One flag, reversible — the user's timing call.
+const PRETTY = { '/': process.env.BANPANI_WORLD_HOME === '1' ? '/world.html' : '/index.html', '/world': '/world.html' };
 async function serveStatic(req, res, pathname) {
   countView(req, pathname);
   const full = normalize(join(FRONTEND, PRETTY[pathname] || pathname));
