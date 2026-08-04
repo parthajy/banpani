@@ -17,6 +17,8 @@ import { db, all, one, run, now, today, parseRows, decoratedReports, decoratedNg
 import { buildReport } from './report.js';
 import { updateWeather } from './weather.js';
 import { fetchNews } from './news.js';
+import { clusterEvents, findEvent } from './events.js';
+import { DISASTERS } from './disasters.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FRONTEND = join(__dirname, '..', 'frontend');
@@ -100,6 +102,8 @@ on('GET', '/api/state', (req, res) => {
 on('GET', '/api/report', (req, res) => json(res, 200, buildReport()));
 on('GET', '/api/advisory', (req, res) => json(res, 200, one('SELECT * FROM advisory WHERE id=1') || {}));
 on('GET', '/api/news', async (req, res) => { try { json(res, 200, { items: await fetchNews() }); } catch { json(res, 200, { items: [] }); } });
+// Events: nearby same-family reports clustered; `promoted` ones have their own /e/<slug> page.
+on('GET', '/api/events', (req, res) => json(res, 200, { events: clusterEvents({ light: true }) }));
 
 // Place search - proxied to OpenStreetMap Nominatim (bounded to Assam), cached, proper UA
 // (so it respects the usage policy and the key/UA stays server-side).
@@ -393,6 +397,69 @@ on('GET', '/api/admin/stats', (req, res) => {
     days: Object.values(byDay).sort((a, b) => b.day.localeCompare(a.day)) });
 });
 
+/* ---- server-rendered event pages (the crawlable SEO surface) + dynamic sitemap ---- */
+const htmlEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function timeAgo(iso) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 3600) return Math.max(1, Math.round(s / 60)) + 'm ago';
+  if (s < 86400) return Math.round(s / 3600) + 'h ago';
+  return Math.round(s / 86400) + 'd ago';
+}
+function eventPage(ev) {
+  const f = DISASTERS[ev.family] || DISASTERS.water;
+  const title = `${ev.title} — ${f.label} relief coordination · Banpani`;
+  const desc = `Live community relief for ${ev.title}: ${ev.reports} report(s), ${ev.confirmations} community-confirmed, ~${ev.people} people affected. Coordinate help — no accounts, no money, open to everyone.`;
+  const items = ev.members.slice(0, 80).map(m =>
+    `<li><b>${htmlEsc(m.place)}</b>${(m.items && m.items.length) ? ' · <span class="need">' + htmlEsc(m.items.join(', ')) + '</span>' : ''}${m.details ? ' — ' + htmlEsc(m.details) : ''} <span class="t">${timeAgo(m.created_at)}</span></li>`).join('');
+  const pts = JSON.stringify(ev.members.filter(m => m.lat != null).map(m => [m.lat, m.lng]));
+  return `<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>${htmlEsc(title)}</title>
+<meta name="description" content="${htmlEsc(desc)}">
+<link rel="canonical" href="https://banpani.org/e/${ev.slug}">
+<meta property="og:title" content="${htmlEsc(ev.title)} — ${htmlEsc(f.label)} relief · Banpani">
+<meta property="og:description" content="${htmlEsc(desc)}">
+<meta property="og:type" content="website"><meta property="og:url" content="https://banpani.org/e/${ev.slug}"><meta property="og:image" content="https://banpani.org/og.png">
+<meta name="theme-color" content="#0f1419"><link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="/styles.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
+<style>body{overflow:auto}.wrap{max-width:760px;margin:0 auto;padding:0 16px 60px}
+.ehead{border-top:6px solid ${f.color};padding:18px 0 2px}
+.ebadge{display:inline-block;background:${f.color};color:#fff;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px}
+.wrap h1{font-size:24px;margin:10px 0 4px}.estat{color:var(--muted);font-size:14px;margin:2px 0 14px}
+#emap{height:300px;border-radius:14px;border:1px solid var(--line);margin-bottom:16px;background:#0b0f14}
+.rlist{list-style:none;padding:0;margin:0}.rlist li{padding:10px 2px;border-bottom:1px solid var(--line);font-size:14px;color:#c3cdda;line-height:1.5}
+.rlist .need{color:${f.color};font-weight:600}.rlist .t{color:var(--muted);font-size:12px}
+.ecta{display:inline-block;color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:11px;margin:6px 8px 0 0;background:var(--accent)}
+.emuted{color:var(--muted);font-size:13px;margin-top:22px;line-height:1.6}.emuted a{color:var(--accent)}</style></head><body>
+<header><img class="logo" src="/icon.svg" width="28" height="28" alt="Banpani"><div><h1 style="font-size:15px;margin:0">Banpani</h1><div class="sub">Coordinating Community Relief</div></div><div class="spacer"></div><a class="link" href="/world">🌍 World map</a></header>
+<div class="wrap">
+<div class="ehead"><span class="ebadge">${f.emoji} ${htmlEsc(f.label)}</span></div>
+<h1>${htmlEsc(ev.title)}</h1>
+<p class="estat">${ev.reports} report(s) · ${ev.confirmations} community-confirmed · ~${ev.people} people affected · updated ${timeAgo(ev.lastUpdate)}</p>
+<div id="emap"></div>
+<a class="ecta" style="background:${f.color}" href="/world">🌍 Open on the map</a><a class="ecta" href="/world">➕ Report something here</a>
+<h2 style="margin-top:26px">On-the-ground reports</h2>
+<ul class="rlist">${items || '<li>No detailed reports yet — be the first to add one.</li>'}</ul>
+<p class="emuted">This page is community-powered and updates live. Banpani never collects money and never shows a victim's phone number publicly. Open source, owned by everyone. <a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a></p>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>var pts=${pts};var m=L.map('emap',{scrollWheelZoom:false}).setView([${ev.lat},${ev.lng}],9);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(m);
+var g=[];pts.forEach(function(p){L.circleMarker(p,{radius:7,color:'#0b0f14',weight:1.5,fillColor:'${f.color}',fillOpacity:.9}).addTo(m);g.push(p);});
+if(g.length>1)m.fitBounds(g,{padding:[30,30],maxZoom:11});</script></body></html>`;
+}
+const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not found · Banpani</title><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;background:#0f1419;color:#e7edf2;text-align:center;padding:14vh 20px"><h1>🌊 Nothing here (yet)</h1><p style="color:#9fb0bd">This response may have receded, or the link is old.</p><p><a href="/world" style="color:#4fc3f7">Open the world map →</a></p></body>`;
+function sitemapXml() {
+  const evs = clusterEvents({ light: true }).filter(e => e.promoted);
+  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
+    .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
+    + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')
+    + `\n</urlset>`;
+}
+
 const PRETTY = { '/': '/index.html', '/world': '/world.html' };   // clean URLs → files
 async function serveStatic(req, res, pathname) {
   countView(req, pathname);
@@ -427,6 +494,13 @@ http.createServer(async (req, res) => {
       const buf = await readFile(full);
       res.writeHead(200, { 'content-type': name.endsWith('.png') ? 'image/png' : 'image/jpeg', 'cache-control': 'public, max-age=604800' });
       return res.end(buf);
+    }
+    if (url.pathname === '/sitemap.xml') return writeBody(req, res, 200, Buffer.from(sitemapXml()), 'application/xml', 'public, max-age=3600');
+    if (url.pathname.startsWith('/e/')) {                        // server-rendered event page (SEO)
+      const slug = decodeURIComponent(url.pathname.slice(3)).replace(/\/+$/, '');
+      const ev = findEvent(slug);
+      if (!ev) { res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' }); return res.end(eventNotFound()); }
+      return writeBody(req, res, 200, Buffer.from(eventPage(ev)), 'text/html; charset=utf-8', 'public, max-age=120');
     }
     return await serveStatic(req, res, url.pathname);
   } catch (e) { console.error(e); json(res, 500, { error: 'server error', detail: String(e.message || e) }); }

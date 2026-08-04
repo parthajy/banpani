@@ -21,7 +21,7 @@ const active = new Set(Object.keys(FAM));   // all families visible by default
 const pins = [];                            // { marker, family }
 const group = L.layerGroup().addTo(map);
 
-const dot = (lat, lng, color, popup) => L.circleMarker([lat, lng], { radius: 7, weight: 1.5, color: '#0b0f14', fillColor: color, fillOpacity: .92 }).bindPopup(popup);
+const dot = (lat, lng, color, popup, radius = 7) => L.circleMarker([lat, lng], { radius, weight: 1.5, color: '#0b0f14', fillColor: color, fillOpacity: .9 }).bindPopup(popup);
 
 function render() {
   group.clearLayers();
@@ -29,17 +29,17 @@ function render() {
   for (const p of pins) if (active.has(p.family)) { p.marker.addTo(group); shown++; }
   $('wc').textContent = shown;
 }
-function add(lat, lng, family, title, sub) {
-  if (lat == null || lng == null) return;
-  const f = FAM[family] || FAM.water;
-  const popup = `<b>${f.emoji} ${esc(title)}</b>${sub ? '<br>' + esc(sub) : ''}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span>`;
-  pins.push({ marker: dot(lat, lng, f.color, popup), family });
-}
+// One marker per EVENT (clustered reports), sized by report count; promoted events link to their page.
 async function load(fit = true) {
-  let s; try { s = await (await fetch((C.API || '') + '/api/state')).json(); } catch { return; }
+  let evs; try { evs = (await (await fetch((C.API || '') + '/api/events')).json()).events || []; } catch { return; }
   pins.length = 0;
-  (s.reports || []).forEach(r => add(r.lat, r.lng, familyOf(r.disaster_type), r.place, r.details || (r.items || []).slice(0, 3).join(', ')));
-  (s.flood_reports || []).forEach(f => add(f.lat, f.lng, 'water', f.place || 'Flood report', f.severity));
+  evs.forEach(ev => {
+    const f = FAM[ev.family] || FAM.water;
+    const radius = 6 + Math.min(16, Math.sqrt(ev.reports) * 3.2);
+    const link = ev.promoted ? `<br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a>` : '';
+    const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span>${link}`;
+    pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius), family: ev.family });
+  });
   render();
   if (fit) { const pts = pins.map(p => p.marker.getLatLng()); if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.35), { maxZoom: 8 }); }
 }
