@@ -46,12 +46,33 @@ let currentView = 'live';
 let currentMode = localStorage.getItem('banpani.mode') === 'rehab' ? 'rehab' : 'relief';
 const inMode = r => (r.mode || 'relief') === currentMode;   // reports belong to relief OR rehab
 
+// Which coordination modules apply here. Homepage = the classic Assam behavior (convoys only).
+const hasModule = m => EVENT ? (EVENT.modules || []).includes(m) : (m === 'convoys');
+// Does an available offer meet this need? Match the offer's kind/label words against the need items
+// (offer 'oxygen' ↔ need "Oxygen"; 'beds' ↔ "Hospital bed"; 'water' ↔ "Drinking water", ...).
+function offerMatchesNeed(o, need) {
+  const hay = (need.items || []).join(' · ').toLowerCase();
+  const key = String(o.kind || '').toLowerCase().replace(/s$/, '');
+  if (key.length > 2 && hay.includes(key)) return true;
+  return String(OFFER_LABEL[o.kind] || '').toLowerCase().replace(/[^a-z ]/g, ' ').split(/\s+/).some(w => w.length > 3 && hay.includes(w.replace(/s$/, '')));
+}
+// "coverage" = someone/something is already addressing this need. Recipe-aware: a convoy inbound
+// (relief logistics) OR a matching supply Offer nearby (pandemic/drought supply↔demand).
 function coverageOf(need) {
   let best = null;
-  for (const r of STATE.routes) {
-    if (r.status !== 'active') continue;
-    const d = haversine([need.lat, need.lng], [r.lat, r.lng]);
-    if (d <= C.GAP_RADIUS_KM && (r.items || []).some(i => need.items.includes(i))) { if (!best || d < best.dist) best = { r, dist: d }; }
+  if (hasModule('convoys')) {
+    for (const r of STATE.routes) {
+      if (r.status !== 'active') continue;
+      const d = haversine([need.lat, need.lng], [r.lat, r.lng]);
+      if (d <= C.GAP_RADIUS_KM && (r.items || []).some(i => need.items.includes(i)) && (!best || d < best.dist)) best = { type: 'convoy', r, dist: d };
+    }
+  }
+  if (hasModule('offers')) {
+    for (const o of (STATE.offers || [])) {
+      if (o.lat == null) continue;
+      const d = haversine([need.lat, need.lng], [o.lat, o.lng]);
+      if (d <= C.GAP_RADIUS_KM && offerMatchesNeed(o, need) && (!best || d < best.dist)) best = { type: 'offer', o, dist: d };
+    }
   }
   return best;
 }
@@ -175,8 +196,10 @@ function needPopup(n) {
   } else {
     const cov = coverageOf(n);
     statusTxt = n.status === 'resolved' ? '' : cov
-      ? `<div style="color:#7fe6b0">🚚 ${esc(cov.r.name)} inbound (~${cov.dist.toFixed(1)}km)</div>`
-      : `<div style="color:#ff8079">⚠️ nobody heading here yet</div>`;
+      ? (cov.type === 'offer'
+        ? `<div style="color:#7fe6b0">✅ ${esc(OFFER_LABEL[cov.o.kind] || 'Supply')} available nearby (~${cov.dist.toFixed(1)}km)</div>`
+        : `<div style="color:#7fe6b0">🚚 ${esc(cov.r.name)} inbound (~${cov.dist.toFixed(1)}km)</div>`)
+      : `<div style="color:#ff8079">⚠️ ${hasModule('offers') && !hasModule('convoys') ? 'no matching supply nearby' : 'nobody heading here yet'}</div>`;
     actionRow = `<div class="vbtns">
         <button onclick="bp.vote(${n.id},'trust','confirm')">✅ ${t('confirm')} (${n.confirmations || 0})</button>
         <button onclick="bp.vote(${n.id},'resolve','yes')">✓ ${t('delivered')}</button>
@@ -465,7 +488,7 @@ window.bp = {
   },
   share: (id) => {
     const n = STATE.reports.find(x => x.id === id); if (!n) return;
-    const text = `🆘 ${n.place} needs: ${n.items.join(', ')}${n.people ? ` (~${n.people} people)` : ''}. ${isGap(n) ? 'NOBODY is going there yet.' : ''} Help via Banpani → ${mapUrl(n.lat, n.lng)}`;
+    const text = `🆘 ${n.place} needs: ${n.items.join(', ')}${n.people ? ` (~${n.people} people)` : ''}. ${isGap(n) ? 'No help has reached this yet.' : ''} Help via Banpani → ${mapUrl(n.lat, n.lng)}`;
     waShare(text);
   },
   shareMap: () => waShare(`Banpani - live Assam flood relief map. See who needs help & where nobody has reached: ${location.origin}`),
@@ -964,6 +987,9 @@ function gateModules() {
   gateModules();
   if (EVENT) {   // event mode: badge the header with this event, and don't auto-fly (bounds already fit)
     const sub = document.querySelector('header .sub'); if (sub) { sub.textContent = EVENT.emoji + ' ' + EVENT.title; sub.removeAttribute('data-i18n'); }
+    // the "gap" pane is convoy-framed by default; relabel it for supply-matched disasters
+    const mods = EVENT.modules || [], gapEl = document.querySelector('[data-i18n="nobody"]');
+    if (gapEl && !mods.includes('convoys')) { gapEl.textContent = mods.includes('offers') ? '⚠ No supply nearby' : '⚠ Unattended needs'; gapEl.removeAttribute('data-i18n'); }
   }
   applyMode();
   await loadOfficialFlood();
