@@ -18,7 +18,7 @@ import { buildReport } from './report.js';
 import { updateWeather } from './weather.js';
 import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation } from './events.js';
-import { DISASTERS, familyOf } from './disasters.js';
+import { DISASTERS, familyOf, HAZARD } from './disasters.js';
 import { officialEvents } from './official.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -527,6 +527,7 @@ async function serveEventApp(req, res, ev) {
     bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
     official: isAssam, items: ev.needs || [], modules: ev.modules || [],
     offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: helplinesFor(ev),
+    hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
   };
   let html;
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }

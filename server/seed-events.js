@@ -23,16 +23,19 @@ const DEMOS = [
   { fam: 'water', type: 'flood', title: 'Kerala Floods 2026 (demo)', lat: 9.98, lng: 76.28,
     needs: [['Kochi', 9.93, 76.27, ['Boat / rescue', 'Drinking water'], 120], ['Aluva', 10.11, 76.35, ['Dry food', 'Medicines'], 60]],
     offers: [['boat', 9.95, 76.30, '2 boats, dawn to dusk'], ['water', 9.90, 76.25, 'Water tanker, refilling']],
-    blocked: [['Bridge washed out on NH-66', 9.99, 76.29, 'blocked']] },
+    blocked: [['Bridge washed out on NH-66', 9.99, 76.29, 'blocked']],
+    hazard: [['Kochi - submerged', 9.93, 76.27, 'high'], ['Aluva - rising', 10.11, 76.35, 'medium']] },
   { fam: 'fire', type: 'wildfire', title: 'California Wildfire (demo)', lat: 39.77, lng: -121.6,
     needs: [['Paradise', 39.75, -121.6, ['Evacuation help', 'Shelter'], 200], ['Magalia', 39.81, -121.58, ['Masks / clean air'], 80]],
     offers: [['shelter', 39.76, -121.61, 'Community hall — 50 spaces'], ['transport', 39.78, -121.59, 'Van for evacuation'], ['masks', 39.80, -121.57, 'N95 masks available']],
+    hazard: [['Fire front', 39.78, -121.60, 'high'], ['Spot fire', 39.73, -121.55, 'medium'], ['Contained edge', 39.82, -121.64, 'receding']],
     facilities: [['shelter', 39.74, -121.63, 'High School shelter', 'open'], ['clinic', 39.74, -121.62, 'Feather River Clinic', 'limited']] },
   { fam: 'storm', type: 'cyclone', title: 'Odisha Cyclone (demo)', lat: 19.30, lng: 84.80,
     needs: [['Gopalpur', 19.26, 84.90, ['Shelter', 'Drinking water'], 150], ['Berhampur', 19.31, 84.79, ['Tarpaulin / roofing', 'Food'], 90]] },
   { fam: 'geo', type: 'earthquake', title: 'Nepal Earthquake (demo)', lat: 28.05, lng: 84.63,
     needs: [['Gorkha', 28.00, 84.63, ['Search & rescue', 'Medical / trauma'], 300], ['Barpak', 28.16, 84.77, ['Tents / shelter', 'Blankets'], 120]],
-    blocked: [['Landslide across the Gorkha road', 28.05, 84.60, 'blocked'], ['Rockfall, single lane', 28.10, 84.70, 'partial']] },
+    blocked: [['Landslide across the Gorkha road', 28.05, 84.60, 'blocked'], ['Rockfall, single lane', 28.10, 84.70, 'partial']],
+    hazard: [['Gorkha - heavy damage', 28.00, 84.63, 'high'], ['Barpak - some damage', 28.16, 84.77, 'medium']] },
   { fam: 'climate', type: 'drought', title: 'Marathwada Drought (demo)', lat: 18.40, lng: 76.57,
     needs: [['Latur', 18.40, 76.57, ['Drinking water', 'Fodder for livestock'], 500]],
     offers: [['water', 18.41, 76.58, 'Tanker, twice daily']],
@@ -65,6 +68,8 @@ for (const d of DEMOS) {
     run('INSERT INTO blocked_roads(created_at,updated_at,event_id,lat,lng,label,kind,device) VALUES(?,?,?,?,?,?,?,?)', now(), now(), eid, lat, lng, label, kind, 'demo');
   for (const [kind, lat, lng, name, status] of (d.facilities || []))
     run('INSERT INTO facilities(created_at,updated_at,event_id,lat,lng,kind,name,status,device) VALUES(?,?,?,?,?,?,?,?,?)', now(), now(), eid, lat, lng, kind, name, status, 'demo');
+  for (const [place, lat, lng, severity] of (d.hazard || []))
+    run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,event_id,device) VALUES(?,?,?,?,?,?,?,?)', now(), now(), place, lat, lng, severity, eid, 'demo');
   console.log('seeded', d.title.padEnd(34), '-> /e/demo-' + d.fam);
 }
 console.log('\ndone -', DEMOS.length, 'demo events. Remove later with: node --experimental-sqlite server/seed-events.js clear');

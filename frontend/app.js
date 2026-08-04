@@ -976,8 +976,7 @@ function gateModules() {
   const mods = EVENT.modules || [];
   document.querySelectorAll('[data-module]').forEach(el => {
     const m = el.dataset.module;
-    let on = m === 'official' ? !!EVENT.official : mods.includes(m);
-    if (m === 'hazard' && EVENT.family !== 'water') on = false;   // flood extent / severity: water only, for now
+    const on = m === 'official' ? !!EVENT.official : mods.includes(m);
     el.classList.toggle('mod-off', !on);
   });
 }
@@ -994,6 +993,20 @@ function gateModules() {
       const rb = document.querySelector('.modeswitch [data-mode="relief"]'), hb = document.querySelector('.modeswitch [data-mode="rehab"]');
       if (rb) { rb.textContent = '🆘 Response'; rb.removeAttribute('data-i18n'); }
       if (hb) { hb.textContent = '🌱 Recovery'; hb.removeAttribute('data-i18n'); }
+    }
+    // generalized hazard module: retitle the flood tab / layer / pane / severity per disaster
+    if (EVENT.hazardLabel && EVENT.family !== 'water') {
+      const hz = EVENT.hazardLabel, set = (sel, txt) => { const e = document.querySelector(sel); if (e) { e.textContent = txt; e.removeAttribute('data-i18n'); } };
+      set('.tab[data-tab="flood"]', EVENT.emoji + ' ' + hz);
+      set('[data-i18n="floodExtent"]', hz);
+      set('[data-i18n="floodNow"]', EVENT.emoji + ' ' + hz);
+      set('[data-i18n="floodIntro"]', 'Mark the ' + hz.toLowerCase() + ' area so the map shows the real danger zone. Tap the map or use GPS.');
+      set('#f_submit', '⚠️ Mark ' + hz.toLowerCase());
+      if (EVENT.hazardSev && EVENT.hazardSev.length) {
+        $('f_sev').innerHTML = EVENT.hazardSev.map((x, i) => `<button data-s="${x[0]}" class="${i === 0 ? 'on' : ''}">${esc(x[1])}</button>`).join('');
+        fSev = EVENT.hazardSev[0][0];
+        $('f_sev').querySelectorAll('button').forEach(b => b.onclick = () => { $('f_sev').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); fSev = b.dataset.s; });
+      }
     }
   }
   applyMode();

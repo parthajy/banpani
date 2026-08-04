@@ -69,6 +69,17 @@ export const DISASTERS = {
   },
 };
 
+// The "danger zone" (hazard) module - generalized from flood extent. Same mechanism (a place +
+// severity marker), retitled per disaster. Only families here get the module. Severity KEYS stay
+// high/medium/receding/receded (server + colours unchanged); only the labels differ.
+export const HAZARD = {
+  water: { label: 'Flood', sev: [['high', 'Severe'], ['medium', 'Moderate'], ['receding', 'Receding'], ['receded', 'Water gone']] },
+  fire:  { label: 'Fire zone', sev: [['high', 'Active'], ['medium', 'Spreading'], ['receding', 'Contained'], ['receded', 'Out']] },
+  storm: { label: 'Storm-hit area', sev: [['high', 'Severe'], ['medium', 'Moderate'], ['receding', 'Easing'], ['receded', 'Passed']] },
+  geo:   { label: 'Damage', sev: [['high', 'Heavy damage'], ['medium', 'Some damage'], ['receding', 'Minor'], ['receded', 'Cleared']] },
+  tech:  { label: 'Contamination', sev: [['high', 'Dangerous'], ['medium', 'Moderate'], ['receding', 'Easing'], ['receded', 'Cleared']] },
+};
+
 export function familyOf(type) {
   type = type || 'flood';
   if (DISASTERS[type]) return type;
