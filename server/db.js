@@ -41,9 +41,10 @@ for (const stmt of [
 // row that has no event yet, so nothing is orphaned when events become first-class.
 (function seedAssamEvent() {
   const ts = new Date().toISOString();
-  const full = JSON.stringify(['needs', 'offers', 'convoys', 'dropoffs', 'blocked', 'shelters', 'hazard', 'photos', 'gaps']);
+  const full = JSON.stringify(['needs', 'offers', 'convoys', 'dropoffs', 'blocked', 'facilities', 'hazard', 'photos', 'gaps']);
   db.prepare(`INSERT OR IGNORE INTO events(created_at,slug,title,disaster_type,lat,lng,radius_km,modules,source,listed,status)
     VALUES(?,?,?,?,?,?,?,?,?,?,?)`).run(ts, 'assam-floods-2026', 'Assam Floods 2026', 'flood', 26.5, 92.9, 400, full, 'assam', 1, 'active');
+  db.prepare("UPDATE events SET modules=? WHERE slug='assam-floods-2026'").run(full);   // keep recipe fresh
   const row = db.prepare("SELECT id FROM events WHERE slug='assam-floods-2026'").get();
   if (row) for (const t of ['reports', 'routes', 'collection_points', 'photos', 'flood_reports'])
     db.prepare(`UPDATE ${t} SET event_id=? WHERE event_id IS NULL`).run(row.id);

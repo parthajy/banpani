@@ -17,16 +17,18 @@ const assamId = () => one("SELECT id FROM events WHERE slug='assam-floods-2026'"
 
 // The module recipe per family — which coordination modules an event turns on. (6a implements
 // `needs` + `photos`; the rest are declared now and light up in later increments.)
+// Only BUILT modules: needs · offers · convoys · dropoffs · blocked · facilities · hazard · photos · gaps.
+// (Shelters/evac-centres are surfaced via the Facilities module; search-&-rescue via needs.)
 export const RECIPES = {
-  water:   ['needs', 'offers', 'convoys', 'dropoffs', 'blocked', 'shelters', 'hazard', 'photos', 'gaps'],
-  fire:    ['needs', 'hazard', 'evac', 'shelters', 'photos', 'gaps'],
-  storm:   ['needs', 'convoys', 'dropoffs', 'shelters', 'hazard', 'photos', 'gaps'],
-  geo:     ['blocked', 'needs', 'sar', 'shelters', 'photos', 'gaps'],
+  water:   ['needs', 'offers', 'convoys', 'dropoffs', 'blocked', 'facilities', 'hazard', 'photos', 'gaps'],
+  fire:    ['needs', 'offers', 'facilities', 'photos', 'gaps'],
+  storm:   ['needs', 'offers', 'convoys', 'dropoffs', 'facilities', 'photos', 'gaps'],
+  geo:     ['needs', 'offers', 'blocked', 'facilities', 'photos', 'gaps'],
   climate: ['needs', 'offers', 'facilities', 'photos'],
   health:  ['needs', 'offers', 'facilities', 'photos'],
-  tech:    ['needs', 'evac', 'facilities', 'photos'],
-  infra:   ['sar', 'needs', 'blocked', 'photos'],
-  agri:    ['needs', 'offers', 'photos'],
+  tech:    ['needs', 'offers', 'facilities', 'photos'],
+  infra:   ['needs', 'offers', 'blocked', 'facilities', 'photos'],
+  agri:    ['needs', 'offers', 'facilities', 'photos'],
 };
 
 function counts(eventId) {
