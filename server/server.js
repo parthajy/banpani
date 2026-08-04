@@ -97,13 +97,15 @@ on('GET', '/api/state', (req, res, params, url) => {
     flood_reports: all(`SELECT id,place,lat,lng,severity,created_at,updated_at,
       (SELECT COUNT(DISTINCT device) FROM votes v WHERE v.target_type='flood' AND v.target_id=f.id AND v.category='clear') AS clears
       FROM flood_reports f WHERE hidden=0 AND severity!='receded'${A} ORDER BY COALESCE(updated_at,created_at) DESC LIMIT 500`),
-    offers: all('SELECT id,lat,lng,kind,note,contact,updated_at FROM offers WHERE hidden=0 AND status=\'available\'' + A + ' ORDER BY id DESC LIMIT 300')
+    // event-only modules — scoped to the event; empty on the homepage (Assam classic map) so a
+    // growing world of offers/facilities/etc. never bloats or leaks into the homepage payload
+    offers: eid == null ? [] : all('SELECT id,lat,lng,kind,note,contact,updated_at FROM offers WHERE hidden=0 AND status=\'available\'' + A + ' ORDER BY id DESC LIMIT 300')
       .map(({ contact, ...o }) => ({ ...o, has_contact: !!contact, fresh_min: Math.round((Date.now() - new Date(o.updated_at).getTime()) / 60000) })),
-    blocked: all('SELECT id,lat,lng,label,kind,updated_at FROM blocked_roads WHERE hidden=0 AND status=\'blocked\'' + A + ' ORDER BY id DESC LIMIT 300')
+    blocked: eid == null ? [] : all('SELECT id,lat,lng,label,kind,updated_at FROM blocked_roads WHERE hidden=0 AND status=\'blocked\'' + A + ' ORDER BY id DESC LIMIT 300')
       .map(x => ({ ...x, fresh_min: Math.round((Date.now() - new Date(x.updated_at).getTime()) / 60000) })),
-    facilities: all('SELECT id,lat,lng,kind,name,note,status,updated_at FROM facilities WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 300')
+    facilities: eid == null ? [] : all('SELECT id,lat,lng,kind,name,note,status,updated_at FROM facilities WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 300')
       .map(x => ({ ...x, fresh_min: Math.round((Date.now() - new Date(x.updated_at).getTime()) / 60000) })),
-    evac: all('SELECT id,from_lat,from_lng,to_lat,to_lng,label,updated_at FROM evac_routes WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 200')
+    evac: eid == null ? [] : all('SELECT id,from_lat,from_lng,to_lat,to_lng,label,updated_at FROM evac_routes WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 200')
       .map(x => ({ ...x, fresh_min: Math.round((Date.now() - new Date(x.updated_at).getTime()) / 60000) })),
     thresholds: { confirm: 3, resolve: 2, endorse: 5 },
     server_time: now(),
@@ -130,8 +132,18 @@ on('GET', '/api/news', async (req, res, params, url) => {
 });
 // Events: first-class persisted responses (for the world map). `promoted` = SEO-worthy.
 on('GET', '/api/events', (req, res) => json(res, 200, { events: listEvents() }));
-// A single event with its scoped coordination data (drives the /e/<slug> coordination page).
-on('GET', '/api/event/:slug', (req, res, params) => { const e = eventBySlug(params.slug); e ? json(res, 200, e) : json(res, 404, { error: 'no such event' }); });
+// Community flag-to-hide: anyone can flag an event as fake/duplicate/wrong. No account, one vote
+// per device (logged). At 3 distinct devices the event auto-hides — the same soft-consensus model
+// used for reports/offers/etc. A maintainer can also hide directly via /api/admin/events/:id/hide.
+on('POST', '/api/events/:slug/flag', async (req, res, params) => {
+  const b = await readBody(req);
+  const e = one('SELECT id,lat,lng FROM events WHERE slug=? AND hidden=0', params.slug);
+  if (!e) return json(res, 404, { error: 'no such event' });
+  castVote(req, 'event', e.id, dev(b), 'flag', 'yes', coarse(e.lat, e.lng));
+  const flags = one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='event' AND target_id=? AND category='flag'", e.id).c;
+  if (flags >= 3) { run('UPDATE events SET hidden=1 WHERE id=?', e.id); return json(res, 200, { hidden: true, flags }); }
+  json(res, 200, { hidden: false, flags });
+});
 // Official multi-hazard signals (GDACS) so the world map is never empty when disaster hits.
 on('GET', '/api/official', async (req, res) => { try { json(res, 200, { official: await officialEvents() }); } catch { json(res, 200, { official: [] }); } });
 
@@ -467,7 +479,8 @@ on('POST', '/api/admin/advisory', async (req, res) => {
 });
 on('POST', '/api/admin/:kind/:id/hide', async (req, res, params) => {
   if (!isAdmin(req)) return json(res, 403, { error: 'admin only' });
-  const table = { reports: 'reports', routes: 'routes', 'collection-points': 'collection_points', ngos: 'ngos', flood: 'flood_polygons' }[params.kind];
+  const table = { reports: 'reports', routes: 'routes', 'collection-points': 'collection_points', ngos: 'ngos', flood: 'flood_polygons',
+    events: 'events', offers: 'offers', blocked: 'blocked_roads', facilities: 'facilities', evac: 'evac_routes', 'flood-reports': 'flood_reports' }[params.kind];
   if (!table) return json(res, 400, { error: 'bad kind' });
   run(`UPDATE ${table} SET hidden=1 WHERE id=?`, params.id);
   json(res, 200, { ok: true });

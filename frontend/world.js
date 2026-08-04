@@ -38,7 +38,7 @@ async function load() {
     evs.forEach(ev => {
       const f = FAM[ev.family] || FAM.water;
       const radius = 6 + Math.min(16, Math.sqrt(ev.reports || 1) * 3.2);
-      const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a>`;
+      const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a><br><a href="#" onclick="return flagEvent('${esc(ev.slug)}')" style="color:#8a94a6;font-size:12px">⚑ Flag as fake / wrong</a>`;
       pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius), family: ev.family });
     });
   } catch {}
@@ -126,6 +126,20 @@ $('wr_submit').onclick = async () => {
     toast('Posted 🌍 — thank you for helping the map');
     await load(false);
   } catch { toast('Could not post — try again'); }
+};
+
+// Community flag: one tap reports an event as fake/duplicate/wrong. Three distinct devices hide it.
+window.flagEvent = async function (slug) {
+  if (!confirm('Flag this event as fake, duplicate, or wrong? A few flags will hide it from the map.')) return false;
+  try {
+    const res = await fetch((C.API || '') + '/api/events/' + encodeURIComponent(slug) + '/flag', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ device: deviceId() })
+    });
+    const j = await res.json();
+    toast(j.hidden ? 'Flagged — this event has been hidden. Thank you.' : 'Flag recorded — thank you.');
+    if (j.hidden) await load(false);
+  } catch { toast('Could not flag — try again'); }
+  return false;
 };
 
 load();

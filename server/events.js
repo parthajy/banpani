@@ -85,6 +85,19 @@ export function createOrJoinEvent(lat, lng, disasterType, place, device) {
     for (const e of cands) { const d = haversine(lat, lng, e.lat, e.lng); if (d <= (e.radius_km || 30) && d < bestD) { best = e; bestD = d; } }
     if (best) return best.id;
   }
+  // Rate-limit: a single device can only spin up so many brand-new events per day. Past the cap we
+  // attach to the nearest same-family event of ANY distance rather than let one device flood the map
+  // with fresh pins. Soft by design — real reports still land, they just join an existing response.
+  if (device) {
+    const cutoff = new Date(Date.now() - 864e5).toISOString();
+    const madeToday = one('SELECT COUNT(*) c FROM events WHERE created_by=? AND created_at > ?', device, cutoff)?.c || 0;
+    if (madeToday >= 8 && lat != null && lng != null) {
+      const cands = all("SELECT id,lat,lng,disaster_type FROM events WHERE hidden=0 AND status='active' AND lat IS NOT NULL").filter(e => familyOf(e.disaster_type) === fam);
+      let best = null, bestD = Infinity;
+      for (const e of cands) { const d = haversine(lat, lng, e.lat, e.lng); if (d < bestD) { best = e; bestD = d; } }
+      if (best) return best.id;
+    }
+  }
   const title = (place && place.trim()) ? place.trim() : (DISASTERS[fam]?.label || 'Response');
   let base = slugify(title) + '-' + fam, slug = base, k = 2;
   while (one('SELECT 1 FROM events WHERE slug=?', slug)) slug = base + '-' + (k++);
