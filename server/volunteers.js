@@ -7,8 +7,11 @@
 import { createCipheriv, createDecipheriv, scryptSync, randomBytes } from 'node:crypto';
 import { all, one, run, now } from './db.js';
 
-const ADMIN_KEY = process.env.BANPANI_ADMIN_KEY || 'change-me-in-production';
-const EKEY = scryptSync(ADMIN_KEY, 'banpani-volunteer-emails-v1', 32);   // 32-byte AES key from the maintenance key
+// Email-encryption key derives from a STABLE secret (BANPANI_VOL_KEY), independent of the admin
+// login — so changing the maintenance password never scrambles stored emails. Falls back to the
+// admin key only if VOL_KEY isn't set (safe while there are no volunteers yet).
+const VOL_KEY = process.env.BANPANI_VOL_KEY || process.env.BANPANI_ADMIN_KEY || 'change-me-in-production';
+const EKEY = scryptSync(VOL_KEY, 'banpani-volunteer-emails-v1', 32);   // 32-byte AES key
 
 export const volunteersEnabled = () => true;   // always on — no separate setup step
 
