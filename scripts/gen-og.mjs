@@ -1,4 +1,4 @@
-// Generate per-family Open Graph share images (1200x630 PNG) with headless Chrome — zero npm deps.
+// Generate per-family Open Graph share images (1200x630 PNG) with headless Chrome - zero npm deps.
 // Run:  node scripts/gen-og.mjs
 // Writes frontend/og-<family>.png for every disaster family + og-world.png for the world map.
 // These are the images social platforms (WhatsApp/X/Facebook) show when an event or the map is shared.
@@ -58,11 +58,11 @@ for (const [key, f] of Object.entries(DISASTERS)) {
   const lo = f.label.toLowerCase();
   shoot('og-' + key, card({ color: f.color, emoji: f.emoji, label: f.label,
     tag: `${f.emoji} <b>${f.label}</b> relief,<br>coordinated`,
-    sub: `A free, community-run live map to coordinate ${lo} relief — report needs, see who's covering where, and reach the places nobody has.` }));
+    sub: `A free, community-run live map to coordinate ${lo} relief - report needs, see who's covering where, and reach the places nobody has.` }));
 }
 // The world map card (multi-hazard)
 shoot('og-world', card({ color: '#2E77FF', emoji: '🌍', label: 'World',
   tag: `The world's disasters,<br><b>coordinated by everyone</b>`,
-  sub: `A live, community-run world map of floods, fires, storms and more. Report a disaster anywhere — no accounts, no login. Open source.` }));
+  sub: `A live, community-run world map of floods, fires, storms and more. Report a disaster anywhere - no accounts, no login. Open source.` }));
 
 console.log('done. Regenerate anytime with: node scripts/gen-og.mjs');

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>About Banpani — Coordinating Community Flood Relief</title>
-  <meta name="description" content="What Banpani is, why it was built, how to use it, and the data behind it. A free, community-run flood-relief coordination map for Assam." />
+  <title>About Banpani</title>
+  <meta name="description" content="What Banpani is, how it works, how trust and privacy work, and who runs it. A free, community-run map for coordinating disaster relief." />
   <link rel="canonical" href="https://banpani.org/about.html" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0f1419" />
@@ -31,58 +31,71 @@
 <body>
   <header>
     <img class="logo" src="icon.svg" alt="Banpani" width="30" height="30" />
-    <div><h1>About Banpani <span style="color:var(--muted);font-weight:400">· বানপানী</span></h1><div class="sub">Coordinating Community Flood Relief</div></div>
+    <div><h1>About Banpani <span style="color:var(--muted);font-weight:400">· বানপানী</span></h1><div class="sub">Community disaster relief, coordinated</div></div>
     <div class="spacer"></div>
-    <a class="link" href="index.html">🗺️ Live map</a>
+    <a class="link" href="index.html">Live map</a>
   </header>
 
   <div class="wrap">
-    <p class="lead">Banpani is a <b>free, community-run live map to coordinate flood relief in Assam</b> — so no area is left stranded, and no two convoys collide on the same village. It belongs to no one, and it's built by volunteers.</p>
+    <p class="lead">Banpani is a free website for coordinating disaster relief. It puts needs, offers of help, and hazards on one shared live map, so help reaches the right places and two groups don't cover the same spot while another is missed.</p>
 
-    <div class="warn2">⚠️ Banpani is a <b>community tool, not a replacement for official rescue.</b> Reports are crowd-sourced and may be wrong or incomplete — please don't rely on it 100%. For any emergency, always call <b>112 / SDRF / the ASDMA control room</b> first.</div>
+    <p>It started in 2026 for the Assam floods. It now works for any disaster, anywhere: floods, fires, storms, earthquakes, disease outbreaks, industrial accidents, and more. There are no accounts and no login. Nobody owns it. Anyone can use it, and anyone can help run it.</p>
 
-    <h2>Why we built it</h2>
-    <p>During the floods, relief is enormous and generous — but a lot of it lives inside scattered WhatsApp groups, where messages pile up and things slip: two convoys reach the same village while another waits, a camp runs out of ORS and the ask gets buried, a stranded family is seen by one person who doesn't know who to tell. Banpani puts it all on one shared, living map so we can see the whole picture at once — together.</p>
+    <div class="warn2">Banpani is a community tool, not a replacement for official rescue. Reports come from the public and can be wrong or out of date. In an emergency, call your official emergency number first (112 in India and much of the world, or your local number).</div>
 
-    <h2>How to use it</h2>
+    <h2>What you can do</h2>
     <ul>
-      <li><b>🆘 Need help?</b> Open the Need tab, drop a pin, say what's needed. No login, no account.</li>
-      <li><b>🗺️ Helping?</b> Check the <b>Gaps</b> view — the flooded areas nobody has reached yet.</li>
-      <li><b>🚚 Running a convoy?</b> Announce your route so effort isn't doubled — the map warns you if another group is already covering that spot.</li>
-      <li><b>🌊 See water rising or receding?</b> Mark it on the Flood tab. The flood map is only as live as we make it.</li>
-      <li><b>🏳️ An NGO?</b> List your group so donors and convoys can find you.</li>
+      <li><b>Report a need.</b> Drop a pin and say what is needed. No login.</li>
+      <li><b>Offer help.</b> Mark what you can provide: a boat, water, beds, transport, shelter.</li>
+      <li><b>Mark the ground truth.</b> Blocked roads, shops and clinics that are open or closed, hazard zones, escape routes.</li>
+      <li><b>See the gaps.</b> Places that have been reported but nobody has reached yet.</li>
+      <li><b>Add photos as proof.</b> The location data in a photo is removed before it is uploaded.</li>
     </ul>
-    <a class="cta" href="index.html">Open the live map →</a>
+    <a class="cta" href="index.html">Open the live map</a>
 
-    <h2>How trust works — community consensus</h2>
-    <p>There are no accounts and no gatekeeper. Anyone can report; the community verifies. A report becomes <b>trusted</b> when <b>3 different people</b> confirm it, and false reports get flagged and hidden. NGOs earn a <b>community-verified</b> badge at 5 endorsements. Victim phone numbers are never shown publicly — they're revealed only to someone actually coordinating help. Every action is visible in the public <a href="index.html">Activity</a> feed (no names, no numbers, no IP addresses — just anonymous ids), and a <a href="report.html">public 6-hour report</a> lists everything still unverified and every coverage gap.</p>
+    <h2>How trust works</h2>
+    <p>There is no gatekeeper and no authority deciding what is true. The community checks each other's reports. The rule is simple: it takes a few ordinary people agreeing, not an official, to make information trustworthy.</p>
+    <ul>
+      <li>A report appears on the map straight away, marked <b>unconfirmed</b>.</li>
+      <li>When <b>3 different people</b> confirm it, it becomes <b>confirmed</b>.</li>
+      <li>If people flag a report as false, it is hidden.</li>
+      <li>Groups and NGOs get a <b>community-verified</b> mark after 5 people vouch for them.</li>
+      <li>Anyone can flag a fake or duplicate event. A few flags hide it.</li>
+    </ul>
+    <p>Every action is visible in the public <a href="index.html">Activity</a> log, with no names, no numbers, and no IP addresses, just an anonymous id per person. There is also a <a href="report.html">public situation report</a> that lists what is still unconfirmed and where the coverage gaps are.</p>
+
+    <h2>Privacy</h2>
+    <ul>
+      <li>No accounts, no passwords, no login.</li>
+      <li>Phone numbers are never shown publicly. A number is revealed one at a time, only to someone coordinating help, and every reveal is logged.</li>
+      <li>IP addresses are hashed, never stored or shown in the open.</li>
+      <li>Everything else people add (needs, hazards, photos) is published as open data that anyone can reuse.</li>
+    </ul>
+    <p>See the <a href="privacy.html">privacy policy</a> for exactly what is kept and what stays private.</p>
 
     <h2>Languages</h2>
-    <p>Banpani works in <b>English, অসমীয়া (Assamese) and हिन्दी (Hindi)</b> — switch from the top-right of the map.</p>
+    <p>Banpani works in English, Assamese (অসমীয়া), and Hindi (हिन्दी). It picks your language from your browser, and you can change it from the top of the map. More languages can be added.</p>
 
-    <h2>Data &amp; sources</h2>
-    <p>Banpani links back to its sources and never claims to replace an official warning.</p>
+    <h2>Where the data comes from</h2>
     <div class="card2 muted">
       <b>Map:</b> © OpenStreetMap contributors<br>
-      <b>Weather outlook:</b> live rainfall forecast from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (auto-updated)<br>
-      <b>Official affected areas &amp; relief camps:</b> <a href="https://sdmassam.nic.in/" target="_blank" rel="noopener">ASDMA</a> bulletins (dated snapshots)<br>
-      <b>River levels (planned):</b> <a href="https://cwc.gov.in/" target="_blank" rel="noopener">Central Water Commission</a> — for gauge stations above danger mark<br>
-      <b>News:</b> aggregated headlines via Google News<br>
-      <b>Also see:</b> <a href="https://assamflood.org/" target="_blank" rel="noopener">Axom Flood</a> — an independent CWC river-level dashboard for Assam (a great companion to this map)
+      <b>Weather:</b> live rainfall forecast from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a><br>
+      <b>Official alerts:</b> <a href="https://www.gdacs.org/" target="_blank" rel="noopener">GDACS</a> worldwide, and <a href="https://sdmassam.nic.in/" target="_blank" rel="noopener">ASDMA</a> for Assam<br>
+      <b>News:</b> aggregated headlines from Google News<br>
+      <b>Also useful for Assam:</b> <a href="https://assamflood.org/" target="_blank" rel="noopener">Axom Flood</a>, an independent river-level dashboard
     </div>
+    <p>Banpani links back to its sources and does not replace an official warning.</p>
 
-    <h2>Open, and owned in the open</h2>
-    <p>Banpani is <b>open source under the MIT License</b> and built to belong to everyone — anyone can fork it, improve it, or run it for the next flood, anywhere. Code: <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">github.com/parthajy/banpani</a></p>
-    <p>To be precise about copyright: <b>Banpani was created and is maintained by Partha Borthakur</b>, and the code is <b>© 2026 Partha Borthakur, released under the MIT License</b>. Holding the copyright is exactly what lets it be given away — the licence guarantees the community can always use, change and re-run it. The deployment is run <i>for</i> the community, not owned <i>over</i> it.</p>
-    <p><b>Open data.</b> Everything submitted here — needs, flood extent, coverage, listings, photos — is published as <b>open data, dedicated to the public domain under <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 1.0</a></b>, so anyone can reuse it. Personal identifiers (phone numbers, IP addresses) are stripped from all of it. See the <a href="privacy.html">privacy policy</a> for exactly what stays private.</p>
+    <h2>Who runs it</h2>
+    <p>Banpani was created and is maintained by <b>Partha Borthakur</b>. The code is open source under the <b>MIT License</b>, copyright 2026 Partha Borthakur. Holding the copyright is what lets it be given away: the licence guarantees that anyone can use, change, and run it for the next disaster. It is run for the community, not owned over it. Code: <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">github.com/parthajy/banpani</a></p>
+    <p>The information people add is released into the public domain under <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 1.0</a>, so anyone can reuse it. Phone numbers and IP addresses are stripped from all of it.</p>
 
-    <h2>Contact &amp; help</h2>
-    <p>Something not working, or want to help build/translate/run it? Use the <b>✉ Contact</b> button on the <a href="index.html">map</a> — no phone numbers are shown to anyone. This is ours, together. 🙏</p>
+    <h2>Help build it</h2>
+    <p>If something is broken, or you want to help build, translate, or run Banpani, use the <b>Contact</b> button on the <a href="index.html">map</a>. No phone numbers are shown to anyone. You can also <a href="/volunteers">sign up as a volunteer</a> to be contacted when a disaster hits near you.</p>
 
     <p class="muted" style="margin-top:28px">
-      🌍 <a href="/world">Explore the emerging world map (beta)</a> — the same idea, for every disaster, everywhere.<br>
-      Open source under the MIT License · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">GitHub</a> · <a href="privacy.html">Privacy</a> · © 2026 Partha Borthakur<br>
-      <a href="index.html">← Back to the live map</a>
+      <a href="/world">World map</a> · <a href="/volunteers">Volunteer</a> · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">GitHub</a> · <a href="privacy.html">Privacy</a> · MIT License · © 2026 Partha Borthakur<br>
+      <a href="index.html">Back to the live map</a>
     </p>
   </div>
 </body>

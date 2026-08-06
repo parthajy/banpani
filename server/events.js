@@ -1,6 +1,6 @@
 // Events are FIRST-CLASS and persisted (see schema.sql `events`). Every coordination row
 // carries event_id. A report creates-or-joins an event, so every place with activity has a
-// live coordination space immediately — no waiting to "graduate" (graduation only affects
+// live coordination space immediately - no waiting to "graduate" (graduation only affects
 // SEO/discovery via `promoted`). Each event enables a recipe of modules per disaster family.
 import { all, one, run, now, decoratedReports } from './db.js';
 import { familyOf, DISASTERS } from './disasters.js';
@@ -15,7 +15,7 @@ const ASSAM = { s: 24.0, w: 89.6, n: 28.4, e: 96.1 };
 const inAssam = (lat, lng) => lat >= ASSAM.s && lat <= ASSAM.n && lng >= ASSAM.w && lng <= ASSAM.e;
 const assamId = () => one("SELECT id FROM events WHERE slug='assam-floods-2026'")?.id || null;
 
-// The module recipe per family — which coordination modules an event turns on. (6a implements
+// The module recipe per family - which coordination modules an event turns on. (6a implements
 // `needs` + `photos`; the rest are declared now and light up in later increments.)
 // Only BUILT modules: needs · offers · convoys · dropoffs · blocked · facilities · hazard · photos · gaps.
 // (Shelters/evac-centres are surfaced via the Facilities module; search-&-rescue via needs.)
@@ -44,7 +44,7 @@ export function listEvents() {
     const c = counts(e.id);
     const score = c.reports + c.confirmations * 2 + (c.people > 50 ? 2 : c.people > 0 ? 1 : 0);
     // "earned its place" = listed, or has a 2nd report / a confirmation. Everything else is shown
-    // too, but flagged UNCONFIRMED so the world map can render it faded — a first report must be
+    // too, but flagged UNCONFIRMED so the world map can render it faded - a first report must be
     // visible immediately (that's the whole promise), while spam is held back by the per-device
     // create rate-limit and community flag-to-hide, not by hiding genuine reports.
     const active = !!e.listed || c.reports >= 2 || c.confirmations >= 1;
@@ -92,7 +92,7 @@ export function createOrJoinEvent(lat, lng, disasterType, place, device) {
   }
   // Rate-limit: a single device can only spin up so many brand-new events per day. Past the cap we
   // attach to the nearest same-family event of ANY distance rather than let one device flood the map
-  // with fresh pins. Soft by design — real reports still land, they just join an existing response.
+  // with fresh pins. Soft by design - real reports still land, they just join an existing response.
   if (device) {
     const cutoff = new Date(Date.now() - 864e5).toISOString();
     const madeToday = one('SELECT COUNT(*) c FROM events WHERE created_by=? AND created_at > ?', device, cutoff)?.c || 0;
@@ -107,7 +107,7 @@ export function createOrJoinEvent(lat, lng, disasterType, place, device) {
   let base = slugify(title) + '-' + fam, slug = base, k = 2;
   while (one('SELECT 1 FROM events WHERE slug=?', slug)) slug = base + '-' + (k++);
   // Spam control: a brand-new community event is UNLISTED (link-only) until it gains real
-  // activity — listEvents() surfaces it on the world map once it has ≥2 reports or a confirmation.
+  // activity - listEvents() surfaces it on the world map once it has ≥2 reports or a confirmation.
   const r = run(`INSERT INTO events(created_at,slug,title,disaster_type,lat,lng,radius_km,modules,source,created_by,listed,status)
     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, now(), slug, title, disasterType || fam, lat, lng, 30,
     JSON.stringify(RECIPES[fam] || ['needs', 'photos']), 'community', device || null, 0, 'active');

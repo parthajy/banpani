@@ -1,4 +1,4 @@
--- Banpani (banpani.org) — flood relief coordination
+-- Banpani (banpani.org) - flood relief coordination
 -- One SQLite file holds everything. Human-readable, trivially backed up (just copy the file).
 -- Trust is community consensus: verify_status is DERIVED from the votes table on read
 -- (see db.js), never stored on the row.
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS ngos (
   hidden       INTEGER NOT NULL DEFAULT 0
 );
 
--- ADVISORY: a single editable block for the map's corner — current IMD outlook,
+-- ADVISORY: a single editable block for the map's corner - current IMD outlook,
 -- rainfall warnings, assumptions. Admin updates it; everyone reads it.
 CREATE TABLE IF NOT EXISTS advisory (
   id           INTEGER PRIMARY KEY CHECK (id = 1),
@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS photos (
 );
 CREATE INDEX IF NOT EXISTS idx_photos ON photos(created_at, hidden);
 
--- VOTES: the community-consensus trust layer. No accounts — one device, one vote per
+-- VOTES: the community-consensus trust layer. No accounts - one device, one vote per
 -- (target, category). Reports become confirmed/hidden and NGOs earn a badge purely by
 -- how many DIFFERENT people vouch. Derivation happens on read (see db.js).
 CREATE TABLE IF NOT EXISTS votes (

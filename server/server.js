@@ -99,7 +99,7 @@ on('GET', '/api/state', (req, res, params, url) => {
     flood_reports: all(`SELECT id,place,lat,lng,severity,created_at,updated_at,
       (SELECT COUNT(DISTINCT device) FROM votes v WHERE v.target_type='flood' AND v.target_id=f.id AND v.category='clear') AS clears
       FROM flood_reports f WHERE hidden=0 AND severity!='receded'${A} ORDER BY COALESCE(updated_at,created_at) DESC LIMIT 500`),
-    // event-only modules — scoped to the event; empty on the homepage (Assam classic map) so a
+    // event-only modules - scoped to the event; empty on the homepage (Assam classic map) so a
     // growing world of offers/facilities/etc. never bloats or leaks into the homepage payload
     offers: eid == null ? [] : all('SELECT id,lat,lng,kind,note,contact,updated_at FROM offers WHERE hidden=0 AND status=\'available\'' + A + ' ORDER BY id DESC LIMIT 300')
       .map(({ contact, ...o }) => ({ ...o, has_contact: !!contact, fresh_min: Math.round((Date.now() - new Date(o.updated_at).getTime()) / 60000) })),
@@ -142,7 +142,7 @@ on('GET', '/api/news', async (req, res, params, url) => {
 // Events: first-class persisted responses (for the world map). `promoted` = SEO-worthy.
 on('GET', '/api/events', (req, res) => json(res, 200, { events: listEvents() }));
 // Community flag-to-hide: anyone can flag an event as fake/duplicate/wrong. No account, one vote
-// per device (logged). At 3 distinct devices the event auto-hides — the same soft-consensus model
+// per device (logged). At 3 distinct devices the event auto-hides - the same soft-consensus model
 // used for reports/offers/etc. A maintainer can also hide directly via /api/admin/events/:id/hide.
 on('POST', '/api/events/:slug/flag', async (req, res, params) => {
   const b = await readBody(req);
@@ -154,7 +154,7 @@ on('POST', '/api/events/:slug/flag', async (req, res, params) => {
   json(res, 200, { hidden: false, flags });
 });
 // Standing volunteer registry. Email is encrypted with a public key the server CANNOT reverse
-// (see volunteers.js) — we store it, but nobody online (operator included) can read it. Coarse
+// (see volunteers.js) - we store it, but nobody online (operator included) can read it. Coarse
 // location + families only. Rate-limited by hashed IP so it can't be scripted into a spam list.
 on('GET', '/api/volunteers/summary', (req, res) => json(res, 200, { enabled: volunteersEnabled(), ...volunteerSummary() }));
 on('POST', '/api/volunteer', async (req, res) => {
@@ -167,7 +167,7 @@ on('POST', '/api/volunteer', async (req, res) => {
   const country = b.country || (b.lat != null ? await countryOf(b.lat, b.lng) : null);
   const ok = addVolunteer({ email: b.email, lat: b.lat, lng: b.lng, country, region: b.region, families: b.families, skills: b.skills });
   if (!ok) return json(res, 400, { error: 'could not register' });
-  // Log the ACT (for rate-limiting + a public count) but never the email — area is coarse only.
+  // Log the ACT (for rate-limiting + a public count) but never the email - area is coarse only.
   log(req, 'volunteer_signup', null, { device: dev(b), area: country || coarse(b.lat, b.lng) });
   json(res, 200, { ok: true, ...volunteerSummary() });
 });
@@ -495,7 +495,7 @@ on('POST', '/api/ngos/:id/endorse', async (req, res, params) => {
   json(res, 200, { ok: true, endorsements: n?.endorsements });
 });
 
-// The standing volunteer force, decrypted — shown in the admin after login (maintenance-key gated).
+// The standing volunteer force, decrypted - shown in the admin after login (maintenance-key gated).
 on('GET', '/api/admin/volunteers', (req, res) => {
   if (!isAdmin(req)) return json(res, 403, { error: 'admin only' });
   json(res, 200, { volunteers: listVolunteers() });
@@ -595,7 +595,7 @@ async function serveEventApp(req, res, ev) {
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }
   const ld = JSON.stringify({
     '@context': 'https://schema.org', '@type': 'SpecialAnnouncement',
-    name: ev.title, text: `Live community relief coordination for ${ev.title} (${f.label}). Report needs, offers, blocked roads and photos — no accounts.`,
+    name: ev.title, text: `Live community relief coordination for ${ev.title} (${f.label}). Report needs, offers, blocked roads and photos - no accounts.`,
     datePosted: ev.created_at, category: 'https://www.wikidata.org/wiki/Q3839081', url: 'https://banpani.org/e/' + ev.slug,
     ...(ev.lat != null ? { spatialCoverage: { '@type': 'Place', geo: { '@type': 'GeoCoordinates', latitude: ev.lat, longitude: ev.lng } } } : {}),
   }).replace(/</g, '\\u003c');
@@ -603,15 +603,15 @@ async function serveEventApp(req, res, ev) {
   // Per-event SEO: a shared /e/<slug> link must preview as ITSELF (its title, blurb, family image),
   // not as the generic Assam homepage. Swap title/description + every OG/Twitter tag + canonical.
   const url = 'https://banpani.org/e/' + ev.slug;
-  const ogTitle = `${f.emoji} ${ev.title} — live ${f.label.toLowerCase()} relief coordination`;
-  const ogDesc = `Report needs, offers, blocked roads and photos for ${ev.title}. A free, community-run relief map — no accounts, no money, owned by everyone.`;
+  const ogTitle = `${f.emoji} ${ev.title} - live ${f.label.toLowerCase()} relief coordination`;
+  const ogDesc = `Report needs, offers, blocked roads and photos for ${ev.title}. A free, community-run relief map - no accounts, no money, owned by everyone.`;
   const ogImg = `https://banpani.org/og-${ev.family}.png`;
   const set = (h, attr, val) => h.replace(new RegExp('(<meta ' + attr + ' content=")[^"]*(")'), '$1' + htmlEsc(val).replace(/\$/g, '$$$$') + '$2');
   html = html
     // served under /e/<slug>, so relative asset URLs (styles.css, app.js…) must resolve from root
     .replace('<head>', '<head>\n  <base href="/">')
     .replace('<script src="config.js"></script>', inject + '<script src="config.js"></script>')
-    .replace(/<title>[\s\S]*?<\/title>/, '<title>' + htmlEsc(ev.title + ' — ' + f.label + ' relief coordination · Banpani') + '</title>')
+    .replace(/<title>[\s\S]*?<\/title>/, '<title>' + htmlEsc(ev.title + ' - ' + f.label + ' relief coordination · Banpani') + '</title>')
     .replace(/(<link rel="canonical" href=")[^"]*(")/, '$1' + url + '$2');
   html = set(html, 'name="description"', ogDesc);
   html = set(html, 'property="og:title"', ogTitle);
@@ -637,7 +637,7 @@ function sitemapXml() {
 
 // Homepage flip: set BANPANI_WORLD_HOME=1 (env) + restart to serve the WORLD map at `/` when
 // Assam winds down. Until then `/` stays the Assam relief map. Assam always lives at
-// /e/assam-floods-2026 too. One flag, reversible — the user's timing call.
+// /e/assam-floods-2026 too. One flag, reversible - the user's timing call.
 const PRETTY = { '/': process.env.BANPANI_WORLD_HOME === '1' ? '/world.html' : '/index.html', '/world': '/world.html', '/volunteers': '/volunteers.html',
   '/admin': '/admin.html', '/parthajy/admin': '/admin.html' };   // one admin, reachable at either path
 async function serveStatic(req, res, pathname) {

@@ -47,7 +47,7 @@ async function load() {
       evBySlug[ev.slug] = { slug: ev.slug, title: ev.title, family: ev.family, emoji: f.emoji };
       const sv = S.has(ev.slug);
       const unconf = ev.unconfirmed
-        ? `<br><span style="color:#c9a227;font-size:12px">⏳ Unconfirmed — needs a 2nd report or a confirmation to be verified.</span>` : '';
+        ? `<br><span style="color:#c9a227;font-size:12px">⏳ Unconfirmed - needs a 2nd report or a confirmation to be verified.</span>` : '';
       const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}${unconf}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a><br><a href="#" onclick="return toggleSave('${esc(ev.slug)}',this)" style="color:#c9a227;font-size:12px">${sv ? '★ Saved' : '☆ Save'}</a> · <a href="#" onclick="return flagEvent('${esc(ev.slug)}')" style="color:#8a94a6;font-size:12px">⚑ Flag</a>`;
       pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius, ev.unconfirmed), family: ev.family });
     });
@@ -57,7 +57,7 @@ async function load() {
     off.forEach(o => {
       const f = FAM[o.family] || FAM.water;
       const m = L.circleMarker([o.lat, o.lng], { radius: 12, weight: 3, color: f.color, opacity: .95, fillColor: f.color, fillOpacity: .1, dashArray: '3 4' })
-        .bindPopup(`<b>🛰️ ${esc(o.title)}</b><br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span> · <b style="text-transform:capitalize">${esc(o.level)}</b> alert<br><small>Official signal — GDACS${o.country ? ' · ' + esc(o.country) : ''}</small><br><a href="${esc(o.url)}" target="_blank" rel="noopener">Official report →</a>`);
+        .bindPopup(`<b>🛰️ ${esc(o.title)}</b><br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span> · <b style="text-transform:capitalize">${esc(o.level)}</b> alert<br><small>Official signal - GDACS${o.country ? ' · ' + esc(o.country) : ''}</small><br><a href="${esc(o.url)}" target="_blank" rel="noopener">Official report →</a>`);
       pins.push({ marker: m, family: o.family, official: true });
     });
   } catch {}
@@ -133,9 +133,9 @@ $('wr_submit').onclick = async () => {
     });
     if (!res.ok) throw 0;
     $('wreportPanel').classList.remove('show'); repMarker.remove(); repMarker = null;
-    toast('Posted 🌍 — thank you for helping the map');
+    toast('Posted 🌍 - thank you for helping the map');
     await load(false);
-  } catch { toast('Could not post — try again'); }
+  } catch { toast('Could not post - try again'); }
 };
 
 // Saved events (client-side bookmarks). ★ Save from any popup; the Saved sheet lists them.
@@ -144,13 +144,13 @@ function renderSaved() {
   const l = S.list(), box = $('wsaved_list');
   box.innerHTML = l.length
     ? l.map(e => `<div class="wsaved-item"><a href="/e/${esc(e.slug)}">${esc(e.emoji || '')} ${esc(e.title)}</a><button class="rm" onclick="return unsave('${esc(e.slug)}')" title="Remove">✕</button></div>`).join('')
-    : '<div class="wsaved-empty">No saved events yet. Open any event and tap <b>☆ Save</b> to keep it here — stored only on this device, no account.</div>';
+    : '<div class="wsaved-empty">No saved events yet. Open any event and tap <b>☆ Save</b> to keep it here - stored only on this device, no account.</div>';
 }
 window.toggleSave = function (slug, el) {
   const ev = evBySlug[slug]; if (!ev) return false;
   const nowSaved = S.toggle(ev);
   if (el) { el.textContent = nowSaved ? '★ Saved' : '☆ Save'; }
-  toast(nowSaved ? '★ Saved — see it under ★ Saved' : 'Removed from Saved');
+  toast(nowSaved ? '★ Saved - see it under ★ Saved' : 'Removed from Saved');
   updateSavedBtn(); renderSaved();
   return false;
 };
@@ -167,9 +167,9 @@ window.flagEvent = async function (slug) {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ device: deviceId() })
     });
     const j = await res.json();
-    toast(j.hidden ? 'Flagged — this event has been hidden. Thank you.' : 'Flag recorded — thank you.');
+    toast(j.hidden ? 'Flagged - this event has been hidden. Thank you.' : 'Flag recorded - thank you.');
     if (j.hidden) await load(false);
-  } catch { toast('Could not flag — try again'); }
+  } catch { toast('Could not flag - try again'); }
   return false;
 };
 

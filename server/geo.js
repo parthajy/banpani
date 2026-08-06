@@ -20,10 +20,10 @@ export async function countryOf(lat, lng) {
 
 // National emergency line + a family-relevant line where we're confident of the number. Countries
 // not listed fall back to the GSM-standard 112 (routes to local emergency on most mobile networks)
-// with a plain "or your local number" hedge, and a number-free family label — never a wrong number.
+// with a plain "or your local number" hedge, and a number-free family label - never a wrong number.
 const HELP = {
-  IN: { name: 'India', emerg: '112', fam: { health: ['Ambulance (108)', '108'], fire: ['Fire (101)', '101'], water: ['Disaster — NDMA (108)', '108'], storm: ['Disaster — NDMA (108)', '108'], geo: ['Disaster — NDMA (108)', '108'] } },
-  US: { name: 'United States', emerg: '911', fam: { health: ['Health — CDC-INFO', '18002324636'], water: ['Disaster — FEMA', '18006213362'], storm: ['Disaster — FEMA', '18006213362'], fire: ['Disaster — FEMA', '18006213362'], geo: ['Disaster — FEMA', '18006213362'] } },
+  IN: { name: 'India', emerg: '112', fam: { health: ['Ambulance (108)', '108'], fire: ['Fire (101)', '101'], water: ['Disaster - NDMA (108)', '108'], storm: ['Disaster - NDMA (108)', '108'], geo: ['Disaster - NDMA (108)', '108'] } },
+  US: { name: 'United States', emerg: '911', fam: { health: ['Health - CDC-INFO', '18002324636'], water: ['Disaster - FEMA', '18006213362'], storm: ['Disaster - FEMA', '18006213362'], fire: ['Disaster - FEMA', '18006213362'], geo: ['Disaster - FEMA', '18006213362'] } },
   GB: { name: 'United Kingdom', emerg: '999', fam: { health: ['NHS non-emergency (111)', '111'] } },
   CA: { name: 'Canada', emerg: '911', fam: {} },
   AU: { name: 'Australia', emerg: '000', fam: { health: ['Healthdirect', '1800022222'] } },
@@ -51,7 +51,7 @@ for (const cc of ['DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'PT', 'SE', 'NO', 'FI', 'D
 export function helplinesFor(family, cc) {
   const c = HELP[cc];
   const emerg = c ? c.emerg : '112';
-  const label = c && c.name ? `Emergency — ${c.name} (${emerg})` : `Emergency (${emerg} — or your local number)`;
+  const label = c && c.name ? `Emergency - ${c.name} (${emerg})` : `Emergency (${emerg} - or your local number)`;
   const hl = [{ label, tel: emerg }];
   const extra = c && c.fam && c.fam[family];
   if (extra) hl.push({ label: extra[0], tel: extra[1] });

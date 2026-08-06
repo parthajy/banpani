@@ -94,7 +94,7 @@ input[type=file]{width:100%;background:var(--panel2);border:1px solid var(--line
 .endorse button{margin-left:auto;font-size:11.5px;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:#7fe6b0}
 .endorse button.flag{margin-left:0;color:var(--muted);flex:0 0 auto}
 
-/* flood + weather advisory — now a normal card in the left overlay stack */
+/* flood + weather advisory - now a normal card in the left overlay stack */
 .advisory{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
 .adv-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;cursor:pointer;font-size:12.5px}
 .adv-head .chev{color:var(--muted);transition:.2s}

@@ -1,5 +1,5 @@
 // Official hazard signals so the map is never empty when a disaster hits. Source: GDACS
-// (Global Disaster Alert and Coordination System, UN/EC) — a free multi-hazard GeoJSON of
+// (Global Disaster Alert and Coordination System, UN/EC) - a free multi-hazard GeoJSON of
 // current events. We keep only Orange/Red (significant) alerts and map each to a family.
 // Community reports then enrich a signal that is already on the map. Cached 1h.
 const GDACS = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP';

@@ -2,7 +2,7 @@
 // Strategy: NETWORK-FIRST for everything (so a live crisis tool is always up to date the
 // moment it's online), falling back to the last cached copy only when the network fails -
 // so the app still opens and the last-seen map still shows on a dead connection.
-const CACHE = 'banpani-v58';
+const CACHE = 'banpani-v59';
 const PRECACHE = [
   './', 'index.html', 'styles.css', 'app.js', 'config.js', 'i18n.js',
   'about.html', 'privacy.html', 'volunteers.html',
@@ -29,7 +29,7 @@ self.addEventListener('fetch', e => {
       return resp;
     }).catch(async () => {
       // Offline fallback: serve the cached copy of THIS exact url if we have it. Never substitute a
-      // different page — serving index.html for /parthajy/admin, /world, /e/<slug> etc. broke them.
+      // different page - serving index.html for /parthajy/admin, /world, /e/<slug> etc. broke them.
       const hit = await caches.match(request);
       if (hit) return hit;
       // Only the Assam app shell falls back to index.html, and only for the root navigation.

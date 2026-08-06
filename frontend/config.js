@@ -3,7 +3,7 @@ window.BANPANI = {
   API: '',   // '' = same origin (the Node server serves this page too)
 
   TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  TILE_ATTR: '© OpenStreetMap contributors · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">Banpani — open source (MIT)</a>',
+  TILE_ATTR: '© OpenStreetMap contributors · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">Banpani - open source (MIT)</a>',
   TILE_MAXZOOM: 18,
 
   // Locked on Assam - tight bounds + a min zoom where Assam fills the screen, so the
@@ -32,7 +32,7 @@ window.BANPANI = {
   ITEMS: ['Drinking water', 'ORS', 'Dettol / antiseptic', 'Rice / dry food', 'Baby food',
     'Tarpaulin', 'Blankets', 'Sanitary pads', 'Medicines', 'Candles / matches',
     'Boat / rescue', 'Mosquito nets', 'Cattle feed', 'First aid'],
-  // Rehabilitation phase — what people need to recover, not just survive.
+  // Rehabilitation phase - what people need to recover, not just survive.
   REHAB_ITEMS: ['House rebuild (full)', 'House repair (partial)', 'Roofing / tin', 'Seeds & saplings',
     'Livestock', 'Farming tools', 'Fishing net / boat', 'School kit / books', 'Clothes & bedding',
     'Utensils', 'Well / water repair', 'Medical follow-up', 'Compensation help', 'Cash / debt relief'],
@@ -68,7 +68,7 @@ window.BANPANI = {
   },
   WORLD: { center: [20, 60], zoom: 3, minZoom: 2 },
 
-  // Saved events — pure client-side bookmarks (localStorage, no account, nothing sent to the server).
+  // Saved events - pure client-side bookmarks (localStorage, no account, nothing sent to the server).
   // Shared by the world map and the per-event page so ★ Save works from either side.
   saved: {
     key: 'banpani.saved',

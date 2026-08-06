@@ -1,19 +1,19 @@
-// Standing volunteer registry — the "ready force" for when disaster strikes.
+// Standing volunteer registry - the "ready force" for when disaster strikes.
 //
 // Emails are encrypted AT REST with AES-256-GCM under a key derived from the maintenance key. A
 // stolen database alone reveals nothing. After you log into the admin with the maintenance key, the
-// server decrypts them so you can see the list in one place — simple, one login, no extra password.
+// server decrypts them so you can see the list in one place - simple, one login, no extra password.
 // (Victim phone numbers are protected far more strictly and separately; these are volunteer emails.)
 import { createCipheriv, createDecipheriv, scryptSync, randomBytes } from 'node:crypto';
 import { all, one, run, now } from './db.js';
 
 // Email-encryption key derives from a STABLE secret (BANPANI_VOL_KEY), independent of the admin
-// login — so changing the maintenance password never scrambles stored emails. Falls back to the
+// login - so changing the maintenance password never scrambles stored emails. Falls back to the
 // admin key only if VOL_KEY isn't set (safe while there are no volunteers yet).
 const VOL_KEY = process.env.BANPANI_VOL_KEY || process.env.BANPANI_ADMIN_KEY || 'change-me-in-production';
 const EKEY = scryptSync(VOL_KEY, 'banpani-volunteer-emails-v1', 32);   // 32-byte AES key
 
-export const volunteersEnabled = () => true;   // always on — no separate setup step
+export const volunteersEnabled = () => true;   // always on - no separate setup step
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
 export const validEmail = e => typeof e === 'string' && EMAIL_RE.test(e.trim());
@@ -30,7 +30,7 @@ export function decryptEmail(enc) {
     const d = createDecipheriv('aes-256-gcm', EKEY, b.subarray(0, 12));
     d.setAuthTag(b.subarray(12, 28));
     return Buffer.concat([d.update(b.subarray(28)), d.final()]).toString('utf8');
-  } catch { return null; }   // e.g. after the maintenance key changed — old rows won't decrypt
+  } catch { return null; }   // e.g. after the maintenance key changed - old rows won't decrypt
 }
 
 // Register a volunteer. Stores ONLY: encrypted email, a COARSE location (rounded ~11km so it's a
@@ -47,7 +47,7 @@ export function addVolunteer({ email, lat, lng, country, region, families, skill
   return true;
 }
 
-// The full list, DECRYPTED — for the admin room only (server.js gates it behind the maintenance key).
+// The full list, DECRYPTED - for the admin room only (server.js gates it behind the maintenance key).
 export function listVolunteers() {
   return all('SELECT id,created_at,email_enc,country,region,lat,lng,families,skills FROM volunteers WHERE hidden=0 ORDER BY id DESC LIMIT 5000')
     .map(v => {

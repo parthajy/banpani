@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Become a disaster-response volunteer · Banpani</title>
-  <meta name="description" content="Join the standing volunteer network. When a flood, fire, cyclone or outbreak hits your area, you'll be alerted so help arrives faster. Free, no account, and your email is encrypted so even we can't read it." />
+  <title>Volunteer for disaster response · Banpani</title>
+  <meta name="description" content="Sign up to help with disaster response. If a flood, fire, cyclone, or outbreak hits near you, you can be contacted to help. Free, no account. Your email is kept private and never shown publicly." />
   <link rel="canonical" href="https://banpani.org/volunteers.html" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0f1419" />
@@ -13,14 +13,14 @@
   <link rel="stylesheet" href="styles.css" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Banpani" />
-  <meta property="og:title" content="Be the force before the disaster — become a Banpani volunteer" />
-  <meta property="og:description" content="Sign up once. When disaster strikes near you, you're alerted. No account, no cost — and your email is encrypted so even we can't read it." />
+  <meta property="og:title" content="Volunteer for disaster response - Banpani" />
+  <meta property="og:description" content="Sign up once. If a disaster hits near you, you can be contacted to help. No account, no cost. Your email is kept private." />
   <meta property="og:url" content="https://banpani.org/volunteers.html" />
-  <meta property="og:image" content="https://banpani.org/og.png" />
+  <meta property="og:image" content="https://banpani.org/og-world.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Become a Banpani disaster-response volunteer" />
-  <meta name="twitter:description" content="Join the standing force. Alerted when disaster hits your area. Email encrypted so even we can't read it." />
-  <meta name="twitter:image" content="https://banpani.org/og.png" />
+  <meta name="twitter:title" content="Volunteer for disaster response - Banpani" />
+  <meta name="twitter:description" content="Sign up to help when a disaster hits near you. No account. Your email is kept private." />
+  <meta name="twitter:image" content="https://banpani.org/og-world.png" />
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Banpani","url":"https://banpani.org","description":"Community-run disaster-relief coordination. Volunteers sign up to be alerted and mobilised when disaster strikes near them.","email":"","sameAs":["https://github.com/parthajy/banpani"]}</script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
@@ -67,12 +67,12 @@
 
   <div class="wrap">
     <div class="hero">
-      <h2>Be the force <em>before</em> the disaster</h2>
-      <p class="lead">When a flood, fire, cyclone or outbreak hits your area, minutes matter. Sign up once and you'll be alerted — so a ready force is already there when it happens, not scrambling after.</p>
-      <div class="count" id="count">Loading the standing force…</div>
+      <h2>Volunteer for disaster response</h2>
+      <p class="lead">If a flood, fire, cyclone, or outbreak hits near you, help is needed fast. Sign up once, and you can be contacted to help when a disaster happens near you.</p>
+      <div class="count" id="count">Loading…</div>
     </div>
 
-    <div class="lock">🔒 <b>Your email is encrypted the moment you send it</b>, with a key that lives offline — not on our servers. That means <b>no one online, including us, can read the volunteer list</b>. It can only ever be used, offline and deliberately, to send you an alert when disaster strikes near you. No account, no password, no spam, never sold.</div>
+    <div class="lock">🔒 Your email is stored encrypted and is used only to contact you if a disaster is near you. It is never shown publicly, never shared or sold, and you can ask to be removed at any time. No account and no password.</div>
 
     <form id="form" autocomplete="on">
       <label for="email">Your email</label>
@@ -91,9 +91,9 @@
       <label for="skills">Skills / resources <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
       <input id="skills" type="text" maxlength="120" placeholder="e.g. boat, first aid, transport, shelter space" />
 
-      <button type="submit" class="submit" id="submit">🙋 Join the standing force</button>
+      <button type="submit" class="submit" id="submit">Sign up</button>
       <div class="msg" id="msg"></div>
-      <p class="note">One email when a disaster is confirmed near you — nothing else. You can ask us to remove you any time. Banpani is free, open-source and owned by no one.</p>
+      <p class="note">We contact you only if a disaster is confirmed near you. Nothing else. You can ask to be removed any time. Banpani is free, open source, and owned by no one.</p>
     </form>
   </div>
 
@@ -106,7 +106,7 @@
     const sel = $('country');
     for (const [code, name] of COUNTRIES) { const o = document.createElement('option'); o.value = code; o.textContent = name; sel.appendChild(o); }
 
-    // families (from the shared disaster catalog) — what kind of disaster the volunteer can help with
+    // families (from the shared disaster catalog) - what kind of disaster the volunteer can help with
     const fams = new Set();
     const fbox = $('families');
     for (const [key, f] of Object.entries(C.DISASTERS)) {
@@ -117,25 +117,25 @@
       fbox.appendChild(b);
     }
 
-    // optional finer location — coarse coords only (server rounds them further)
+    // optional finer location - coarse coords only (server rounds them further)
     let coords = null;
     $('gps').onclick = () => {
       if (!navigator.geolocation) return;
       $('gps').textContent = '📍 Locating…';
       navigator.geolocation.getCurrentPosition(
         p => { coords = { lat: p.coords.latitude, lng: p.coords.longitude }; $('gps').textContent = '📍 Location added ✓'; $('gps').classList.add('on'); },
-        () => { $('gps').textContent = '📍 Could not get location — country is enough'; },
+        () => { $('gps').textContent = '📍 Could not get location - country is enough'; },
         { enableHighAccuracy: false, timeout: 8000 }
       );
     };
 
     function fmtCount(s) {
-      if (!s || !s.total) return 'Be the very first to join the standing force 🌱';
-      return `<b>${s.total.toLocaleString()}</b> volunteer${s.total === 1 ? '' : 's'} ready across <b>${s.countries}</b> countr${s.countries === 1 ? 'y' : 'ies'}`;
+      if (!s || !s.total) return 'Be the first volunteer to sign up.';
+      return `<b>${s.total.toLocaleString()}</b> volunteer${s.total === 1 ? '' : 's'} signed up across <b>${s.countries}</b> countr${s.countries === 1 ? 'y' : 'ies'}`;
     }
     fetch((C.API || '') + '/api/volunteers/summary').then(r => r.json()).then(s => {
-      if (!s.enabled) {   // operator hasn't set the password room up yet — don't take sign-ups we can't key
-        $('count').textContent = 'Sign-up opens very soon — check back shortly 🌱';
+      if (!s.enabled) {
+        $('count').textContent = 'Sign-up opens soon.';
         $('submit').disabled = true; $('submit').textContent = 'Opening soon';
         $('email').disabled = true;
       } else { $('count').innerHTML = fmtCount(s); }
@@ -155,11 +155,11 @@
         const res = await fetch((C.API || '') + '/api/volunteer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
         const j = await res.json();
         if (!res.ok) throw new Error(j.error || 'Something went wrong');
-        $('form').innerHTML = '<div class="done" style="text-align:center"><h3>🎉 You\'re in the standing force!</h3><p style="color:#c3cdda">Thank you. If disaster strikes near you, you\'ll be among the first alerted. Your email is already encrypted — no one online can read it.</p><p style="margin-top:14px"><a class="link" href="/world">🌍 See the live world map</a></p><p style="margin-top:10px;color:var(--muted);font-size:13px">Pull a friend in — the bigger the force, the faster help arrives:</p><p><a class="link" href="https://wa.me/?text=' + encodeURIComponent('I just joined Banpani\'s disaster-response volunteer force — you get alerted when disaster hits your area, no account, email encrypted. Join 👉 https://banpani.org/volunteers.html') + '" target="_blank" rel="noopener">↗ Share on WhatsApp</a></p></div>';
+        $('form').innerHTML = '<div class="done" style="text-align:center"><h3>You\'re signed up.</h3><p style="color:#c3cdda">Thank you. If a disaster is confirmed near you, you may be contacted to help. Your email is kept private.</p><p style="margin-top:14px"><a class="link" href="/world">See the live world map</a></p><p style="margin-top:10px;color:var(--muted);font-size:13px">Share it so more people can help:</p><p><a class="link" href="https://wa.me/?text=' + encodeURIComponent('I signed up to help with disaster response on Banpani. If a disaster hits your area you can be contacted to help. No account needed. https://banpani.org/volunteers') + '" target="_blank" rel="noopener">Share on WhatsApp</a></p></div>';
         $('count').innerHTML = fmtCount(j);
       } catch (err) {
-        msg(err.message || 'Could not join — please try again.', 'err');
-        $('submit').disabled = false; $('submit').textContent = '🙋 Join the standing force';
+        msg(err.message || 'Could not sign up. Please try again.', 'err');
+        $('submit').disabled = false; $('submit').textContent = 'Sign up';
       }
     });
   })();
