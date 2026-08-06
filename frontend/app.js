@@ -898,10 +898,13 @@ $('m_send').onclick = async () => {
 // helplines dropdown
 $('helpBtn').onclick = () => $('helpMenu').classList.toggle('show');
 $('helpMenu').innerHTML = ((EVENT && EVENT.helplines) ? EVENT.helplines : C.HELPLINES).map(h => `<a href="tel:${h.tel}">☎ ${esc(h.label)}</a>`).join('');
-// hamburger menu (mobile)
+// hamburger menu (the ☰ dropdown, on every screen size)
 $('menuBtn').onclick = e => { e.stopPropagation(); $('hdrActions').classList.toggle('show'); };
-document.addEventListener('click', e => { if (!$('hdrActions').contains(e.target) && e.target !== $('menuBtn')) $('hdrActions').classList.remove('show'); });
-$('hdrActions').addEventListener('click', e => { if (!e.target.closest('#helpBtn')) $('hdrActions').classList.remove('show'); });
+document.addEventListener('click', e => { if (!$('hdrActions').contains(e.target) && !$('menuBtn').contains(e.target)) $('hdrActions').classList.remove('show'); });
+$('hdrActions').addEventListener('click', () => $('hdrActions').classList.remove('show'));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('hdrActions').classList.remove('show'); });
+// Assam-only tools (community verify console + the Assam situation report) do not apply to other events
+if (EVENT) { const v = $('mVerify'), r = $('mReport'); if (v) v.hidden = true; if (r) r.hidden = true; }
 // one-time disclaimer
 if (!localStorage.getItem('banpani.disclaimer2')) $('disclaimer').classList.add('show');
 $('discOk').onclick = () => { $('disclaimer').classList.remove('show'); localStorage.setItem('banpani.disclaimer2', '1'); };

@@ -26,8 +26,15 @@ header a.link:hover{color:var(--text);border-color:var(--accent)}
 header button.link{cursor:pointer;font-family:inherit}
 .ic-btn{display:inline-flex;align-items:center;gap:5px}
 .ic-btn .e{font-size:14px;line-height:1}
-.hdr-actions{display:flex;align-items:center;gap:8px}
-.hamburger{display:none;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:7px 11px;font-size:16px;line-height:1;cursor:pointer}
+/* the menu is a dropdown on EVERY screen size now (was a flat desktop row) */
+.hdr-actions{position:absolute;top:100%;right:10px;margin-top:6px;flex-direction:column;align-items:stretch;gap:2px;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:1200;min-width:210px}
+.hdr-actions.show{display:flex}
+.hdr-actions .ic-btn{width:100%;justify-content:flex-start;padding:11px 12px;font-size:14px;border-radius:8px;color:var(--text);background:none;border:none;text-decoration:none}
+.hdr-actions .ic-btn:hover{background:var(--panel2)}
+.hdr-actions .ic-btn .t{display:inline}
+.hdr-actions .ic-btn .e{font-size:16px;width:24px;text-align:center;flex:0 0 auto}
+.hamburger{display:inline-flex;align-items:center;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:7px 11px;font-size:16px;line-height:1;cursor:pointer}
 .hlp{position:relative}
 .helpmenu{display:none;position:absolute;right:0;top:110%;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:6px;z-index:1000;min-width:180px}
 .helpmenu.show{display:block}
@@ -312,17 +319,6 @@ textarea{resize:vertical;min-height:50px}
   header{gap:8px;padding:9px 10px}
   header h1{font-size:14px}header .sub{display:none}.name-sub{display:none}
   .hide-sm{display:none}
-  /* header actions collapse into a hamburger dropdown */
-  .hamburger{display:block}
-  .hdr-actions{position:absolute;top:100%;right:8px;margin-top:6px;flex-direction:column;align-items:stretch;gap:2px;
-    background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:none;z-index:1200;min-width:190px}
-  .hdr-actions.show{display:flex}
-  .hdr-actions .ic-btn{width:100%;justify-content:flex-start;padding:11px 12px;font-size:14px}
-  .hdr-actions .ic-btn .t{display:inline}
-  .hdr-actions .ic-btn .e{font-size:17px;width:24px;text-align:center}
-  .hdr-actions .hlp{width:100%}
-  .hdr-actions .helpmenu{position:static;box-shadow:none;border:none;background:transparent;padding:0;min-width:0;margin-top:2px}
-  .hdr-actions .helpmenu a{padding-left:36px;font-size:13px}
   /* map hint: compact, never spanning the top */
   .modehint{font-size:11px;padding:5px 11px;max-width:78vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;top:62px}
   input,textarea,select{font-size:16px}   /* ≥16px stops iOS auto-zoom */
@@ -345,3 +341,8 @@ body.map-max .panel,
 body.map-max .panel-fab,
 body.map-max .modehint,
 body.map-max .recenter-btn{display:none!important}
+
+/* on small screens the always-visible primary buttons show icon only, so the header stays tight */
+@media(max-width:640px){ .hdr-primary .t{display:none} }
+/* on phones, drop the wordmark (logo stays) so the menu + language never get pushed off-screen */
+@media(max-width:560px){ header h1{display:none} header{gap:6px} }

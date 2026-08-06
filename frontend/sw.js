@@ -2,7 +2,7 @@
 // Strategy: NETWORK-FIRST for everything (so a live crisis tool is always up to date the
 // moment it's online), falling back to the last cached copy only when the network fails -
 // so the app still opens and the last-seen map still shows on a dead connection.
-const CACHE = 'banpani-v62';
+const CACHE = 'banpani-v63';
 const PRECACHE = [
   './', 'index.html', 'styles.css', 'app.js', 'config.js', 'fullscreen.js', 'i18n.js',
   'about.html', 'privacy.html', 'volunteers.html', 'doc.css', 'doc.js',

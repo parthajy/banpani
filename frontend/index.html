@@ -53,30 +53,33 @@
       <button data-mode="rehab" data-i18n="modeRehab">🔨 Rehab</button>
     </div>
     <div class="spacer"></div>
-    <div class="hdr-actions" id="hdrActions">
-      <div class="hlp">
-        <button class="link ic-btn" id="helpBtn"><span class="e">☎</span><span class="t" data-i18n="helplines">Help</span></button>
-        <div class="helpmenu" id="helpMenu"></div>
-      </div>
-      <button class="link ic-btn" id="expandBtn" title="Full screen"><span class="e">⛶</span><span class="t">Full</span></button>
-      <button class="link ic-btn" id="saveEventBtn" hidden><span class="e">☆</span><span class="t">Save</span></button>
-      <button class="link ic-btn" id="shareMap"><span class="e">↗</span><span class="t" data-i18n="shareMap">Share</span></button>
-      <button class="link ic-btn" id="newsBtn"><span class="e">📰</span><span class="t" data-i18n="news">News</span></button>
-      <button class="link ic-btn" id="activityBtn"><span class="e">🧾</span><span class="t" data-i18n="activity">Activity</span></button>
-      <button class="link ic-btn" id="contactBtn"><span class="e">✉</span><span class="t" data-i18n="contact">Contact</span></button>
-      <a class="link ic-btn" href="verify.html"><span class="e">🛡️</span><span class="t" data-i18n="volunteers">Verify</span></a>
-      <a class="link ic-btn" href="/volunteers.html"><span class="e">🙋</span><span class="t">Volunteer</span></a>
-      <a class="link ic-btn" href="report.html" target="_blank"><span class="e">📄</span><span class="t" data-i18n="report6h">Report</span></a>
-      <button class="link ic-btn" id="guideBtn"><span class="e">▶</span><span class="t" data-i18n="guide">Guide</span></button>
-      <a class="link ic-btn" href="about.html"><span class="e">ℹ️</span><span class="t" data-i18n="about">About</span></a>
-      <a class="link ic-btn" href="privacy.html"><span class="e">🔒</span><span class="t" data-i18n="privacy">Privacy</span></a>
+    <!-- always-visible primary actions -->
+    <div class="hlp hdr-primary">
+      <button class="link ic-btn" id="helpBtn"><span class="e">☎</span><span class="t" data-i18n="helplines">Help</span></button>
+      <div class="helpmenu" id="helpMenu"></div>
     </div>
+    <button class="link ic-btn hdr-primary" id="expandBtn" title="Full screen"><span class="e">⛶</span><span class="t">Full</span></button>
+    <button class="link ic-btn hdr-primary" id="saveEventBtn" hidden><span class="e">☆</span><span class="t">Save</span></button>
     <select id="lang" class="langsel" title="Language" aria-label="Language">
       <option value="en">EN</option>
       <option value="as">অস</option>
       <option value="hi">हि</option>
     </select>
-    <button class="hamburger" id="menuBtn" aria-label="Menu">☰</button>
+    <!-- everything else lives in the menu (a dropdown on every screen size) -->
+    <button class="hamburger" id="menuBtn" aria-label="Menu" aria-haspopup="true">☰</button>
+    <div class="hdr-actions" id="hdrActions">
+      <button class="link ic-btn" id="shareMap"><span class="e">↗</span><span class="t" data-i18n="shareMap">Share</span></button>
+      <button class="link ic-btn" id="newsBtn"><span class="e">📰</span><span class="t" data-i18n="news">News</span></button>
+      <button class="link ic-btn" id="activityBtn"><span class="e">🧾</span><span class="t" data-i18n="activity">Activity</span></button>
+      <button class="link ic-btn" id="contactBtn"><span class="e">✉</span><span class="t" data-i18n="contact">Contact</span></button>
+      <button class="link ic-btn" id="guideBtn"><span class="e">▶</span><span class="t" data-i18n="guide">Guide</span></button>
+      <a class="link ic-btn" id="mVerify" href="verify.html"><span class="e">🛡️</span><span class="t" data-i18n="volunteers">Verify</span></a>
+      <a class="link ic-btn" id="mReport" href="report.html" target="_blank"><span class="e">📄</span><span class="t" data-i18n="report6h">Report</span></a>
+      <a class="link ic-btn" href="/volunteers.html"><span class="e">🙋</span><span class="t">Volunteer</span></a>
+      <a class="link ic-btn" href="/world"><span class="e">🌍</span><span class="t">World map</span></a>
+      <a class="link ic-btn" href="about.html"><span class="e">ℹ️</span><span class="t" data-i18n="about">About</span></a>
+      <a class="link ic-btn" href="privacy.html"><span class="e">🔒</span><span class="t" data-i18n="privacy">Privacy</span></a>
+    </div>
   </header>
 
   <div class="disclaimer" id="disclaimer">
