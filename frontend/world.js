@@ -174,4 +174,14 @@ window.flagEvent = async function (slug) {
   return false;
 };
 
+// header hamburger menu (Assam map / About / Privacy)
+(function () {
+  const b = $('wmenuBtn'), m = $('wmenu');
+  if (!b || !m) return;
+  b.onclick = e => { e.stopPropagation(); m.classList.toggle('show'); };
+  document.addEventListener('click', e => { if (!m.contains(e.target) && !b.contains(e.target)) m.classList.remove('show'); });
+  m.addEventListener('click', () => m.classList.remove('show'));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') m.classList.remove('show'); });
+})();
+
 load();
