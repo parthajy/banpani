@@ -4,99 +4,226 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>About Banpani</title>
-  <meta name="description" content="What Banpani is, how it works, how trust and privacy work, and who runs it. A free, community-run map for coordinating disaster relief." />
+  <meta name="description" content="A complete guide to Banpani: what it is, who it is for, how coordination pages and community verification work, how privacy is protected, the data sources, and how it is owned and run." />
   <link rel="canonical" href="https://banpani.org/about.html" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#0f1419" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="doc.css" />
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
-  <style>
-    body{overflow:auto}
-    .wrap{max-width:760px;margin:0 auto;padding:26px 18px 70px;line-height:1.6}
-    .wrap h2{font-size:20px;margin:30px 0 8px}
-    .wrap h3{font-size:15px;margin:20px 0 6px;color:#cdd6e2}
-    .wrap p,.wrap li{color:#c3cdda;font-size:15px}
-    .lead{font-size:17px;color:var(--text)}
-    .wrap a{color:#8fbaff}
-    .card2{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:16px 0}
-    .warn2{background:rgba(240,69,58,.10);border:1px solid #6b2f2a;border-radius:12px;padding:14px 16px;color:#ffb3ad}
-    ul{padding-left:20px}
-    .cta{display:inline-block;background:var(--accent);color:#fff;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:11px;margin-top:8px}
-    .muted{color:var(--muted);font-size:13px}
-  </style>
 </head>
 <body>
-  <header>
-    <img class="logo" src="icon.svg" alt="Banpani" width="30" height="30" />
-    <div><h1>About Banpani <span style="color:var(--muted);font-weight:400">· বানপানী</span></h1><div class="sub">Community disaster relief, coordinated</div></div>
-    <div class="spacer"></div>
-    <a class="link" href="index.html">Live map</a>
-  </header>
-
-  <div class="wrap">
-    <p class="lead">Banpani is a free website for coordinating disaster relief. It puts needs, offers of help, and hazards on one shared live map, so help reaches the right places and two groups don't cover the same spot while another is missed.</p>
-
-    <p>It started in 2026 for the Assam floods. It now works for any disaster, anywhere: floods, fires, storms, earthquakes, disease outbreaks, industrial accidents, and more. There are no accounts and no login. Nobody owns it. Anyone can use it, and anyone can help run it.</p>
-
-    <div class="warn2">Banpani is a community tool, not a replacement for official rescue. Reports come from the public and can be wrong or out of date. In an emergency, call your official emergency number first (112 in India and much of the world, or your local number).</div>
-
-    <h2>What you can do</h2>
-    <ul>
-      <li><b>Report a need.</b> Drop a pin and say what is needed. No login.</li>
-      <li><b>Offer help.</b> Mark what you can provide: a boat, water, beds, transport, shelter.</li>
-      <li><b>Mark the ground truth.</b> Blocked roads, shops and clinics that are open or closed, hazard zones, escape routes.</li>
-      <li><b>See the gaps.</b> Places that have been reported but nobody has reached yet.</li>
-      <li><b>Add photos as proof.</b> The location data in a photo is removed before it is uploaded.</li>
-    </ul>
-    <a class="cta" href="index.html">Open the live map</a>
-
-    <h2>How trust works</h2>
-    <p>There is no gatekeeper and no authority deciding what is true. The community checks each other's reports. The rule is simple: it takes a few ordinary people agreeing, not an official, to make information trustworthy.</p>
-    <ul>
-      <li>A report appears on the map straight away, marked <b>unconfirmed</b>.</li>
-      <li>When <b>3 different people</b> confirm it, it becomes <b>confirmed</b>.</li>
-      <li>If people flag a report as false, it is hidden.</li>
-      <li>Groups and NGOs get a <b>community-verified</b> mark after 5 people vouch for them.</li>
-      <li>Anyone can flag a fake or duplicate event. A few flags hide it.</li>
-    </ul>
-    <p>Every action is visible in the public <a href="index.html">Activity</a> log, with no names, no numbers, and no IP addresses, just an anonymous id per person. There is also a <a href="report.html">public situation report</a> that lists what is still unconfirmed and where the coverage gaps are.</p>
-
-    <h2>Privacy</h2>
-    <ul>
-      <li>No accounts, no passwords, no login.</li>
-      <li>Phone numbers are never shown publicly. A number is revealed one at a time, only to someone coordinating help, and every reveal is logged.</li>
-      <li>IP addresses are hashed, never stored or shown in the open.</li>
-      <li>Everything else people add (needs, hazards, photos) is published as open data that anyone can reuse.</li>
-    </ul>
-    <p>See the <a href="privacy.html">privacy policy</a> for exactly what is kept and what stays private.</p>
-
-    <h2>Languages</h2>
-    <p>Banpani works in English, Assamese (অসমীয়া), and Hindi (हिन्दी). It picks your language from your browser, and you can change it from the top of the map. More languages can be added.</p>
-
-    <h2>Where the data comes from</h2>
-    <div class="card2 muted">
-      <b>Map:</b> © OpenStreetMap contributors<br>
-      <b>Weather:</b> live rainfall forecast from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a><br>
-      <b>Official alerts:</b> <a href="https://www.gdacs.org/" target="_blank" rel="noopener">GDACS</a> worldwide, and <a href="https://sdmassam.nic.in/" target="_blank" rel="noopener">ASDMA</a> for Assam<br>
-      <b>News:</b> aggregated headlines from Google News<br>
-      <b>Also useful for Assam:</b> <a href="https://assamflood.org/" target="_blank" rel="noopener">Axom Flood</a>, an independent river-level dashboard
-    </div>
-    <p>Banpani links back to its sources and does not replace an official warning.</p>
-
-    <h2>Who runs it</h2>
-    <p>Banpani was created and is maintained by <b>Partha Borthakur</b>. The code is open source under the <b>MIT License</b>, copyright 2026 Partha Borthakur. Holding the copyright is what lets it be given away: the licence guarantees that anyone can use, change, and run it for the next disaster. It is run for the community, not owned over it. Code: <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">github.com/parthajy/banpani</a></p>
-    <p>The information people add is released into the public domain under <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 1.0</a>, so anyone can reuse it. Phone numbers and IP addresses are stripped from all of it.</p>
-
-    <h2>Help build it</h2>
-    <p>If something is broken, or you want to help build, translate, or run Banpani, use the <b>Contact</b> button on the <a href="index.html">map</a>. No phone numbers are shown to anyone. You can also <a href="/volunteers">sign up as a volunteer</a> to be contacted when a disaster hits near you.</p>
-
-    <p class="muted" style="margin-top:28px">
-      <a href="/world">World map</a> · <a href="/volunteers">Volunteer</a> · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">GitHub</a> · <a href="privacy.html">Privacy</a> · MIT License · © 2026 Partha Borthakur<br>
-      <a href="index.html">Back to the live map</a>
-    </p>
+  <div class="doc-top">
+    <img src="icon.svg" alt="" width="26" height="26" />
+    <div class="brand">Banpani <span>· বানপানী</span></div>
+    <nav>
+      <a href="/">Live map</a>
+      <a href="/world" class="opt">World map</a>
+      <a href="/volunteers" class="opt">Volunteer</a>
+      <a href="/about.html" class="here">About</a>
+      <a href="/privacy.html">Privacy</a>
+    </nav>
   </div>
+
+  <div class="doc-hero">
+    <div class="in">
+      <h1>About Banpani</h1>
+      <p>A free, community-run map for coordinating relief during a disaster. This page explains what Banpani is, who it is for, how it works, and how it protects the people who use it.</p>
+      <div class="updated">Community disaster relief, coordinated. No accounts. No cost. Owned by no one.</div>
+    </div>
+  </div>
+
+  <div class="doc-layout">
+    <aside class="toc">
+      <div class="h">Contents</div>
+      <ol>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#who">Who Banpani is for</a></li>
+        <li><a href="#do">What you can do</a></li>
+        <li><a href="#events">How coordination pages work</a></li>
+        <li><a href="#trust">How trust and verification work</a></li>
+        <li><a href="#moderation">Moderation and safety</a></li>
+        <li><a href="#privacy">Privacy and your data</a></li>
+        <li><a href="#disasters">Disasters we cover</a></li>
+        <li><a href="#languages">Languages</a></li>
+        <li><a href="#sources">Data sources and credits</a></li>
+        <li><a href="#licence">Open source and open data</a></li>
+        <li><a href="#governance">Governance, ownership and money</a></li>
+        <li><a href="#limits">Limitations and disclaimer</a></li>
+        <li><a href="#access">Accessibility and offline use</a></li>
+        <li><a href="#help">How to help</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ol>
+    </aside>
+
+    <main class="content">
+      <p class="lead">Banpani is a free website for coordinating relief during a disaster. It puts needs, offers of help, hazards, and the state of the ground onto one shared and live map, so that help reaches the right places and effort is not wasted.</p>
+
+      <section id="overview">
+        <h2><span class="n">1.</span> Overview</h2>
+        <p>When a disaster strikes, relief is usually generous but disorganised. A great deal of it lives inside scattered messaging groups, where a request for medicine can be buried under a hundred later messages, and where two convoys can unknowingly travel to the same village while a third village waits. Banpani exists to fix that. It shows, on a single map that everyone can see at once, where help is needed, who is providing it, which roads are blocked, which shops and clinics are open, where the hazards and the safe routes are, and which places have been reported but not yet reached.</p>
+        <p>Banpani began in 2026 during the floods in Assam, India. It was built by volunteers, for the people affected, and it was designed from the start to be reused for the next disaster, anywhere. It is now general: it works for floods, fires, storms, earthquakes, disease outbreaks, industrial accidents, and more, in any country. There are no accounts, no logins, and no cost. Nobody owns it.</p>
+      </section>
+
+      <section id="who">
+        <h2><span class="n">2.</span> Who Banpani is for</h2>
+        <ul>
+          <li><dfn>People affected by a disaster,</dfn> who can place a request for help on the map in under a minute, without registering.</li>
+          <li><dfn>Neighbours and bystanders,</dfn> who can report what they can see near them.</li>
+          <li><dfn>Volunteers and relief groups,</dfn> who can see the whole picture, avoid duplicating each other, and reach the places nobody has yet reached.</li>
+          <li><dfn>Non-governmental organisations,</dfn> who can list themselves so that donors and coordinators can find them.</li>
+          <li><dfn>People who want to help in advance,</dfn> who can sign up as standing volunteers to be contacted when a disaster happens near them.</li>
+        </ul>
+        <p>Banpani is meant to be usable by an ordinary person on an ordinary phone, on a weak connection. It asks for as little as possible and never requires you to create an account.</p>
+      </section>
+
+      <section id="do">
+        <h2><span class="n">3.</span> What you can do</h2>
+        <p>Every disaster page carries a toolkit suited to that kind of disaster. Depending on the situation, you can:</p>
+        <ul>
+          <li><dfn>Report a need.</dfn> Drop a pin, say what is needed (for example a boat, drinking water, medicine, or shelter), and roughly how many people are affected.</li>
+          <li><dfn>Offer help.</dfn> Mark what you can provide, so that people who need it can find you. This is the supply side of the map.</li>
+          <li><dfn>Mark blocked roads.</dfn> Show which routes are cut or damaged, so relief can route around them.</li>
+          <li><dfn>Mark open and closed facilities.</dfn> Show which shops, pharmacies, clinics, fuel stations, and water points are open right now. This matters most during outbreaks and long emergencies.</li>
+          <li><dfn>Mark hazards and safe routes.</dfn> Show danger zones (a fire front, a flooded area, a gas plume) and the escape routes away from them.</li>
+          <li><dfn>See the gaps.</dfn> The map highlights places that have been reported but that nobody has yet covered, so effort goes where it is missing.</li>
+          <li><dfn>Add photographs as proof.</dfn> A photo of the situation, a need, or completed relief work. The location information stored inside a photo is removed before it is uploaded.</li>
+        </ul>
+      </section>
+
+      <section id="events">
+        <h2><span class="n">4.</span> How coordination pages work</h2>
+        <p>Each disaster gets its own coordination page with its own live map and its own toolkit. These pages are created automatically. Nobody has to apply, and nobody approves them in advance.</p>
+        <p>When a person files the first report for a place, Banpani either attaches it to a nearby ongoing response of the same kind, or, if there is none, starts a new one. A brand new response appears on the map straight away, marked as unconfirmed, so that a genuine first report is never invisible. As more people report and confirm, the response becomes established.</p>
+        <p>To prevent misuse, a single device can only start a limited number of new responses in a day, and anyone can flag a response that is fake or duplicated. A response stays live for as long as the disaster is active. When it is over, it winds down and moves into a permanent public archive, so that the record of what happened, and when, is never lost.</p>
+      </section>
+
+      <section id="trust">
+        <h2><span class="n">5.</span> How trust and verification work</h2>
+        <p>There is no gatekeeper and no authority deciding what is true. The community checks each other's reports. The idea is simple: it takes a few ordinary people agreeing, not an official stamp, to make information trustworthy.</p>
+        <ul>
+          <li>A report appears on the map straight away, marked <dfn>unconfirmed</dfn>.</li>
+          <li>When <dfn>three different people</dfn> confirm it, it becomes <dfn>confirmed</dfn>.</li>
+          <li>If people flag a report as false, it is hidden.</li>
+          <li>Groups and NGOs receive a <dfn>community-verified</dfn> mark after five people vouch for them.</li>
+          <li>Anyone can flag a fake or duplicate response, and a few flags will hide it.</li>
+        </ul>
+        <p>Every action taken on Banpani is visible in a public activity log, with no names, no phone numbers, and no network addresses, shown only as an anonymous identifier for each person. There is also a public situation report that lists what is still unconfirmed and where the coverage gaps are. This is how the system stays honest and open at the same time.</p>
+      </section>
+
+      <section id="moderation">
+        <h2><span class="n">6.</span> Moderation and safety</h2>
+        <p>Banpani is built to be hard to abuse and safe to use.</p>
+        <ul>
+          <li>Reports and responses can be flagged by the community and are hidden once enough people agree they are false or duplicated.</li>
+          <li>Creating new responses is rate-limited per device, so one person cannot flood the map.</li>
+          <li>A maintainer can remove clearly harmful content that the community has not yet caught.</li>
+          <li>By deliberate choice, Banpani does not host categories that can put people in danger, such as tracking named missing persons, or mapping conflict, refugees, and other situations where publishing a location could get someone targeted. It is a tool for coordinating relief, not for locating individuals.</li>
+        </ul>
+      </section>
+
+      <section id="privacy">
+        <h2><span class="n">7.</span> Privacy and your data</h2>
+        <ul>
+          <li>There are no accounts, no passwords, and no logins.</li>
+          <li>Phone numbers are never shown publicly. A number is revealed one at a time, only to a person who is actually coordinating help, and every reveal is recorded.</li>
+          <li>Network (IP) addresses are hashed. They are never stored or shown in a readable form. They exist only to detect abuse.</li>
+          <li>Everything else that people add, such as needs, hazards, and photographs, is published as open data that anyone can reuse.</li>
+          <li>Money is never collected or displayed anywhere on Banpani.</li>
+        </ul>
+        <p>The full details are in the <a href="/privacy.html">privacy policy</a>, including what is kept, for how long, and your rights over it.</p>
+      </section>
+
+      <section id="disasters">
+        <h2><span class="n">8.</span> Disasters we cover</h2>
+        <p>Banpani groups disasters into families, and gives each family the tools and the vocabulary that suit it:</p>
+        <ul>
+          <li><dfn>Water:</dfn> floods, flash floods, and related events.</li>
+          <li><dfn>Fire:</dfn> wildfires and large urban fires.</li>
+          <li><dfn>Storm and wind:</dfn> cyclones, hurricanes, and severe storms.</li>
+          <li><dfn>Geological:</dfn> earthquakes and landslides.</li>
+          <li><dfn>Climate extreme:</dfn> drought and heatwaves.</li>
+          <li><dfn>Health:</dfn> disease outbreaks and pandemics, where the focus is on medicines, oxygen, hospital beds, and which shops and clinics are open.</li>
+          <li><dfn>Industrial:</dfn> chemical and gas leaks.</li>
+          <li><dfn>Infrastructure:</dfn> building collapses and major failures.</li>
+          <li><dfn>Agriculture:</dfn> pest and livestock emergencies.</li>
+        </ul>
+      </section>
+
+      <section id="languages">
+        <h2><span class="n">9.</span> Languages</h2>
+        <p>Banpani currently works in English, Assamese (অসমীয়া), and Hindi (हिन्दी). It chooses your language automatically from your browser's settings, and you can change it from the top of the map at any time. More languages can be added, and help translating is welcome. If you would like to add a language, please get in touch through the contact details below.</p>
+      </section>
+
+      <section id="sources">
+        <h2><span class="n">10.</span> Data sources and credits</h2>
+        <table>
+          <tr><th>Map</th><td>© OpenStreetMap contributors</td></tr>
+          <tr><th>Weather</th><td>Live rainfall forecast from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a></td></tr>
+          <tr><th>Official alerts</th><td><a href="https://www.gdacs.org/" target="_blank" rel="noopener">GDACS</a> worldwide, and <a href="https://sdmassam.nic.in/" target="_blank" rel="noopener">ASDMA</a> for Assam</td></tr>
+          <tr><th>News</th><td>Aggregated headlines from Google News</td></tr>
+          <tr><th>Also useful (Assam)</th><td><a href="https://assamflood.org/" target="_blank" rel="noopener">Axom Flood</a>, an independent river-level dashboard</td></tr>
+        </table>
+        <p>Banpani always links back to its sources, and it never claims to replace an official warning.</p>
+      </section>
+
+      <section id="licence">
+        <h2><span class="n">11.</span> Open source and open data</h2>
+        <p>Banpani's software is open source under the MIT License. Anyone can read it, improve it, fork it, or run it for the next disaster. The source code is public at <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">github.com/parthajy/banpani</a>.</p>
+        <p>The information that people add to Banpani, such as needs, hazards, listings, and photographs, is dedicated to the public domain under <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">Creative Commons Zero (CC0 1.0)</a>, so that anyone can reuse it freely. Personal identifiers, such as phone numbers and network addresses, are stripped from all of it.</p>
+      </section>
+
+      <section id="governance">
+        <h2><span class="n">12.</span> Governance, ownership and money</h2>
+        <p>Banpani belongs to no company and no single person. It is run by a volunteer, together with a community of contributors, and it is meant to be given away, not held. Open licensing is what guarantees this: the community can always use, change, and re-run Banpani for the next disaster, no matter who is operating the current website.</p>
+        <p>Banpani does not, and will not, collect or display money. There is no payment, no donation collection, no advertising, and no paywall anywhere on the service. It is not a business, and it is not for sale.</p>
+      </section>
+
+      <section id="limits">
+        <h2><span class="n">13.</span> Limitations and disclaimer</h2>
+        <div class="callout">Banpani is a community tool, not a replacement for official rescue. Reports come from the public and can be wrong, incomplete, or out of date. In an emergency, call your official emergency number first (112 in India and much of the world, or your local number). Do not rely on Banpani alone for a life-safety decision.</div>
+        <p>Because the information is crowd-sourced, it should be treated as a helpful shared picture, not as a guarantee. Always confirm critical details, and always defer to official instructions from emergency services and government authorities.</p>
+      </section>
+
+      <section id="access">
+        <h2><span class="n">14.</span> Accessibility and offline use</h2>
+        <p>Banpani is designed to work on low-end phones and weak connections, which are common in a disaster. It is light on data. It can be installed to your home screen and opened like an app, and it will still open and show the last map you saw even when your connection drops. If you find something that is hard to use or read, please tell us so we can fix it.</p>
+      </section>
+
+      <section id="help">
+        <h2><span class="n">15.</span> How to help</h2>
+        <ul>
+          <li>Report accurately, and confirm other people's reports when you know they are true.</li>
+          <li>Sign up as a <a href="/volunteers">standing volunteer</a>, so you can be contacted when a disaster happens near you.</li>
+          <li>Help translate Banpani into another language.</li>
+          <li>Improve the software or run it for a new disaster. The code is on <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">GitHub</a>.</li>
+          <li>Share Banpani with people and groups who are helping, so more effort lands on the map.</li>
+        </ul>
+      </section>
+
+      <section id="contact">
+        <h2><span class="n">16.</span> Contact</h2>
+        <p>You can reach the volunteer behind Banpani by email at <a href="mailto:parthajy@gmail.com">parthajy@gmail.com</a>. You can also use the Contact button on the <a href="/">map</a> to leave a message. No phone numbers are shown to anyone, at any time.</p>
+        <a class="backtop" href="#">Back to top</a>
+      </section>
+    </main>
+  </div>
+
+  <div class="doc-footer">
+    <div class="in">
+      Banpani is free, open source, and owned by no one. Software under the MIT License. Community data under CC0 1.0.
+      <div class="row">
+        <a href="/">Live map</a>
+        <a href="/world">World map</a>
+        <a href="/volunteers">Volunteer</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:parthajy@gmail.com">Email</a>
+        <a href="https://www.linkedin.com/in/parthajy/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="doc.js"></script>
 </body>
 </html>
