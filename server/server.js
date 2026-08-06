@@ -600,12 +600,28 @@ async function serveEventApp(req, res, ev) {
     ...(ev.lat != null ? { spatialCoverage: { '@type': 'Place', geo: { '@type': 'GeoCoordinates', latitude: ev.lat, longitude: ev.lng } } } : {}),
   }).replace(/</g, '\\u003c');
   const inject = '<script>window.EVENT=' + JSON.stringify(cfg).replace(/</g, '\\u003c') + '</script>\n  <script type="application/ld+json">' + ld + '</script>\n  ';
+  // Per-event SEO: a shared /e/<slug> link must preview as ITSELF (its title, blurb, family image),
+  // not as the generic Assam homepage. Swap title/description + every OG/Twitter tag + canonical.
+  const url = 'https://banpani.org/e/' + ev.slug;
+  const ogTitle = `${f.emoji} ${ev.title} — live ${f.label.toLowerCase()} relief coordination`;
+  const ogDesc = `Report needs, offers, blocked roads and photos for ${ev.title}. A free, community-run relief map — no accounts, no money, owned by everyone.`;
+  const ogImg = `https://banpani.org/og-${ev.family}.png`;
+  const set = (h, attr, val) => h.replace(new RegExp('(<meta ' + attr + ' content=")[^"]*(")'), '$1' + htmlEsc(val).replace(/\$/g, '$$$$') + '$2');
   html = html
     // served under /e/<slug>, so relative asset URLs (styles.css, app.js…) must resolve from root
     .replace('<head>', '<head>\n  <base href="/">')
     .replace('<script src="config.js"></script>', inject + '<script src="config.js"></script>')
     .replace(/<title>[\s\S]*?<\/title>/, '<title>' + htmlEsc(ev.title + ' — ' + f.label + ' relief coordination · Banpani') + '</title>')
-    .replace(/(<meta name="description" content=")[^"]*(")/, '$1' + htmlEsc('Live community relief coordination for ' + ev.title + ' — report needs, offers, blocked roads and photos. No accounts, no money, open to everyone.') + '$2');
+    .replace(/(<link rel="canonical" href=")[^"]*(")/, '$1' + url + '$2');
+  html = set(html, 'name="description"', ogDesc);
+  html = set(html, 'property="og:title"', ogTitle);
+  html = set(html, 'property="og:description"', ogDesc);
+  html = set(html, 'property="og:url"', url);
+  html = set(html, 'property="og:image"', ogImg);
+  html = set(html, 'property="og:image:alt"', ogTitle);
+  html = set(html, 'name="twitter:title"', ogTitle);
+  html = set(html, 'name="twitter:description"', ogDesc);
+  html = set(html, 'name="twitter:image"', ogImg);
   writeBody(req, res, 200, Buffer.from(html), 'text/html; charset=utf-8', 'no-cache');
 }
 
