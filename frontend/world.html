@@ -43,6 +43,9 @@
     .wfab{position:absolute;right:16px;bottom:74px;z-index:650;background:var(--accent);color:#fff;border:none;border-radius:26px;
       padding:13px 18px;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
     .wfab:active{transform:scale(.95)}
+    .wexpand{position:absolute;right:12px;top:150px;z-index:640;width:40px;height:40px;border-radius:9px;
+      background:var(--panel);border:1px solid var(--line);color:#fff;font-size:17px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
+    .wexpand:active{transform:scale(.94)}
     .whint{position:absolute;top:150px;left:50%;transform:translateX(-50%);z-index:640;background:var(--accent);color:#fff;
       padding:8px 15px;border-radius:20px;font-size:13px;font-weight:600;display:none;box-shadow:var(--shadow)}
     .whint.show{display:block}
@@ -104,6 +107,7 @@
     Report a disaster anywhere - no accounts. <a href="/volunteers.html">🙋 Become a volunteer →</a>
   </div>
 
+  <button class="wexpand" id="wexpandBtn" title="Full screen">⛶</button>
   <button class="wfab" id="wreportBtn">＋ Report</button>
   <div class="whint" id="whint">Tap the map where it’s happening 📍</div>
 
@@ -128,6 +132,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="config.js"></script>
+  <script src="fullscreen.js"></script>
   <script src="world.js"></script>
 </body>
 </html>

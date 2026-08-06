@@ -18,6 +18,7 @@ let toastT; function toast(m) { const t = $('wtoast'); t.textContent = m; t.clas
 const map = L.map('wmap', { worldCopyJump: true, minZoom: C.WORLD.minZoom, maxZoom: 16, zoomControl: false })
   .setView(C.WORLD.center, C.WORLD.zoom);
 L.control.zoom({ position: 'topright' }).addTo(map);
+if (window.attachFullscreen) window.attachFullscreen(document.getElementById('wexpandBtn'), document.documentElement, map);   // expand the whole world map
 L.tileLayer(C.TILE_URL, { attribution: C.TILE_ATTR, maxZoom: C.TILE_MAXZOOM }).addTo(map);
 
 const active = new Set(Object.keys(FAM));   // all families visible by default

@@ -87,6 +87,11 @@ function isGap(n) {
 const B = L.latLngBounds(EVENT ? EVENT.bounds : C.BOUNDS);
 const map = L.map('map', { zoomControl: false, minZoom: EVENT ? (EVENT.minZoom || 5) : C.MIN_ZOOM, maxZoom: C.MAX_ZOOM, maxBounds: B, maxBoundsViscosity: 1.0 }).setView(EVENT ? EVENT.center : C.CENTER, EVENT ? EVENT.zoom : C.ZOOM);
 L.control.zoom({ position: 'topright' }).addTo(map);   // top-right, away from the View controls
+// Full-screen the map for easier panning/zooming: hide the side panels (body.map-max) so the map
+// fills the width, and request browser full screen too. The header stays, so the same button exits.
+// Guarded so the smoke test (no fullscreen.js) skips it.
+if (window.attachFullscreen) window.attachFullscreen(document.getElementById('expandBtn'), document.documentElement, map,
+  on => document.body.classList.toggle('map-max', on));
 L.tileLayer(C.TILE_URL, { attribution: C.TILE_ATTR, maxZoom: C.TILE_MAXZOOM, bounds: B }).addTo(map);
 map.setMaxBounds(B);
 map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp - no drift off Assam

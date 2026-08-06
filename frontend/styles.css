@@ -331,3 +331,17 @@ textarea{resize:vertical;min-height:50px}
 @media(max-width:520px){
   .overlay .ctl.uncovered{display:none}    /* keep only view/layers on tiny screens */
 }
+
+/* Full-screen / expand control for maps (works via Fullscreen API or the CSS fallback below) */
+.fs-ctrl a{font-size:17px;font-weight:700;line-height:26px;text-align:center}
+:fullscreen{width:100%!important;height:100%!important}
+:-webkit-full-screen{width:100%!important;height:100%!important}
+.fs-expanded{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;z-index:3000!important}
+body.fs-lock{overflow:hidden}
+
+/* map-max: the header "Full screen" button hides the side panels so the map fills the width */
+body.map-max .overlay,
+body.map-max .panel,
+body.map-max .panel-fab,
+body.map-max .modehint,
+body.map-max .recenter-btn{display:none!important}
