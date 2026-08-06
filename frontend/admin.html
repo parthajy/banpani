@@ -34,11 +34,14 @@
     <div id="panel" style="display:none">
       <div class="box">
         <h2>🙋 Volunteer force</h2>
-        <p class="sub2">People who signed up at <code>/volunteers</code> to be alerted when disaster strikes near them. Emails are encrypted in the database and shown here only after you log in. Never shown publicly.</p>
-        <div class="bar" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <p class="sub2">People who signed up at <code>/volunteers</code>. Emails are encrypted in the database and shown here only after you log in, never publicly. Filter by country and relief type, then <b>Copy emails</b> to paste into your mail app's BCC.</p>
+        <div class="bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
           <span id="v_count" style="background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:12.5px">0 volunteers</span>
-          <input id="v_filter" placeholder="Filter by email, country, area, skill…" style="flex:1;min-width:180px" />
-          <button class="btn" id="v_csv" style="margin:0">⬇ Export CSV</button>
+          <select id="v_country" style="min-width:130px"><option value="">All countries</option></select>
+          <select id="v_relief" style="min-width:140px"><option value="">All relief types</option></select>
+          <input id="v_filter" placeholder="Search…" style="flex:1;min-width:120px" />
+          <button class="btn" id="v_copy" style="margin:0">📋 Copy emails</button>
+          <button class="btn" id="v_csv" style="margin:0">⬇ CSV</button>
         </div>
         <div style="overflow-x:auto"><table id="vols"><thead><tr><th>Email</th><th>Country</th><th>Area</th><th>Can help</th><th>Skills</th><th>Joined</th></tr></thead><tbody></tbody></table></div>
       </div>

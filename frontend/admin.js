@@ -13,27 +13,43 @@ $('unlock').onclick = async () => {
   catch (e) { toast('Wrong key or unreachable: ' + e.message); }
 };
 
-let vols = [];
+let vols = [], shown = [];
 const famLabel = k => (C.DISASTERS[k] ? C.DISASTERS[k].emoji + ' ' + C.DISASTERS[k].label : k);
 async function loadVolunteers() {
   try {
     vols = (await api('/api/admin/volunteers')).volunteers || [];
-    renderVols(vols);
+    // populate the country + relief-type dropdowns from what's actually in the list
+    const countries = [...new Set(vols.map(v => v.country).filter(Boolean))].sort();
+    $('v_country').innerHTML = '<option value="">All countries</option>' + countries.map(c => `<option value="${esc(c)}">${esc(c)} (${vols.filter(v => v.country === c).length})</option>`).join('');
+    const fams = [...new Set(vols.flatMap(v => v.families || []))].sort();
+    $('v_relief').innerHTML = '<option value="">All relief types</option>' + fams.map(f => `<option value="${esc(f)}">${esc(famLabel(f))} (${vols.filter(v => (v.families || []).includes(f)).length})</option>`).join('');
+    applyVolFilters();
   } catch (e) { toast('Volunteers: ' + e.message); }
 }
-function renderVols(list) {
-  $('v_count').textContent = list.length + ' volunteer' + (list.length === 1 ? '' : 's');
-  $('vols').querySelector('tbody').innerHTML = list.map(v =>
+function applyVolFilters() {
+  const country = $('v_country').value, relief = $('v_relief').value, q = $('v_filter').value.toLowerCase().trim();
+  shown = vols.filter(v =>
+    (!country || v.country === country) &&
+    (!relief || (v.families || []).includes(relief)) &&
+    (!q || [v.email, v.country, v.region, (v.families || []).map(famLabel).join(' '), (v.skills || []).join(' ')].join(' ').toLowerCase().includes(q))
+  ).sort((a, b) => (a.country || '~').localeCompare(b.country || '~') || (a.email || '').localeCompare(b.email || ''));   // grouped by country
+  $('v_count').textContent = shown.length + ' of ' + vols.length + ' shown';
+  $('vols').querySelector('tbody').innerHTML = shown.map(v =>
     `<tr><td>${esc(v.email)}</td><td>${esc(v.country || '')}</td><td>${esc(v.region || '')}</td><td>${esc((v.families || []).map(famLabel).join(', '))}</td><td>${esc((v.skills || []).join(', '))}</td><td>${esc((v.created_at || '').slice(0, 10))}</td></tr>`
-  ).join('') || '<tr><td colspan=6 style="color:var(--muted)">No volunteers yet. Share banpani.org/volunteers to build the force.</td></tr>';
+  ).join('') || '<tr><td colspan=6 style="color:var(--muted)">No volunteers match. (Share banpani.org/volunteers to grow the list.)</td></tr>';
 }
-$('v_filter').oninput = e => {
-  const q = e.target.value.toLowerCase().trim();
-  renderVols(!q ? vols : vols.filter(v => [v.email, v.country, v.region, (v.families || []).map(famLabel).join(' '), (v.skills || []).join(' ')].join(' ').toLowerCase().includes(q)));
+$('v_country').onchange = applyVolFilters;
+$('v_relief').onchange = applyVolFilters;
+$('v_filter').oninput = applyVolFilters;
+$('v_copy').onclick = async () => {
+  const emails = shown.map(v => v.email).filter(e => e && e.includes('@'));
+  if (!emails.length) return toast('No emails to copy');
+  try { await navigator.clipboard.writeText(emails.join(', ')); toast('Copied ' + emails.length + ' email' + (emails.length === 1 ? '' : 's') + ' - paste into BCC'); }
+  catch { toast('Copy failed - use CSV instead'); }
 };
 $('v_csv').onclick = () => {
   const rows = [['email', 'country', 'area', 'can_help', 'skills', 'joined'],
-    ...vols.map(v => [v.email, v.country || '', v.region || '', (v.families || []).map(famLabel).join('; '), (v.skills || []).join('; '), (v.created_at || '').slice(0, 10)])];
+    ...shown.map(v => [v.email, v.country || '', v.region || '', (v.families || []).map(famLabel).join('; '), (v.skills || []).join('; '), (v.created_at || '').slice(0, 10)])];
   const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'banpani-volunteers.csv'; a.click();
