@@ -19,7 +19,7 @@ const map = L.map('wmap', { worldCopyJump: true, minZoom: C.WORLD.minZoom, maxZo
   .setView(C.WORLD.center, C.WORLD.zoom);
 L.control.zoom({ position: 'topright' }).addTo(map);
 if (window.attachFullscreen) window.attachFullscreen(document.getElementById('wexpandBtn'), document.documentElement, map);   // expand the whole world map
-L.tileLayer(C.TILE_URL, { attribution: C.TILE_ATTR, maxZoom: C.TILE_MAXZOOM }).addTo(map);
+L.tileLayer(C.TILE_URL, { attribution: C.TILE_ATTR, maxZoom: C.TILE_MAXZOOM, subdomains: 'abcd' }).addTo(map);
 
 const active = new Set(Object.keys(FAM));   // all families visible by default
 const pins = [];                            // { marker, family }

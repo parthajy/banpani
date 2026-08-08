@@ -2,9 +2,11 @@
 window.BANPANI = {
   API: '',   // '' = same origin (the Node server serves this page too)
 
-  TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  TILE_ATTR: '© OpenStreetMap contributors · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">Banpani - open source (MIT)</a>',
-  TILE_MAXZOOM: 18,
+  // Muted "Dark Matter" basemap (CARTO, free): the map recedes to gray so the data (affected areas,
+  // needs, hazards) pops. To try the light version instead, swap dark_all -> light_all.
+  TILE_URL: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+  TILE_ATTR: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a> · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">Banpani - open source (MIT)</a>',
+  TILE_MAXZOOM: 19,
 
   // Locked on Assam - tight bounds + a min zoom where Assam fills the screen, so the
   // view can't drift off the state.
