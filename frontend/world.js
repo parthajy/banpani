@@ -25,6 +25,23 @@ const active = new Set(Object.keys(FAM));   // all families visible by default
 const pins = [];                            // { marker, family }
 const group = L.layerGroup().addTo(map);
 
+// Live rain radar (RainViewer, free, no key): where it is raining hard right now = danger forming.
+let rainLayer = null;
+window.toggleRain = async function () {
+  const btn = $('wrainBtn');
+  if (rainLayer) { map.removeLayer(rainLayer); rainLayer = null; if (btn) btn.classList.remove('on'); return false; }
+  try {
+    const j = await (await fetch('https://api.rainviewer.com/public/weather-maps.json')).json();
+    const past = (j.radar && j.radar.past) || [];
+    const f = past[past.length - 1];
+    if (!f) { toast('Rain data unavailable'); return false; }
+    rainLayer = L.tileLayer(j.host + f.path + '/256/{z}/{x}/{y}/2/1_1.png', { opacity: 0.6, zIndex: 350, attribution: 'Rain radar © RainViewer' }).addTo(map);
+    if (btn) btn.classList.add('on');
+    toast('Live rain radar on - blue/green = rain, red = intense');
+  } catch { toast('Could not load rain radar'); }
+  return false;
+};
+
 const dot = (lat, lng, color, popup, radius = 7, unconfirmed = false) => L.circleMarker([lat, lng], {
   radius, weight: unconfirmed ? 2 : 1.5, color: unconfirmed ? color : '#0b0f14',
   fillColor: color, fillOpacity: unconfirmed ? .3 : .9, dashArray: unconfirmed ? '2 3' : null,

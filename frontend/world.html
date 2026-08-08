@@ -46,6 +46,10 @@
     .wexpand{position:absolute;right:12px;top:150px;z-index:640;width:40px;height:40px;border-radius:9px;
       background:var(--panel);border:1px solid var(--line);color:#fff;font-size:17px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
     .wexpand:active{transform:scale(.94)}
+    .wrain{position:absolute;right:12px;top:196px;z-index:640;width:40px;height:40px;border-radius:9px;
+      background:var(--panel);border:1px solid var(--line);font-size:17px;cursor:pointer;box-shadow:var(--shadow)}
+    .wrain.on{border-color:#4fa3ff;background:#183050}
+    .wrain:active{transform:scale(.94)}
     .whint{position:absolute;top:150px;left:50%;transform:translateX(-50%);z-index:640;background:var(--accent);color:#fff;
       padding:8px 15px;border-radius:20px;font-size:13px;font-weight:600;display:none;box-shadow:var(--shadow)}
     .whint.show{display:block}
@@ -112,6 +116,7 @@
   </div>
 
   <button class="wexpand" id="wexpandBtn" title="Full screen">⛶</button>
+  <button class="wrain" id="wrainBtn" title="Live rain radar" onclick="return toggleRain()">🌧</button>
   <button class="wfab" id="wreportBtn">＋ Report</button>
   <div class="whint" id="whint">Tap the map where it’s happening 📍</div>
 
