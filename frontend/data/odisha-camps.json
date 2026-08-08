@@ -1,0 +1,15 @@
+{
+  "source": "OSDMA",
+  "updated": "2026-08-02",
+  "note": "OSDMA: 22 districts affected, ~8.63 lakh people, 2.67 lakh evacuated, 529 relief centres + 31 animal centres. Worst-hit districts marked at their headquarters; exact camp locations can be added by volunteers on the ground.",
+  "camps": [
+    { "district": "Bhadrak", "lat": 21.06, "lng": 86.51, "note": "Worst-hit district" },
+    { "district": "Baleshwar (Balasore)", "lat": 21.49, "lng": 86.93, "note": "Worst-hit district" },
+    { "district": "Jajpur", "lat": 20.85, "lng": 86.33, "note": "Worst-hit district" },
+    { "district": "Mayurbhanj (Baripada)", "lat": 21.93, "lng": 86.73, "note": "Worst-hit district" },
+    { "district": "Keonjhar", "lat": 21.63, "lng": 85.58, "note": "Worst-hit district" },
+    { "district": "Cuttack", "lat": 20.46, "lng": 85.88, "note": "Mahanadi delta - affected" },
+    { "district": "Kendrapara", "lat": 20.50, "lng": 86.42, "note": "Mahanadi delta - affected" },
+    { "district": "Jagatsinghpur", "lat": 20.27, "lng": 86.17, "note": "Mahanadi delta - affected" }
+  ]
+}

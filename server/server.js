@@ -600,16 +600,20 @@ function timeAgo(iso) {
 async function serveEventApp(req, res, ev) {
   const f = DISASTERS[ev.family] || DISASTERS.water;
   const isAssam = ev.source === 'assam';
+  const isOdisha = ev.slug === 'odisha-flood-2026';
+  // Flagship events ship an official affected-areas dataset (district polygons + relief camps),
+  // loaded per-event by the app (data/<officialData>-districts.geojson + -camps.json).
+  const officialData = isAssam ? 'assam' : isOdisha ? 'odisha' : null;
   // Country-aware helplines: Assam keeps its own set (app falls back to C.HELPLINES); every other
   // event resolves its coordinates to a country and shows that country's emergency + family line.
   const cc = isAssam ? null : await countryOf(ev.lat, ev.lng);
   const cfg = {
     id: ev.id, slug: ev.slug, title: ev.title, disaster_type: ev.disaster_type, family: ev.family,
     color: f.color, emoji: f.emoji,
-    center: isAssam ? [26.5, 92.9] : [ev.lat, ev.lng],
-    zoom: isAssam ? 7 : 9, minZoom: isAssam ? 7 : 5,
-    bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
-    official: isAssam, items: ev.needs || [], modules: ev.modules || [],
+    center: isAssam ? [26.5, 92.9] : isOdisha ? [20.5, 85.3] : [ev.lat, ev.lng],
+    zoom: isAssam ? 7 : isOdisha ? 7 : 9, minZoom: isAssam ? 7 : isOdisha ? 6 : 5,
+    bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : isOdisha ? [[18.3, 82.2], [22.9, 87.8]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
+    official: !!officialData, officialData, items: ev.needs || [], modules: ev.modules || [],
     offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: isAssam ? null : helplinesForCountry(ev.family, cc),
     hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
     status: ev.status || 'active', dormantAt: ev.dormant_at || null, archivedAt: ev.archived_at || null,

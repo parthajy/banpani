@@ -114,10 +114,14 @@ const emojiIcon = e => L.divIcon({ html: `<div class="emoji">${e}</div>`, classN
 let officialFlood = null, officialCamps = { camps: [], updated: '' };
 async function loadOfficialFlood() {
   if (EVENT && !EVENT.official) { officialFlood = { type: 'FeatureCollection', features: [] }; officialCamps = { camps: [], updated: '' }; return; }
-  try { officialFlood = await (await fetch(C.FLOOD_GEOJSON)).json(); } catch { officialFlood = { type: 'FeatureCollection', features: [] }; }
-  try { officialCamps = await (await fetch('data/relief-camps.json')).json(); } catch { officialCamps = { camps: [], updated: '' }; }
+  // Which official dataset: homepage = Assam; flagship events name their own (assam / odisha / …).
+  const od = EVENT ? (EVENT.officialData || 'assam') : 'assam';
+  const geo = od === 'assam' ? C.FLOOD_GEOJSON : `data/${od}-districts.geojson`;
+  const camps = od === 'assam' ? 'data/relief-camps.json' : `data/${od}-camps.json`;
+  try { officialFlood = await (await fetch(geo)).json(); } catch { officialFlood = { type: 'FeatureCollection', features: [] }; }
+  try { officialCamps = await (await fetch(camps)).json(); } catch { officialCamps = { camps: [], updated: '' }; }
 }
-// Official ASDMA layer: affected-district shading (dated + sourced) + relief-camp summaries.
+// Official affected-areas layer: district shading (dated + sourced) + relief-camp summaries.
 function renderOfficial() {
   layers.official.clearLayers();
   if (!$('ly_official').checked || !officialFlood) return;
@@ -127,10 +131,11 @@ function renderOfficial() {
     interactive: false,
     style: f => ({ color: floodColor(f.properties.severity), weight: 1.4, fillColor: floodColor(f.properties.severity), fillOpacity: 0.20 }),
   }).addTo(layers.official);
-  const dn = $('officialDate'); if (dn) dn.textContent = officialCamps.updated ? `🏛️ ${t('sourceASDMA')} · ${officialCamps.updated}` : '';
+  const src = officialCamps.source ? '🏛️ Official · ' + officialCamps.source : t('sourceASDMA');
+  const dn = $('officialDate'); if (dn) dn.textContent = officialCamps.updated ? `${src} · ${officialCamps.updated}` : '';
   for (const c of (officialCamps.camps || [])) {
     L.marker([c.lat, c.lng], { icon: emojiIcon('🏕️') }).addTo(layers.official)
-      .bindPopup(`<b>🏕️ ${esc(c.district)}</b><br>${c.camps ? c.camps + ' ' + t('reliefCamps') + '<br>' : ''}${c.people ? '~' + Number(c.people).toLocaleString() + ' ' + t('sheltered') + '<br>' : ''}<small>${t('sourceASDMA')} · ${esc(officialCamps.updated || '')}</small>`);
+      .bindPopup(`<b>🏕️ ${esc(c.district)}</b><br>${c.camps ? c.camps + ' ' + t('reliefCamps') + '<br>' : ''}${c.people ? '~' + Number(c.people).toLocaleString() + ' ' + t('sheltered') + '<br>' : ''}${c.note ? esc(c.note) + '<br>' : ''}<small>${src} · ${esc(officialCamps.updated || '')}</small>`);
   }
 }
 function renderFlood() {
