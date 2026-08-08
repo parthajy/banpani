@@ -469,8 +469,30 @@ function renderFloodNow() {
     box.querySelectorAll('.fnow').forEach(el => el.onclick = () => map.setView([+el.dataset.lat, +el.dataset.lng], 12));
   }
 }
+let evtWx = null, evtWxAt = 0;
 async function renderAdvisory() {
   renderFloodNow();
+  // Non-Assam events: the outlook must be for THIS place, not Assam. Fetch it from Open-Meteo
+  // (free, no key) for the event's location, cached ~30 min. Assam homepage/event keep the server feed.
+  const isAssam = EVENT && (EVENT.officialData === 'assam' || EVENT.source === 'assam');
+  if (EVENT && !isAssam && Array.isArray(EVENT.center)) {
+    try {
+      if (!evtWx || Date.now() - evtWxAt > 30 * 60 * 1000) {
+        const [lat, lng] = EVENT.center;
+        const j = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum&forecast_days=3&timezone=auto`)).json();
+        const p = ((j.daily && j.daily.precipitation_sum) || []).map(x => Math.round(x || 0));
+        const total = p.reduce((a, b) => a + b, 0);
+        evtWx = {
+          headline: total >= 100 ? '⚠️ Heavy rain ahead' : '🌧️ ' + t('outlook'),
+          body: p.length ? `Rain outlook (next 3 days): ${p.map(x => x + 'mm').join(' · ')}.` + (total >= 100 ? ' Heavy rain expected - flooding may worsen.' : total >= 30 ? ' Moderate rain expected.' : ' Little rain expected.') : '',
+          meta: 'Open-Meteo · ' + t('updated') + ' ' + new Date().toLocaleString(),
+        };
+        evtWxAt = Date.now();
+      }
+      $('advHeadline').textContent = evtWx.headline; $('advText').textContent = evtWx.body; $('advMeta').textContent = evtWx.meta;
+      return;
+    } catch {}
+  }
   try {
     const a = await api('/api/advisory');
     $('advHeadline').textContent = a.headline || '';
