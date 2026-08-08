@@ -6,11 +6,9 @@
   <title>Volunteer for disaster response · Banpani</title>
   <meta name="description" content="Sign up to help with disaster response. If a flood, fire, cyclone, or outbreak hits near you, you can be contacted to help. Free, no account. Your email is kept private and never shown publicly." />
   <link rel="canonical" href="https://banpani.org/volunteers.html" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#0f1419" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="icon" href="banpani_favicon.png" sizes="any" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="doc.css" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Banpani" />
   <meta property="og:title" content="Volunteer for disaster response - Banpani" />
@@ -21,53 +19,54 @@
   <meta name="twitter:title" content="Volunteer for disaster response - Banpani" />
   <meta name="twitter:description" content="Sign up to help when a disaster hits near you. No account. Your email is kept private." />
   <meta name="twitter:image" content="https://banpani.org/og-world.png" />
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Banpani","url":"https://banpani.org","description":"Community-run disaster-relief coordination. Volunteers sign up to be alerted and mobilised when disaster strikes near them.","email":"","sameAs":["https://github.com/parthajy/banpani"]}</script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
   <style>
-    body{overflow:auto}
-    .wrap{max-width:640px;margin:0 auto;padding:24px 18px 80px}
-    .hero{text-align:center;padding:14px 0 6px}
-    .hero h2{font-size:26px;line-height:1.2;margin:6px 0}
-    .hero .lead{font-size:16px;color:#c3cdda;line-height:1.55;margin:10px 0}
-    .count{display:inline-block;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:7px 15px;font-size:14px;margin:6px 0;color:var(--text)}
-    .count b{color:#5db4ff}
-    form{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 16px;margin:18px 0}
-    label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
-    label:first-child{margin-top:0}
-    input,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:13px;font-size:16px;font-family:inherit}
-    .row{display:flex;gap:8px}
-    .row>*{flex:1}
-    .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
-    .chip{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:18px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+    body{background:#fff}
+    .wrap{max-width:560px;margin:0 auto;padding:26px 18px 80px}
+    .hero h1{font-size:26px;margin:0 0 8px;color:var(--ink);letter-spacing:-.3px}
+    .hero .lead{font-size:16px;color:var(--body);line-height:1.6;margin:0}
+    .count{display:inline-block;margin-top:14px;font-size:14px;color:var(--muted)}
+    .count b{color:var(--ink)}
+    .lock{background:var(--accent-soft);border:1px solid #cddcff;border-radius:10px;padding:14px 16px;font-size:14px;color:#33414f;line-height:1.55;margin:20px 0}
+    form{margin:0}
+    label{display:block;font-weight:600;font-size:14px;color:var(--ink);margin:16px 0 6px}
+    .opt{font-weight:400;color:var(--muted)}
+    input,select{width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:12px;font-size:16px;font-family:inherit}
+    input:focus,select:focus{outline:none;border-color:var(--accent)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+    .chip{background:#fff;border:1px solid var(--line);color:#3a4653;border-radius:18px;padding:8px 13px;font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
     .chip::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--c,#888)}
-    .chip.on{color:var(--text);border-color:var(--c,var(--accent))}
-    .gps{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:6px}
-    .gps.on{border-color:#3ea66d;color:#8fe0b0}
-    .submit{background:var(--accent);color:#fff;border:none;border-radius:11px;padding:14px;font-size:16px;font-weight:700;width:100%;margin-top:18px;cursor:pointer}
-    .submit:disabled{opacity:.5}
-    .note{font-size:13px;color:var(--muted);line-height:1.55;margin-top:12px}
-    .lock{background:rgba(70,160,110,.10);border:1px solid #2f5f45;border-radius:12px;padding:13px 15px;color:#a9dcc0;font-size:13.5px;line-height:1.55;margin:16px 0}
-    .lock b{color:#c9f0d8}
-    .msg{text-align:center;font-size:15px;padding:10px;border-radius:10px;margin-top:12px;display:none}
+    .chip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+    .gps{background:#fff;border:1px solid var(--line);color:var(--body);border-radius:9px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:8px}
+    .gps.on{border-color:#2e9e63;color:#1c7a45}
+    .submit{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;width:100%;margin-top:20px;cursor:pointer}
+    .submit:hover{background:#1747b8}
+    .submit:disabled{opacity:.5;cursor:default}
+    .note{font-size:13px;color:var(--muted);line-height:1.55;margin-top:14px;background:none;border:none;padding:0}
+    .msg{text-align:center;font-size:15px;padding:10px;border-radius:9px;margin-top:14px;display:none}
     .msg.show{display:block}
-    .msg.ok{background:rgba(70,160,110,.14);color:#a9dcc0}
-    .msg.err{background:rgba(240,69,58,.12);color:#ffb3ad}
-    .done h3{font-size:20px;margin:8px 0}
+    .msg.ok{background:#e7f6ec;color:#1c6b3a}
+    .msg.err{background:#fdeceb;color:#a8302a}
+    .done{text-align:center}
+    .done h3{font-size:20px;margin:8px 0;color:var(--ink)}
+    .done p{color:var(--body)}
+    .done a{color:var(--accent);font-weight:600}
   </style>
 </head>
 <body>
-  <header>
-    <img class="logo" src="banpani_favicon.png" alt="Banpani" width="30" height="30" />
-    <div><h1>Banpani <span style="color:var(--muted);font-weight:400;font-size:13px">· Volunteer</span></h1></div>
-    <div class="spacer"></div>
-    <a class="link" href="/world">🌍 World map</a>
-    <a class="link" href="/about.html">ℹ️ About</a>
-  </header>
+  <div class="doc-top">
+    <img src="banpani_logo.png" alt="Banpani" class="doc-logo" />
+    <nav>
+      <a href="/">Live map</a>
+      <a href="/world" class="opt">World map</a>
+      <a href="/about.html">About</a>
+    </nav>
+  </div>
 
   <div class="wrap">
     <div class="hero">
-      <h2>Volunteer for disaster response</h2>
+      <h1>Volunteer for disaster response</h1>
       <p class="lead">If a flood, fire, cyclone, or outbreak hits near you, help is needed fast. Sign up once, and you can be contacted to help when a disaster happens near you.</p>
       <div class="count" id="count">Loading…</div>
     </div>
@@ -81,14 +80,14 @@
       <label for="country">Your country</label>
       <select id="country" required><option value="">Select your country…</option></select>
 
-      <label for="region">Your state / area <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-      <input id="region" type="text" maxlength="80" placeholder="e.g. Assam, or your city" />
+      <label for="region">Your state / area <span class="opt">(optional)</span></label>
+      <input id="region" type="text" maxlength="80" placeholder="e.g. Odisha, or your city" />
       <button type="button" class="gps" id="gps">📍 Use my location for finer alerts (optional)</button>
 
-      <label>What can you help with? <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <label>What can you help with? <span class="opt">(optional)</span></label>
       <div class="chips" id="families"></div>
 
-      <label for="skills">Skills / resources <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <label for="skills">Skills / resources <span class="opt">(optional)</span></label>
       <input id="skills" type="text" maxlength="120" placeholder="e.g. boat, first aid, transport, shelter space" />
 
       <button type="submit" class="submit" id="submit">Sign up</button>
@@ -155,7 +154,7 @@
         const res = await fetch((C.API || '') + '/api/volunteer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
         const j = await res.json();
         if (!res.ok) throw new Error(j.error || 'Something went wrong');
-        $('form').innerHTML = '<div class="done" style="text-align:center"><h3>You\'re signed up.</h3><p style="color:#c3cdda">Thank you. If a disaster is confirmed near you, you may be contacted to help. Your email is kept private.</p><p style="margin-top:14px"><a class="link" href="/world">See the live world map</a></p><p style="margin-top:10px;color:var(--muted);font-size:13px">Share it so more people can help:</p><p><a class="link" href="https://wa.me/?text=' + encodeURIComponent('I signed up to help with disaster response on Banpani. If a disaster hits your area you can be contacted to help. No account needed. https://banpani.org/volunteers') + '" target="_blank" rel="noopener">Share on WhatsApp</a></p></div>';
+        $('form').innerHTML = '<div class="done"><h3>You\'re signed up.</h3><p>Thank you. If a disaster is confirmed near you, you may be contacted to help. Your email is kept private.</p><p style="margin-top:14px"><a href="/world">See the live world map</a></p><p style="margin-top:10px;color:#667180;font-size:13px">Share it so more people can help:</p><p><a href="https://wa.me/?text=' + encodeURIComponent('I signed up to help with disaster response on Banpani. If a disaster hits your area you can be contacted to help. No account needed. https://banpani.org/volunteers') + '" target="_blank" rel="noopener">Share on WhatsApp</a></p></div>';
         $('count').innerHTML = fmtCount(j);
       } catch (err) {
         msg(err.message || 'Could not sign up. Please try again.', 'err');
