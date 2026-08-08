@@ -1079,8 +1079,8 @@ function gateModules() {
     if (gapEl && !mods.includes('convoys')) { gapEl.textContent = mods.includes('offers') ? '⚠ No supply nearby' : '⚠ Unattended needs'; gapEl.removeAttribute('data-i18n'); }
     if (EVENT.family !== 'water') {   // "Relief / Rehab" is flood framing → neutral for other disasters
       const rb = document.querySelector('.modeswitch [data-mode="relief"]'), hb = document.querySelector('.modeswitch [data-mode="rehab"]');
-      if (rb) { rb.textContent = '🆘 Response'; rb.removeAttribute('data-i18n'); }
-      if (hb) { hb.textContent = '🌱 Recovery'; hb.removeAttribute('data-i18n'); }
+      const relabel = (btn, emoji, word) => { if (!btn) return; const e = btn.querySelector('.mse'), t = btn.querySelector('.mst'); if (e) e.textContent = emoji; if (t) { t.textContent = word; t.removeAttribute('data-i18n'); } };
+      relabel(rb, '🆘', 'Response'); relabel(hb, '🌱', 'Recovery');
     }
     // generalized hazard module: retitle the flood tab / layer / pane / severity per disaster
     if (EVENT.hazardLabel && EVENT.family !== 'water') {

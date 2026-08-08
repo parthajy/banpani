@@ -49,8 +49,8 @@
       <div class="sub" data-i18n="tagline">Coordinating Community Flood Relief</div>
     </div>
     <div class="modeswitch" id="modeswitch">
-      <button data-mode="relief" class="on" data-i18n="modeRelief">🆘 Relief</button>
-      <button data-mode="rehab" data-i18n="modeRehab">🔨 Rehab</button>
+      <button data-mode="relief" class="on"><span class="mse">🆘</span><span class="mst" data-i18n="modeReliefTxt">Relief</span></button>
+      <button data-mode="rehab"><span class="mse">🔨</span><span class="mst" data-i18n="modeRehabTxt">Rehab</span></button>
     </div>
     <div class="spacer"></div>
     <!-- always-visible primary actions -->
@@ -58,7 +58,6 @@
       <button class="link ic-btn" id="helpBtn"><span class="e">☎</span><span class="t" data-i18n="helplines">Help</span></button>
       <div class="helpmenu" id="helpMenu"></div>
     </div>
-    <button class="link ic-btn hdr-primary" id="expandBtn" title="Full screen"><span class="e">⛶</span><span class="t">Full</span></button>
     <button class="link ic-btn hdr-primary" id="saveEventBtn" hidden><span class="e">☆</span><span class="t">Save</span></button>
     <select id="lang" class="langsel" title="Language" aria-label="Language">
       <option value="en">EN</option>
@@ -91,6 +90,7 @@
     <div id="map"></div>
     <div class="modehint" id="modehint" data-i18n="tapMap">Tap the map to drop the location 📍</div>
     <button class="recenter-btn" id="recenter" title="Go to where help is needed" data-i18n-title="recenter">🎯</button>
+    <button class="map-fab" id="expandBtn" title="Full screen" aria-label="Full screen">⛶</button>
     <div class="searchbox" id="searchbox">
       <input id="searchInput" type="search" autocomplete="off" data-ph="searchPlace" placeholder="Search a place…" />
       <div class="searchresults" id="searchResults"></div>

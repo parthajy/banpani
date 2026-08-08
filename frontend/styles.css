@@ -355,3 +355,16 @@ body.map-max .recenter-btn{display:none!important}
 .lifebar button:disabled{opacity:.5}
 .lifebar a{color:#8fbaff;font-weight:600;text-decoration:none}
 .lifebar .lc-votes{opacity:.8;font-size:12.5px}
+
+/* Full-screen control lives on the map (below recenter), not in the header. Stays visible in
+   map-max/fullscreen so it can also exit. */
+.map-fab{position:absolute;right:12px;top:142px;z-index:601;width:40px;height:40px;border-radius:9px;
+  background:var(--panel);border:1px solid var(--line);color:#fff;font-size:17px;cursor:pointer;box-shadow:var(--shadow);
+  display:flex;align-items:center;justify-content:center}
+.map-fab:active{transform:scale(.94)}
+/* a hidden icon-button must actually hide (the .ic-btn display rule otherwise overrode [hidden]) */
+.ic-btn[hidden]{display:none}
+
+/* phones: mode switch shows icons only (words hidden) so the header never overflows */
+.modeswitch button .mse{margin-right:5px}
+@media(max-width:560px){ .modeswitch button .mst{display:none} .modeswitch button .mse{margin-right:0} .modeswitch button{padding:7px 11px} }
