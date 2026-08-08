@@ -86,6 +86,14 @@
     <button id="discOk" data-i18n="gotit">Got it</button>
   </div>
 
+  <!-- soft-open: routes non-Assam visitors to the world map / the current active response (homepage only) -->
+  <div class="worldbar" id="worldBar" hidden>
+    <span>🌊 <b>Odisha floods</b> - live coordination is open. <a href="/e/odisha-flood-2026">Open the Odisha map &rarr;</a></span>
+    <span class="wb-sep">·</span>
+    <span>Somewhere else? <a href="/world">See the live world map &rarr;</a></span>
+    <button id="worldBarX" aria-label="Dismiss" title="Dismiss">&times;</button>
+  </div>
+
   <div class="main">
     <div id="map"></div>
     <div class="modehint" id="modehint" data-i18n="tapMap">Tap the map to drop the location 📍</div>

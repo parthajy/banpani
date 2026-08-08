@@ -46,7 +46,7 @@ function counts(eventId) {
    after that window it becomes ARCHIVED. Nothing is ever deleted - archived pages stay as a record. */
 const DAY = 864e5;
 export const LIFECYCLE = { DORMANT_AFTER_DAYS: 45, REOPEN_WINDOW_DAYS: 15, OVER_VOTES: 100, REOPEN_VOTES: 10 };
-const PERMANENT = "(source='assam' OR source='demo')";   // flagship + demos never auto-wind-down
+const PERMANENT = "(source IN ('assam','demo','seeded'))";   // flagship + demos + operator-seeded never auto-wind-down
 
 // Most recent activity across every table that signals a live response.
 export function lastActivityAt(eventId) {

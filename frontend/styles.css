@@ -368,3 +368,13 @@ body.map-max .recenter-btn{display:none!important}
 /* phones: mode switch shows icons only (words hidden) so the header never overflows */
 .modeswitch button .mse{margin-right:5px}
 @media(max-width:560px){ .modeswitch button .mst{display:none} .modeswitch button .mse{margin-right:0} .modeswitch button{padding:7px 11px} }
+
+/* soft-open banner: sends non-Assam / Odisha visitors to the right map (homepage only) */
+.worldbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#12314f;border-bottom:1px solid #1d4a78;
+  color:#cfe4ff;padding:8px 16px;font-size:13px;z-index:820}
+.worldbar[hidden]{display:none}
+.worldbar a{color:#8fc7ff;font-weight:700;text-decoration:none;white-space:nowrap}
+.worldbar a:hover{text-decoration:underline}
+.worldbar .wb-sep{opacity:.5}
+.worldbar #worldBarX{margin-left:auto;background:none;border:none;color:#8fb4dd;font-size:16px;cursor:pointer;line-height:1;padding:2px 6px}
+@media(max-width:560px){ .worldbar .wb-sep{display:none} .worldbar{font-size:12px;gap:6px} }

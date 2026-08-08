@@ -947,6 +947,9 @@ function addOverLink() {
 // one-time disclaimer
 if (!localStorage.getItem('banpani.disclaimer2')) $('disclaimer').classList.add('show');
 $('discOk').onclick = () => { $('disclaimer').classList.remove('show'); localStorage.setItem('banpani.disclaimer2', '1'); };
+// soft-open banner: homepage only (never on an event page), and dismissible
+if (!EVENT && $('worldBar') && !localStorage.getItem('banpani.worldbar')) $('worldBar').hidden = false;
+if ($('worldBarX')) $('worldBarX').onclick = () => { $('worldBar').hidden = true; localStorage.setItem('banpani.worldbar', '1'); };
 
 /* ------------------------------- boot --------------------------------- */
 // Zoom to where the action is, so a first-time visitor lands ON the hotspot, not empty terrain.
