@@ -618,6 +618,7 @@ async function serveEventApp(req, res, ev) {
     hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
     status: ev.status || 'active', dormantAt: ev.dormant_at || null, archivedAt: ev.archived_at || null,
     reopenVotes: ev.reopenVotes || 0, reopenNeed: LIFECYCLE.REOPEN_VOTES, overNeed: LIFECYCLE.OVER_VOTES,
+    langs: isOdisha ? ['en', 'or', 'hi'] : ['en', 'as', 'hi'],   // language options for this response's region
   };
   let html;
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }

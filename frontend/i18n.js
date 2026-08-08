@@ -289,6 +289,38 @@ const STR = {
     evacSet: 'रास्ता तय करें: हर बिंदु चुनें, फिर मानचित्र पर टैप करें', evacFrom: '⚠️ से (ख़तरा)', evacTo: '🏁 तक (सुरक्षित)',
     evacNoFrom: 'ख़तरे का बिंदु तय नहीं', evacNoTo: 'सुरक्षित बिंदु तय नहीं', evacNote: 'टिप्पणी (वैकल्पिक)', evacNotePh: 'जैसे हाई स्कूल की ओर, पुल से बचें', addEvac: '🏃 बचाव का रास्ता जोड़ें',
   },
+  // Odia (ଓଡ଼ିଆ) - first pass for the Odisha response; a native speaker should review. Untranslated
+  // keys fall back to English automatically (see t()).
+  or: {
+    tagline: 'ସମୁଦାୟ ବନ୍ୟା ରିଲିଫ୍ ସମନ୍ୱୟ',
+    report6h: 'ରିପୋର୍ଟ', volunteers: 'ଯାଞ୍ଚ',
+    view: 'ଦୃଶ୍ୟ', live: 'ଲାଇଭ୍', today: 'ଆଜି', earlier: 'ପୂର୍ବରୁ', gaps: 'ଫାଙ୍କ',
+    layers: 'ସ୍ତର', officialLayer: 'ପ୍ରଭାବିତ ଅଞ୍ଚଳ (ସରକାରୀ)', floodExtent: 'ବନ୍ୟା ବିସ୍ତାର', liveRain: 'ଲାଇଭ୍ ବର୍ଷା (ରାଡାର)', needs: 'ଆବଶ୍ୟକତା',
+    sourceASDMA: 'ସରକାରୀ · OSDMA', reliefCamps: 'ରିଲିଫ୍ ଶିବିର', sheltered: 'ଆଶ୍ରିତ',
+    modeReliefTxt: 'ରିଲିଫ୍', modeRehabTxt: 'ପୁନର୍ବାସ',
+    coverage: 'କଭରେଜ୍ / କନଭୟ', ngosLayer: 'NGO ଓ ଡ୍ରପ୍-ଅଫ୍', high: 'ଅଧିକ', medium: 'ମଧ୍ୟମ', receding: 'କମୁଛି',
+    nobody: '⚠ କେହି ଆସୁନାହାନ୍ତି', loading: 'ଲୋଡ୍ ହେଉଛି…',
+    floodNow: '🌊 ବର୍ତ୍ତମାନ ବନ୍ୟାରେ', outlook: '🌧️ ପାଣିପାଗ ପୂର୍ବାନୁମାନ', updated: 'ଅପଡେଟ୍',
+    tNeed: '🆘 ଆବଶ୍ୟକ', tConvoy: '🚚 କନଭୟ', tDrop: '📦 ସଂଗ୍ରହ', tNgo: '🏳️ NGO', tFeed: '📋 ଫିଡ୍',
+    needIntro: 'ଯେକେହି ରିପୋର୍ଟ କରିପାରିବେ - ଆଟକିଥିବା ପରିବାର, ପଡ଼ୋଶୀ, ସ୍ୱେଚ୍ଛାସେବୀ। ଲଗଇନ୍ ନାହିଁ। ଜଣେ ସ୍ୱେଚ୍ଛାସେବୀ ଏହାକୁ ଯାଞ୍ଚ କରିବେ।',
+    place: 'ସ୍ଥାନ / ଅଞ୍ଚଳ', locSet: 'ଅବସ୍ଥାନ - ମାନଚିତ୍ର ଟ୍ୟାପ୍ କରନ୍ତୁ କିମ୍ବା GPS', noLoc: 'କୌଣସି ଅବସ୍ଥାନ ସେଟ୍ ନାହିଁ',
+    whatNeeded: 'କଣ ଆବଶ୍ୟକ?', people: 'ପ୍ରଭାବିତ ଲୋକ (ପ୍ରାୟ)', details: 'ବିବରଣୀ',
+    whoAreYou: 'ଆପଣ କିଏ?', affected: 'ମୁଁ ପ୍ରଭାବିତ / ଏଠାରେ', witness: 'ମୁଁ ଜାଣେ ଏହା ସତ', volSelf: 'ମୁଁ ଜଣେ ସ୍ୱେଚ୍ଛାସେବୀ',
+    contactOpt: 'ଯୋଗାଯୋଗ ଫୋନ୍ (ବୈକଳ୍ପିକ)', postNeed: '🆘 ଏହି ଆବଶ୍ୟକତା ପୋଷ୍ଟ କରନ୍ତୁ',
+    open: 'ଖୋଲା', unverif: 'ଅଯାଞ୍ଚିତ', convoys: 'କନଭୟ', gapsStat: 'ଫାଙ୍କ',
+    gps: '📍 GPS', tapMap: 'ମାନଚିତ୍ର ଟ୍ୟାପ୍ କରନ୍ତୁ, ତାପରେ ପିନ୍ ଟାଣନ୍ତୁ 📍', searchPlace: 'ଏକ ସ୍ଥାନ ଖୋଜନ୍ତୁ…',
+    directions: 'ଦିଗ', showMap: 'ମାନଚିତ୍ରରେ ଦେଖାନ୍ତୁ',
+    tPhoto: '📷 ଫଟୋ', privacy: 'ଗୋପନୀୟତା',
+    tOffer: '🤝 ସାହାଯ୍ୟ', tBlocked: '🚧 ରାସ୍ତା', tFacility: '🏪 ବର୍ତ୍ତମାନ ଖୋଲା',
+    offersLayer: 'ସାହାଯ୍ୟ / ସମ୍ବଳ', blockedLayer: 'ବନ୍ଦ ରାସ୍ତା', facilitiesLayer: 'ଖୋଲା / ବନ୍ଦ', evacLayer: 'ପଳାୟନ ପଥ',
+    tEvac: '🏃 ପଳାୟନ', tFlood: '🌊 ବନ୍ୟା',
+    news: 'ଖବର', activity: 'କାର୍ଯ୍ୟକଳାପ', contact: 'ଯୋଗାଯୋଗ', shareMap: 'ସେୟାର', helplines: 'ସାହାଯ୍ୟ', menu: 'ମେନୁ', guide: 'ଗାଇଡ୍', about: 'ବିଷୟରେ',
+    confirm: 'ନିଶ୍ଚିତ', delivered: 'ପହଞ୍ଚିଲା', notReal: 'ସତ ନୁହେଁ', getContact: 'ଯୋଗାଯୋଗ ପାଆନ୍ତୁ', waShare: 'WhatsApp',
+    close: 'ବନ୍ଦ', send: 'ପଠାନ୍ତୁ', gotit: 'ବୁଝିଲି', flag: 'ଫ୍ଲାଗ୍',
+    disclaimer: 'ଏହା ଏକ ସମୁଦାୟ ମାନଚିତ୍ର - ରିପୋର୍ଟ ଅଯାଞ୍ଚିତ ହୋଇପାରେ। ଉଦ୍ଧାର ପାଇଁ ସର୍ବଦା ସରକାରୀ ହେଲ୍ପଲାଇନ୍ କଲ୍ କରନ୍ତୁ।',
+    howBad: 'ଅବସ୍ଥା କେତେ ଖରାପ?', sevSevere: 'ଗମ୍ଭୀର', sevModerate: 'ମଧ୍ୟମ', sevReceding: 'କମୁଛି', sevGone: 'ପାଣି ଗଲା',
+    markFlood: '🌊 ଏଠାରେ ବନ୍ୟା ଚିହ୍ନଟ କରନ୍ତୁ', floodedArea: 'ବନ୍ୟା ପ୍ରଭାବିତ ଅଞ୍ଚଳ',
+  },
 };
 
 // Pick the visitor's language: an explicit saved choice wins; otherwise match their browser's
