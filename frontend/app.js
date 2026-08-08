@@ -647,6 +647,21 @@ $('timeseg').querySelectorAll('button').forEach(b => b.onclick = () => {
   b.classList.add('on'); currentView = b.dataset.v; renderAll();
 });
 ['ly_official', 'ly_flood', 'ly_needs', 'ly_photos', 'ly_cover', 'ly_routes', 'ly_ngo', 'ly_offers', 'ly_blocked', 'ly_facilities', 'ly_evac'].forEach(id => $(id).onchange = renderAll);
+// Live rain radar (RainViewer, free, no key) - a togglable danger layer, off by default.
+let rainLayer = null;
+async function toggleRainLayer() {
+  const on = $('ly_rain') && $('ly_rain').checked;
+  if (!on) { if (rainLayer) { map.removeLayer(rainLayer); rainLayer = null; } return; }
+  if (rainLayer) return;
+  try {
+    const j = await (await fetch('https://api.rainviewer.com/public/weather-maps.json')).json();
+    const past = (j.radar && j.radar.past) || [], f = past[past.length - 1];
+    if (!f) throw 0;
+    rainLayer = L.tileLayer(j.host + f.path + '/256/{z}/{x}/{y}/2/1_1.png', { opacity: 0.6, zIndex: 350, attribution: 'Rain radar © RainViewer' }).addTo(map);
+    toast('Live rain on - blue/green = rain, red = intense');
+  } catch { toast('Could not load rain radar'); if ($('ly_rain')) $('ly_rain').checked = false; }
+}
+if ($('ly_rain')) $('ly_rain').onchange = toggleRainLayer;
 
 let pickMode = 'need';
 const pending = { need: {}, r: {}, rf: {}, c: {}, f: {}, p: {}, o: {}, bl: {}, fa: {}, ef: {}, et: {} };

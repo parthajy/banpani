@@ -88,3 +88,5 @@ a:hover { text-decoration: underline; }
   .content { padding: 24px 22px 70px; }
   .doc-hero h1 { font-size: 27px; }
 }
+
+.doc-logo{height:30px;width:auto;display:block}

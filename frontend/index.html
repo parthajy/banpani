@@ -35,7 +35,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0f1419" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="banpani_favicon.png" sizes="any" />
   <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -43,7 +43,7 @@
 </head>
 <body>
   <header>
-    <img class="logo" src="icon.svg" alt="Banpani" width="30" height="30" />
+    <img class="logo" src="banpani_favicon.png" alt="Banpani" width="30" height="30" />
     <div>
       <h1>Banpani <span class="name-sub" style="color:var(--muted);font-weight:400">· বানপানী</span></h1>
       <div class="sub" data-i18n="tagline">Coordinating Community Flood Relief</div>
@@ -126,6 +126,7 @@
         <h3 data-i18n="layers">Layers</h3>
         <label class="lyr" data-module="official"><input type="checkbox" id="ly_official" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="officialLayer">Affected areas (official)</span></label>
         <label class="lyr" data-module="hazard"><input type="checkbox" id="ly_flood" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="floodExtent">Flood extent</span></label>
+        <label class="lyr"><input type="checkbox" id="ly_rain"><span class="dot" style="background:#4fa3ff"></span> <span data-i18n="liveRain">Live rain (radar)</span></label>
         <label class="lyr"><input type="checkbox" id="ly_needs" checked><span class="dot" style="background:#f0453a"></span> <span data-i18n="needs">Needs</span></label>
         <label class="lyr"><input type="checkbox" id="ly_photos" checked><span class="dot" style="background:#8fbaff"></span> <span data-i18n="photosLayer">Photos</span></label>
         <label class="lyr relief-only" data-module="convoys"><input type="checkbox" id="ly_cover" checked><span class="dot" style="background:#2f81f7"></span> <span data-i18n="coverage">Coverage / convoys</span></label>
