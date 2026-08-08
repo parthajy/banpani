@@ -103,7 +103,7 @@ if (window.attachFullscreen) {
   });
   map.addControl(new FsCtl());
 }
-L.tileLayer(C.TILE_URL, { attribution: C.TILE_ATTR, maxZoom: C.TILE_MAXZOOM, subdomains: 'abcd', bounds: B }).addTo(map);
+C.addBasemap(map, { bounds: B });   // CARTO Dark Matter, auto-falls back to OSM if it ever fails
 map.setMaxBounds(B);
 map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp - no drift off Assam
 // deep-link support (#@lat,lng)

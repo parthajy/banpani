@@ -7,6 +7,15 @@ window.BANPANI = {
   TILE_URL: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
   TILE_ATTR: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a> · <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">Banpani - open source (MIT)</a>',
   TILE_MAXZOOM: 19,
+  // If the pretty basemap ever fails (rate-limit / outage during a viral spike), fall back to plain
+  // OpenStreetMap tiles so the map still WORKS. Functionality over looks.
+  TILE_FALLBACK: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  addBasemap(map, extra) {
+    const layer = L.tileLayer(this.TILE_URL, Object.assign({ attribution: this.TILE_ATTR, maxZoom: this.TILE_MAXZOOM, subdomains: 'abcd' }, extra || {}));
+    let errs = 0, swapped = false;
+    layer.on('tileerror', () => { if (!swapped && ++errs >= 6) { swapped = true; layer.setUrl(this.TILE_FALLBACK); } });
+    return layer.addTo(map);
+  },
 
   // Locked on Assam - tight bounds + a min zoom where Assam fills the screen, so the
   // view can't drift off the state.
