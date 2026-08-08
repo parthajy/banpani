@@ -87,11 +87,22 @@ function isGap(n) {
 const B = L.latLngBounds(EVENT ? EVENT.bounds : C.BOUNDS);
 const map = L.map('map', { zoomControl: false, minZoom: EVENT ? (EVENT.minZoom || 5) : C.MIN_ZOOM, maxZoom: C.MAX_ZOOM, maxBounds: B, maxBoundsViscosity: 1.0 }).setView(EVENT ? EVENT.center : C.CENTER, EVENT ? EVENT.zoom : C.ZOOM);
 L.control.zoom({ position: 'topright' }).addTo(map);   // top-right, away from the View controls
-// Full-screen the map for easier panning/zooming: hide the side panels (body.map-max) so the map
-// fills the width, and request browser full screen too. The header stays, so the same button exits.
-// Guarded so the smoke test (no fullscreen.js) skips it.
-if (window.attachFullscreen) window.attachFullscreen(document.getElementById('expandBtn'), document.documentElement, map,
-  on => document.body.classList.toggle('map-max', on));
+// Full-screen control lives ON the map (top-right, below zoom) so it's always visible - even in the
+// default view where the side panel covers the window's right edge. Hides the side panels
+// (body.map-max) + requests browser full screen. Guarded so the smoke test (no fullscreen.js) skips it.
+if (window.attachFullscreen) {
+  const FsCtl = L.Control.extend({
+    options: { position: 'topright' },
+    onAdd() {
+      const c = L.DomUtil.create('div', 'leaflet-bar leaflet-control fs-ctl');
+      const a = L.DomUtil.create('a', '', c); a.href = '#'; a.title = 'Full screen'; a.setAttribute('role', 'button'); a.innerHTML = '⛶';
+      L.DomEvent.disableClickPropagation(c);
+      window.attachFullscreen(a, document.documentElement, map, on => document.body.classList.toggle('map-max', on));
+      return c;
+    },
+  });
+  map.addControl(new FsCtl());
+}
 L.tileLayer(C.TILE_URL, { attribution: C.TILE_ATTR, maxZoom: C.TILE_MAXZOOM, bounds: B }).addTo(map);
 map.setMaxBounds(B);
 map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp - no drift off Assam
@@ -833,6 +844,11 @@ document.addEventListener('langchange', () => { renderAll(); renderAdvisory(); }
 $('advToggle').onclick = () => $('advisory').classList.toggle('collapsed');
 // collapsible side columns (so the full map is visible)
 $('overlayToggle').onclick = () => { const o = $('overlay'); o.classList.toggle('min'); $('overlayToggle').firstChild.textContent = o.classList.contains('min') ? '▸ ' : '▾ '; };
+// left-panel tabs (Layers / Status) - one frame at a time, so no scrolling
+document.querySelectorAll('.ovl-tab').forEach(tb => tb.onclick = () => {
+  document.querySelectorAll('.ovl-tab').forEach(x => x.classList.toggle('on', x === tb));
+  document.querySelectorAll('.ovl-pane').forEach(p => p.classList.toggle('hide', p.dataset.pane !== tb.dataset.pane));
+});
 const mainEl = document.querySelector('.main');
 $('panelToggle').onclick = () => { mainEl.classList.add('hide-panel'); setTimeout(() => map.invalidateSize(), 60); };
 $('panelReopen').onclick = () => { mainEl.classList.remove('hide-panel'); setTimeout(() => map.invalidateSize(), 60); };

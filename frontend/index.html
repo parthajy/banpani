@@ -98,7 +98,6 @@
     <div id="map"></div>
     <div class="modehint" id="modehint" data-i18n="tapMap">Tap the map to drop the location 📍</div>
     <button class="recenter-btn" id="recenter" title="Go to where help is needed" data-i18n-title="recenter">🎯</button>
-    <button class="map-fab" id="expandBtn" title="Full screen" aria-label="Full screen">⛶</button>
     <div class="searchbox" id="searchbox">
       <input id="searchInput" type="search" autocomplete="off" data-ph="searchPlace" placeholder="Search a place…" />
       <div class="searchresults" id="searchResults"></div>
@@ -114,6 +113,11 @@
     <!-- map overlay: layers, time views, uncovered pane -->
     <div class="overlay" id="overlay">
       <button class="ovl-toggle" id="overlayToggle" title="Collapse controls">▾ <span data-i18n="view">View</span></button>
+      <div class="ovl-tabs">
+        <button class="ovl-tab on" data-pane="layers"><span data-i18n="layers">Layers</span></button>
+        <button class="ovl-tab" data-pane="status">🌊 <span data-i18n="status">Status</span></button>
+      </div>
+      <div class="ovl-pane" data-pane="layers">
       <div class="ctl">
         <h3 data-i18n="view">View</h3>
         <div class="seg" id="timeseg">
@@ -141,13 +145,15 @@
         </div>
         <div class="lyr-note" id="officialDate"></div>
       </div>
+      </div><!-- /pane layers -->
 
+      <div class="ovl-pane hide" data-pane="status">
       <div class="ctl uncovered">
         <h3><span data-i18n="nobody">⚠ Nobody coming</span></h3>
         <div id="gaps"><div class="none" data-i18n="loading">Loading…</div></div>
       </div>
 
-      <!-- current flood + weather outlook (part of the same scrolling stack) -->
+      <!-- current flood + weather outlook -->
       <div class="advisory" id="advisory" data-module="hazard">
         <div class="adv-head" id="advToggle">
           <b data-i18n="floodNow">🌊 Under flood now</b><span class="chev" id="advChev">▾</span>
@@ -164,6 +170,7 @@
           </div>
         </div>
       </div>
+      </div><!-- /pane status -->
     </div>
 
     <!-- right action panel -->
