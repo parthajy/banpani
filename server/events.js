@@ -38,9 +38,68 @@ function counts(eventId) {
   return { reports: (r?.n || 0) + (fr?.n || 0), people: r?.p || 0, confirmations: conf?.n || 0 };
 }
 
-// Persisted events for the world map, with live counts + a promoted flag (SEO/discovery only).
+/* ------------------------- event lifecycle -------------------------
+   A response is ACTIVE while a disaster is happening. It winds down in one of two ways:
+   - the community votes it is over (100 different people) -> ARCHIVED immediately, or
+   - it goes 45 days with no new activity -> DORMANT (auto-stopped).
+   A DORMANT response can be REOPENED by 10 people within 15 days (or by a fresh report on the spot);
+   after that window it becomes ARCHIVED. Nothing is ever deleted - archived pages stay as a record. */
+const DAY = 864e5;
+export const LIFECYCLE = { DORMANT_AFTER_DAYS: 45, REOPEN_WINDOW_DAYS: 15, OVER_VOTES: 100, REOPEN_VOTES: 10 };
+const PERMANENT = "(source='assam' OR source='demo')";   // flagship + demos never auto-wind-down
+
+// Most recent activity across every table that signals a live response.
+export function lastActivityAt(eventId) {
+  let best = null;
+  for (const t of ['reports', 'flood_reports', 'offers', 'blocked_roads', 'facilities', 'evac_routes', 'photos', 'routes', 'collection_points']) {
+    const m = one(`SELECT MAX(created_at) m FROM ${t} WHERE event_id=?`, eventId)?.m;
+    if (m && (!best || m > best)) best = m;
+  }
+  return best;
+}
+const overVotes = id => one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='event' AND target_id=? AND category='over'", id)?.c || 0;
+const reopenVotes = id => one("SELECT COUNT(DISTINCT device) c FROM votes WHERE target_type='event' AND target_id=? AND category='reopen'", id)?.c || 0;
+
+// Run periodically (on boot + every few hours): stop idle events, archive dormant ones past the window.
+export function sweepLifecycle() {
+  const nowMs = Date.now();
+  for (const e of all(`SELECT id,created_at FROM events WHERE hidden=0 AND status='active' AND NOT ${PERMANENT}`)) {
+    const last = lastActivityAt(e.id) || e.created_at;
+    if (nowMs - new Date(last).getTime() > LIFECYCLE.DORMANT_AFTER_DAYS * DAY)
+      run("UPDATE events SET status='dormant', dormant_at=? WHERE id=?", now(), e.id);
+  }
+  for (const e of all("SELECT id,dormant_at FROM events WHERE hidden=0 AND status='dormant'")) {
+    const d = e.dormant_at ? new Date(e.dormant_at).getTime() : nowMs;
+    if (nowMs - d > LIFECYCLE.REOPEN_WINDOW_DAYS * DAY)
+      run("UPDATE events SET status='archived', archived_at=? WHERE id=?", now(), e.id);
+  }
+}
+
+// Community vote that a response is over. 100 distinct devices -> archived now. Returns {archived, votes}.
+export function voteOver(eventId, device) {
+  const e = one("SELECT id,source,status FROM events WHERE id=? AND hidden=0", eventId);
+  if (!e || e.source === 'assam' || e.source === 'demo' || e.status === 'archived') return { ok: false };
+  run(`INSERT INTO votes(created_at,target_type,target_id,device,category,value) VALUES(?,?,?,?,?,?)
+       ON CONFLICT(target_type,target_id,device,category) DO NOTHING`, now(), 'event', eventId, device, 'over', 'yes');
+  const votes = overVotes(eventId);
+  if (votes >= LIFECYCLE.OVER_VOTES) { run("UPDATE events SET status='archived', archived_at=? WHERE id=?", now(), eventId); return { ok: true, archived: true, votes }; }
+  return { ok: true, archived: false, votes, need: LIFECYCLE.OVER_VOTES };
+}
+
+// Community vote to reopen a dormant response. 10 distinct devices -> active. Returns {reopened, votes}.
+export function voteReopen(eventId, device) {
+  const e = one("SELECT id,status FROM events WHERE id=? AND hidden=0", eventId);
+  if (!e || e.status !== 'dormant') return { ok: false };
+  run(`INSERT INTO votes(created_at,target_type,target_id,device,category,value) VALUES(?,?,?,?,?,?)
+       ON CONFLICT(target_type,target_id,device,category) DO NOTHING`, now(), 'event', eventId, device, 'reopen', 'yes');
+  const votes = reopenVotes(eventId);
+  if (votes >= LIFECYCLE.REOPEN_VOTES) { run("UPDATE events SET status='active', dormant_at=NULL WHERE id=?", eventId); return { ok: true, reopened: true, votes }; }
+  return { ok: true, reopened: false, votes, need: LIFECYCLE.REOPEN_VOTES };
+}
+
+// Persisted events for the world map: ACTIVE and DORMANT (winding down), never ARCHIVED.
 export function listEvents() {
-  return all("SELECT * FROM events WHERE hidden=0 AND status='active'").map(e => {
+  return all("SELECT * FROM events WHERE hidden=0 AND status IN ('active','dormant')").map(e => {
     const c = counts(e.id);
     const score = c.reports + c.confirmations * 2 + (c.people > 50 ? 2 : c.people > 0 ? 1 : 0);
     // "earned its place" = listed, or has a 2nd report / a confirmation. Everything else is shown
@@ -52,7 +111,21 @@ export function listEvents() {
       slug: e.slug, title: e.title, family: familyOf(e.disaster_type), disaster_type: e.disaster_type,
       lat: e.lat, lng: e.lng, source: e.source, modules: JSON.parse(e.modules || '[]'), listed: !!e.listed,
       reports: c.reports, people: c.people, confirmations: c.confirmations, score, promoted: score >= 3,
-      unconfirmed: !active,
+      unconfirmed: !active, status: e.status, reopenVotes: e.status === 'dormant' ? reopenVotes(e.id) : 0,
+    };
+  });
+}
+
+// The full public archive: every response, past and present, newest-first. Nothing is deleted.
+export function archiveList() {
+  return all('SELECT * FROM events WHERE hidden=0 ORDER BY COALESCE(archived_at, dormant_at, created_at) DESC').map(e => {
+    const c = counts(e.id);
+    const last = lastActivityAt(e.id) || e.created_at;
+    return {
+      slug: e.slug, title: e.title, family: familyOf(e.disaster_type), disaster_type: e.disaster_type,
+      lat: e.lat, lng: e.lng, source: e.source, status: e.status,
+      reports: c.reports, people: c.people, confirmations: c.confirmations,
+      created_at: e.created_at, last_activity: last, dormant_at: e.dormant_at || null, archived_at: e.archived_at || null,
     };
   });
 }
@@ -75,6 +148,8 @@ export function eventBySlug(slug) {
   return {
     id: e.id, slug: e.slug, title: e.title, disaster_type: e.disaster_type, family: familyOf(e.disaster_type),
     lat: e.lat, lng: e.lng, source: e.source, modules: JSON.parse(e.modules || '[]'), created_at: e.created_at,
+    status: e.status, dormant_at: e.dormant_at || null, archived_at: e.archived_at || null,
+    reopenVotes: e.status === 'dormant' ? reopenVotes(e.id) : 0,
     reports, photos, floods, blocked, offers, count: c, needs: DISASTERS[familyOf(e.disaster_type)]?.needs || [],
   };
 }
@@ -84,11 +159,13 @@ export function eventBySlug(slug) {
 export function createOrJoinEvent(lat, lng, disasterType, place, device) {
   const fam = familyOf(disasterType);
   if (fam === 'water' && lat != null && inAssam(lat, lng)) { const a = assamId(); if (a) return a; }
+  // a fresh report reactivates a dormant response on the spot (clear signal it is still happening)
+  const join = id => { run("UPDATE events SET status='active', dormant_at=NULL WHERE id=? AND status='dormant'", id); return id; };
   if (lat != null && lng != null) {
-    const cands = all("SELECT id,lat,lng,radius_km,disaster_type FROM events WHERE hidden=0 AND status='active' AND lat IS NOT NULL").filter(e => familyOf(e.disaster_type) === fam);
+    const cands = all("SELECT id,lat,lng,radius_km,disaster_type FROM events WHERE hidden=0 AND status IN ('active','dormant') AND lat IS NOT NULL").filter(e => familyOf(e.disaster_type) === fam);
     let best = null, bestD = Infinity;
     for (const e of cands) { const d = haversine(lat, lng, e.lat, e.lng); if (d <= (e.radius_km || 30) && d < bestD) { best = e; bestD = d; } }
-    if (best) return best.id;
+    if (best) return join(best.id);
   }
   // Rate-limit: a single device can only spin up so many brand-new events per day. Past the cap we
   // attach to the nearest same-family event of ANY distance rather than let one device flood the map
@@ -97,10 +174,10 @@ export function createOrJoinEvent(lat, lng, disasterType, place, device) {
     const cutoff = new Date(Date.now() - 864e5).toISOString();
     const madeToday = one('SELECT COUNT(*) c FROM events WHERE created_by=? AND created_at > ?', device, cutoff)?.c || 0;
     if (madeToday >= 8 && lat != null && lng != null) {
-      const cands = all("SELECT id,lat,lng,disaster_type FROM events WHERE hidden=0 AND status='active' AND lat IS NOT NULL").filter(e => familyOf(e.disaster_type) === fam);
+      const cands = all("SELECT id,lat,lng,disaster_type FROM events WHERE hidden=0 AND status IN ('active','dormant') AND lat IS NOT NULL").filter(e => familyOf(e.disaster_type) === fam);
       let best = null, bestD = Infinity;
       for (const e of cands) { const d = haversine(lat, lng, e.lat, e.lng); if (d < bestD) { best = e; bestD = d; } }
-      if (best) return best.id;
+      if (best) return join(best.id);
     }
   }
   const title = (place && place.trim()) ? place.trim() : (DISASTERS[fam]?.label || 'Response');

@@ -35,6 +35,8 @@ for (const stmt of [
   'ALTER TABLE flood_reports ADD COLUMN event_id INTEGER',
   'ALTER TABLE facilities ADD COLUMN note TEXT',
   'ALTER TABLE actions_log ADD COLUMN event_id INTEGER',
+  'ALTER TABLE events ADD COLUMN dormant_at TEXT',    // when an event auto-stopped (45d idle); 15d reopen window
+  'ALTER TABLE events ADD COLUMN archived_at TEXT',   // when an event was archived (permanent record)
 ]) { try { db.exec(stmt); } catch { /* column already exists */ } }
 
 // Assam is event #1. Create it once (idempotent) and adopt every pre-existing coordination

@@ -905,6 +905,45 @@ $('hdrActions').addEventListener('click', () => $('hdrActions').classList.remove
 document.addEventListener('keydown', e => { if (e.key === 'Escape') $('hdrActions').classList.remove('show'); });
 // Assam-only tools (community verify console + the Assam situation report) do not apply to other events
 if (EVENT) { const v = $('mVerify'), r = $('mReport'); if (v) v.hidden = true; if (r) r.hidden = true; }
+
+// Event lifecycle: a banner for dormant/archived responses, and a "mark as over" action for active ones.
+function lifecycleBar() {
+  const st = EVENT.status;
+  if (!st || st === 'active') { if (EVENT.source === 'community') addOverLink(); return; }
+  const bar = document.createElement('div');
+  bar.className = 'lifebar lifebar-' + st;
+  if (st === 'dormant') {
+    bar.innerHTML = `<span>⏳ This response is <b>winding down</b> - no recent activity. If it is still happening, reopen it.</span>`
+      + `<button id="lifeReopen">Reopen</button><span class="lc-votes" id="lifeVotes">${(EVENT.reopenVotes || 0)}/${EVENT.reopenNeed} people</span>`;
+  } else {
+    bar.innerHTML = `<span>📁 This is an <b>archived</b> response - a past disaster. You are viewing it as a record.</span><a href="/archive">See the archive →</a>`;
+  }
+  const h = document.querySelector('header'); if (h) h.insertAdjacentElement('afterend', bar);
+  const rb = $('lifeReopen');
+  if (rb) rb.onclick = async () => {
+    rb.disabled = true;
+    try {
+      const r = await api('/api/events/' + EVENT.slug + '/reopen', { method: 'POST', body: { device: deviceId() } });
+      if (r.reopened) { toast('Reopened - thank you'); setTimeout(() => location.reload(), 700); }
+      else { const lv = $('lifeVotes'); if (lv) lv.textContent = (r.votes || 0) + '/' + (r.need || EVENT.reopenNeed) + ' people'; toast('Vote recorded'); rb.disabled = false; }
+    } catch { toast('Could not reopen - try again'); rb.disabled = false; }
+  };
+}
+function addOverLink() {
+  const menu = $('hdrActions'); if (!menu) return;
+  const a = document.createElement('button');
+  a.className = 'link ic-btn'; a.id = 'markOver';
+  a.innerHTML = '<span class="e">🏁</span><span class="t">Mark as over</span>';
+  menu.appendChild(a);
+  a.onclick = async () => {
+    if (!confirm('Mark this response as over? When ' + EVENT.overNeed + ' people agree, it moves to the archive.')) return;
+    try {
+      const r = await api('/api/events/' + EVENT.slug + '/over', { method: 'POST', body: { device: deviceId() } });
+      if (r.archived) { toast('Archived - thank you'); setTimeout(() => location.reload(), 700); }
+      else toast('Recorded (' + (r.votes || 0) + '/' + (r.need || EVENT.overNeed) + ' say it is over)');
+    } catch { toast('Could not record - try again'); }
+  };
+}
 // one-time disclaimer
 if (!localStorage.getItem('banpani.disclaimer2')) $('disclaimer').classList.add('show');
 $('discOk').onclick = () => { $('disclaimer').classList.remove('show'); localStorage.setItem('banpani.disclaimer2', '1'); };
@@ -1025,6 +1064,7 @@ function gateModules() {
   gateModules();
   if (EVENT) {   // event mode: badge the header with this event, and don't auto-fly (bounds already fit)
     const sub = document.querySelector('header .sub'); if (sub) { sub.textContent = EVENT.emoji + ' ' + EVENT.title; sub.removeAttribute('data-i18n'); }
+    lifecycleBar();
     // ★ Save this event - client-side bookmark (no account); mirrors the world map's Saved list
     const svBtn = $('saveEventBtn');
     if (svBtn) {

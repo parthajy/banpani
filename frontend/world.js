@@ -46,11 +46,13 @@ async function load() {
       const f = FAM[ev.family] || FAM.water;
       const radius = 6 + Math.min(16, Math.sqrt(ev.reports || 1) * 3.2);
       evBySlug[ev.slug] = { slug: ev.slug, title: ev.title, family: ev.family, emoji: f.emoji };
-      const sv = S.has(ev.slug);
-      const unconf = ev.unconfirmed
-        ? `<br><span style="color:#c9a227;font-size:12px">⏳ Unconfirmed - needs a 2nd report or a confirmation to be verified.</span>` : '';
-      const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}${unconf}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a><br><a href="#" onclick="return toggleSave('${esc(ev.slug)}',this)" style="color:#c9a227;font-size:12px">${sv ? '★ Saved' : '☆ Save'}</a> · <a href="#" onclick="return flagEvent('${esc(ev.slug)}')" style="color:#8a94a6;font-size:12px">⚑ Flag</a>`;
-      pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius, ev.unconfirmed), family: ev.family });
+      const sv = S.has(ev.slug), dormant = ev.status === 'dormant';
+      const note = dormant
+        ? `<br><span style="color:#c9a227;font-size:12px">⏳ Winding down - no recent activity. Still happening? <a href="#" onclick="return reopenEvent('${esc(ev.slug)}')" style="color:#c9a227;font-weight:700">Reopen</a> (${ev.reopenVotes || 0}/10)</span>`
+        : ev.unconfirmed
+          ? `<br><span style="color:#c9a227;font-size:12px">⏳ Unconfirmed - needs a 2nd report or a confirmation to be verified.</span>` : '';
+      const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}${note}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a><br><a href="#" onclick="return toggleSave('${esc(ev.slug)}',this)" style="color:#c9a227;font-size:12px">${sv ? '★ Saved' : '☆ Save'}</a> · <a href="#" onclick="return flagEvent('${esc(ev.slug)}')" style="color:#8a94a6;font-size:12px">⚑ Flag</a>`;
+      pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius, ev.unconfirmed || dormant), family: ev.family });
     });
   } catch {}
   try {
@@ -171,6 +173,20 @@ window.flagEvent = async function (slug) {
     toast(j.hidden ? 'Flagged - this event has been hidden. Thank you.' : 'Flag recorded - thank you.');
     if (j.hidden) await load(false);
   } catch { toast('Could not flag - try again'); }
+  return false;
+};
+
+// Community reopen: bring a dormant (winding-down) response back to active. 10 distinct devices.
+window.reopenEvent = async function (slug) {
+  try {
+    const res = await fetch((C.API || '') + '/api/events/' + encodeURIComponent(slug) + '/reopen', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ device: deviceId() })
+    });
+    const j = await res.json();
+    if (!res.ok) throw 0;
+    toast(j.reopened ? 'Reopened - thank you.' : `Reopen vote recorded (${j.votes || 0}/${j.need || 10}).`);
+    if (j.reopened) await load(false);
+  } catch { toast('Could not reopen - try again'); }
   return false;
 };
 

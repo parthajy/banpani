@@ -17,7 +17,7 @@ import { db, all, one, run, now, today, parseRows, decoratedReports, decoratedNg
 import { buildReport } from './report.js';
 import { updateWeather } from './weather.js';
 import { fetchNews } from './news.js';
-import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation } from './events.js';
+import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLifecycle, voteOver, voteReopen, archiveList, LIFECYCLE } from './events.js';
 import { DISASTERS, familyOf, HAZARD } from './disasters.js';
 import { officialEvents } from './official.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale } from './geo.js';
@@ -153,6 +153,28 @@ on('POST', '/api/events/:slug/flag', async (req, res, params) => {
   if (flags >= 3) { run('UPDATE events SET hidden=1 WHERE id=?', e.id); return json(res, 200, { hidden: true, flags }); }
   json(res, 200, { hidden: false, flags });
 });
+// Lifecycle: community votes a response is over (100 devices -> archived), or reopens a dormant one
+// (10 devices -> active). One vote per device, no account.
+on('POST', '/api/events/:slug/over', async (req, res, params) => {
+  const b = await readBody(req);
+  const e = one('SELECT id,lat,lng FROM events WHERE slug=? AND hidden=0', params.slug);
+  if (!e) return json(res, 404, { error: 'no such event' });
+  const r = voteOver(e.id, dev(b));
+  if (!r.ok) return json(res, 400, { error: 'cannot mark this response over' });
+  log(req, 'event_over', 'event:' + e.id, { device: dev(b), area: coarse(e.lat, e.lng) });
+  json(res, 200, r);
+});
+on('POST', '/api/events/:slug/reopen', async (req, res, params) => {
+  const b = await readBody(req);
+  const e = one('SELECT id,lat,lng FROM events WHERE slug=? AND hidden=0', params.slug);
+  if (!e) return json(res, 404, { error: 'no such event' });
+  const r = voteReopen(e.id, dev(b));
+  if (!r.ok) return json(res, 400, { error: 'this response is not dormant' });
+  log(req, 'event_reopen', 'event:' + e.id, { device: dev(b), area: coarse(e.lat, e.lng) });
+  json(res, 200, r);
+});
+// The public archive: every response, past and present. Nothing is ever deleted.
+on('GET', '/api/archive', (req, res) => json(res, 200, { events: archiveList(), lifecycle: LIFECYCLE }));
 // Standing volunteer registry. Email is encrypted with a public key the server CANNOT reverse
 // (see volunteers.js) - we store it, but nobody online (operator included) can read it. Coarse
 // location + families only. Rate-limited by hashed IP so it can't be scripted into a spam list.
@@ -590,6 +612,8 @@ async function serveEventApp(req, res, ev) {
     official: isAssam, items: ev.needs || [], modules: ev.modules || [],
     offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: isAssam ? null : helplinesForCountry(ev.family, cc),
     hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
+    status: ev.status || 'active', dormantAt: ev.dormant_at || null, archivedAt: ev.archived_at || null,
+    reopenVotes: ev.reopenVotes || 0, reopenNeed: LIFECYCLE.REOPEN_VOTES, overNeed: LIFECYCLE.OVER_VOTES,
   };
   let html;
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }
@@ -628,7 +652,7 @@ async function serveEventApp(req, res, ev) {
 const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not found · Banpani</title><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;background:#0f1419;color:#e7edf2;text-align:center;padding:14vh 20px"><h1>🌊 Nothing here (yet)</h1><p style="color:#9fb0bd">This response may have receded, or the link is old.</p><p><a href="/world" style="color:#4fc3f7">Open the world map →</a></p></body>`;
 function sitemapXml() {
   const evs = listEvents().filter(e => e.promoted);
-  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
+  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/archive', 'daily', '0.8'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
     .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
     + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')
@@ -639,7 +663,7 @@ function sitemapXml() {
 // Assam winds down. Until then `/` stays the Assam relief map. Assam always lives at
 // /e/assam-floods-2026 too. One flag, reversible - the user's timing call.
 const PRETTY = { '/': process.env.BANPANI_WORLD_HOME === '1' ? '/world.html' : '/index.html', '/world': '/world.html', '/volunteers': '/volunteers.html',
-  '/admin': '/admin.html', '/parthajy/admin': '/admin.html' };   // one admin, reachable at either path
+  '/archive': '/archive.html', '/admin': '/admin.html', '/parthajy/admin': '/admin.html' };   // one admin, reachable at either path
 async function serveStatic(req, res, pathname) {
   countView(req, pathname);
   const full = normalize(join(FRONTEND, PRETTY[pathname] || pathname));
@@ -692,4 +716,7 @@ http.createServer(async (req, res) => {
   setInterval(() => updateWeather().catch(() => {}), 3 * 60 * 60 * 1000);
   // Pre-warm official GDACS signals so the world map is populated on first load.
   officialEvents().catch(() => {});
+  // Event lifecycle: stop idle responses (45d) and archive dormant ones past the reopen window.
+  try { sweepLifecycle(); } catch (e) { console.warn('lifecycle sweep failed:', e.message); }
+  setInterval(() => { try { sweepLifecycle(); } catch {} }, 6 * 60 * 60 * 1000);
 });

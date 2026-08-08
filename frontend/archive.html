@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Archive of disaster responses · Banpani</title>
+  <meta name="description" content="A permanent public record of every disaster response coordinated on Banpani, past and present: what happened, where, when, and how it wound down. Nothing is ever deleted." />
+  <link rel="canonical" href="https://banpani.org/archive" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="doc.css" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
+  <style>
+    .arch-controls{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px}
+    .arch-controls input,.arch-controls select{padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-size:14px}
+    .arch-controls input{flex:1;min-width:160px}
+    .arch-stat{color:var(--muted);font-size:14px;margin-bottom:10px}
+    .arch-item{display:block;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:10px 0;text-decoration:none;color:inherit;background:#fff}
+    .arch-item:hover{border-color:var(--accent);text-decoration:none}
+    .arch-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .arch-title{font-weight:700;color:var(--ink);font-size:16px}
+    .arch-badge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid transparent}
+    .b-active{background:#e7f6ec;color:#1c6b3a;border-color:#bfe6cd}
+    .b-dormant{background:#fff4e0;color:#8a5a12;border-color:#f0d9a8}
+    .b-archived{background:#eef1f4;color:#55606c;border-color:#dce1e6}
+    .arch-fam{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+    .arch-meta{color:var(--muted);font-size:13.5px;margin-top:5px}
+    .arch-empty{color:var(--muted);padding:24px 4px}
+    .arch-group{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700;margin:26px 0 4px}
+  </style>
+</head>
+<body>
+  <div class="doc-top">
+    <img src="icon.svg" alt="" width="26" height="26" />
+    <div class="brand">Banpani <span>· বানপানী</span></div>
+    <nav>
+      <a href="/">Live map</a>
+      <a href="/world" class="opt">World map</a>
+      <a href="/archive" class="here">Archive</a>
+      <a href="/about.html">About</a>
+      <a href="/privacy.html" class="opt">Privacy</a>
+    </nav>
+  </div>
+
+  <div class="doc-hero">
+    <div class="in">
+      <h1>Archive of responses</h1>
+      <p>Every disaster response coordinated on Banpani, past and present. This is a permanent record of what happened, where, and when. Nothing here is ever deleted.</p>
+    </div>
+  </div>
+
+  <div class="doc-layout">
+    <aside class="toc">
+      <div class="h">About this page</div>
+      <p style="font-size:13.5px;color:var(--muted);line-height:1.6">A response is <b>active</b> while a disaster is happening. When it is over (either the community agrees, or it goes quiet for weeks) it winds down to <b>dormant</b>, then <b>archived</b>. Each response keeps its page as a lasting record.</p>
+      <p style="font-size:13.5px;margin-top:14px"><a href="/about.html#events">How responses are created and wound down</a></p>
+    </aside>
+
+    <main class="content">
+      <div class="arch-controls">
+        <input id="q" type="search" placeholder="Search by name or country…" />
+        <select id="fam"><option value="">All disaster types</option></select>
+        <select id="st">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="dormant">Winding down</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+      <div class="arch-stat" id="stat">Loading the archive…</div>
+      <div id="list"></div>
+    </main>
+  </div>
+
+  <div class="doc-footer">
+    <div class="in">
+      Banpani is free, open source, and owned by no one. Software under the MIT License. Community data under CC0 1.0.
+      <div class="row">
+        <a href="/">Live map</a><a href="/world">World map</a><a href="/volunteers">Volunteer</a>
+        <a href="/about.html">About</a><a href="/privacy.html">Privacy</a>
+        <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:parthajy@gmail.com">Email</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+  (function () {
+    const C = window.BANPANI, FAM = C.DISASTERS, $ = id => document.getElementById(id);
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    let all = [];
+    const fmtDate = s => { if (!s) return ''; const d = new Date(s); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); };
+    const label = { active: 'Active', dormant: 'Winding down', archived: 'Archived' };
+
+    for (const [k, f] of Object.entries(FAM)) { const o = document.createElement('option'); o.value = k; o.textContent = f.emoji + ' ' + f.label; $('fam').appendChild(o); }
+
+    function render() {
+      const q = $('q').value.toLowerCase().trim(), fam = $('fam').value, st = $('st').value;
+      const rows = all.filter(e =>
+        (!fam || e.family === fam) && (!st || e.status === st) &&
+        (!q || (e.title + ' ' + (e.disaster_type || '')).toLowerCase().includes(q)));
+      $('stat').textContent = rows.length + ' response' + (rows.length === 1 ? '' : 's') + (all.length !== rows.length ? ' of ' + all.length : '');
+      const order = { active: 0, dormant: 1, archived: 2 }, groups = { active: [], dormant: [], archived: [] };
+      rows.forEach(e => (groups[e.status] || groups.archived).push(e));
+      let html = '';
+      for (const g of ['active', 'dormant', 'archived']) {
+        if (!groups[g].length) continue;
+        html += `<div class="arch-group">${label[g]} (${groups[g].length})</div>`;
+        html += groups[g].map(e => {
+          const f = FAM[e.family] || FAM.water;
+          const when = e.status === 'archived' && e.archived_at ? 'Archived ' + fmtDate(e.archived_at)
+            : e.status === 'dormant' && e.dormant_at ? 'Winding down since ' + fmtDate(e.dormant_at)
+              : 'Started ' + fmtDate(e.created_at);
+          return `<a class="arch-item" href="/e/${esc(e.slug)}">
+            <div class="arch-top"><span class="arch-fam" style="background:${f.color}"></span>
+              <span class="arch-title">${f.emoji} ${esc(e.title)}</span>
+              <span class="arch-badge b-${e.status}">${label[e.status]}</span></div>
+            <div class="arch-meta">${esc(f.label)} · ${e.reports} report${e.reports === 1 ? '' : 's'}${e.confirmations ? ' · ' + e.confirmations + ' confirmed' : ''} · ${when}</div>
+          </a>`;
+        }).join('');
+      }
+      $('list').innerHTML = html || '<div class="arch-empty">No responses match. When a disaster is reported anywhere, it appears here.</div>';
+    }
+    $('q').oninput = render; $('fam').onchange = render; $('st').onchange = render;
+
+    fetch((C.API || '') + '/api/archive').then(r => r.json()).then(d => {
+      all = d.events || [];
+      if (!all.length) { $('stat').textContent = ''; $('list').innerHTML = '<div class="arch-empty">No responses yet. When a disaster is reported anywhere in the world, it will appear here as a permanent record.</div>'; return; }
+      render();
+    }).catch(() => { $('stat').textContent = 'Could not load the archive. Please try again.'; });
+  })();
+  </script>
+</body>
+</html>

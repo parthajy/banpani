@@ -346,3 +346,12 @@ body.map-max .recenter-btn{display:none!important}
 @media(max-width:640px){ .hdr-primary .t{display:none} }
 /* on phones, drop the wordmark (logo stays) so the menu + language never get pushed off-screen */
 @media(max-width:560px){ header h1{display:none} header{gap:6px} }
+
+/* event lifecycle banner (dormant / archived responses) */
+.lifebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 16px;font-size:13.5px;border-bottom:1px solid var(--line);position:relative;z-index:800}
+.lifebar-dormant{background:#3a2f12;color:#f0d9a0}
+.lifebar-archived{background:#20262d;color:#aeb9c7}
+.lifebar button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 13px;font-weight:700;cursor:pointer;font-size:13px}
+.lifebar button:disabled{opacity:.5}
+.lifebar a{color:#8fbaff;font-weight:600;text-decoration:none}
+.lifebar .lc-votes{opacity:.8;font-size:12.5px}
