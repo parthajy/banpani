@@ -1,0 +1,23 @@
+{
+  "updated": "9 Aug 2026",
+  "source": "ASDMA bulletins + news",
+  "note": "Barak Valley (Sribhumi, Cachar, Hailakandi) rivers above danger level; statewide the flood spans 13 districts. Edit this file each day to keep the map current.",
+  "helplines": [
+    { "label": "Sribhumi flood control room", "tel": "03843262335" },
+    { "label": "District disaster helpline 1077", "tel": "1077" }
+  ],
+  "districts": {
+    "Karimganj": "high",
+    "Cachar": "high",
+    "Hailakandi": "high",
+    "Nagaon": "medium",
+    "Morigaon": "medium",
+    "Jorhat": "medium",
+    "Sivasagar": "medium",
+    "Golaghat": "medium",
+    "Charaideo": "medium",
+    "Dhemaji": "medium",
+    "Lakhimpur": "medium",
+    "Dibrugarh": "medium"
+  }
+}

@@ -155,7 +155,7 @@ function pinIcon(status, verify, emoji, gap) {
 const emojiIcon = e => L.divIcon({ html: `<div class="emoji">${e}</div>`, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
 
 /* ------------------------------ rendering ----------------------------- */
-let officialFlood = null, officialCamps = { camps: [], updated: '' };
+let officialFlood = null, officialCamps = { camps: [], updated: '' }, assamLive = null;
 async function loadOfficialFlood() {
   if (EVENT && !EVENT.official) { officialFlood = { type: 'FeatureCollection', features: [] }; officialCamps = { camps: [], updated: '' }; return; }
   // Which official dataset: homepage = Assam; flagship events name their own (assam / odisha / …).
@@ -164,6 +164,19 @@ async function loadOfficialFlood() {
   const camps = od === 'assam' ? 'data/relief-camps.json' : `data/${od}-camps.json`;
   try { officialFlood = await (await fetch(geo)).json(); } catch { officialFlood = { type: 'FeatureCollection', features: [] }; }
   try { officialCamps = await (await fetch(camps)).json(); } catch { officialCamps = { camps: [], updated: '' }; }
+  // Assam homepage: a small hand-edited data/assam-live.json carries TODAY's district severities
+  // (Sribhumi today, Nagaon tomorrow, wherever the flood moves) + the date/source + local helplines.
+  // We stamp its severities onto the static district outlines so the official shading follows the day.
+  if (od === 'assam') {
+    try { assamLive = await (await fetch('data/assam-live.json')).json(); } catch { assamLive = null; }
+    if (assamLive && assamLive.districts && officialFlood && officialFlood.features) {
+      for (const f of officialFlood.features) {
+        const sev = assamLive.districts[f.properties.district || f.properties.name];
+        if (sev) f.properties.severity = sev;
+      }
+    }
+  }
+  renderHelplines();
 }
 // Official affected-areas layer: district shading (dated + sourced) + relief-camp summaries.
 function renderOfficial() {
@@ -175,8 +188,9 @@ function renderOfficial() {
     interactive: false,
     style: f => ({ color: floodColor(f.properties.severity), weight: 1.4, fillColor: floodColor(f.properties.severity), fillOpacity: 0.20 }),
   }).addTo(layers.official);
-  const src = officialCamps.source ? '🏛️ Official · ' + officialCamps.source : t('sourceASDMA');
-  const dn = $('officialDate'); if (dn) dn.textContent = officialCamps.updated ? `${src} · ${officialCamps.updated}` : '';
+  const meta = assamLive || officialCamps;   // homepage freshness comes from assam-live.json
+  const src = meta.source ? '🏛️ Official · ' + meta.source : t('sourceASDMA');
+  const dn = $('officialDate'); if (dn) dn.textContent = meta.updated ? `${t('updated')} ${meta.updated} · ${src}` : '';
   for (const c of (officialCamps.camps || [])) {
     L.marker([c.lat, c.lng], { icon: emojiIcon('🏕️') }).addTo(layers.official)
       .bindPopup(`<b>🏕️ ${esc(c.district)}</b><br>${c.camps ? c.camps + ' ' + t('reliefCamps') + '<br>' : ''}${c.people ? '~' + Number(c.people).toLocaleString() + ' ' + t('sheltered') + '<br>' : ''}${c.note ? esc(c.note) + '<br>' : ''}<small>${src} · ${esc(officialCamps.updated || '')}</small>`);
@@ -884,8 +898,8 @@ $('g_submit').onclick = async () => {
 /* language, advisory toggle, helplines, share */
 // Language options adapt to the response's region (Assam -> Assamese; Odisha -> Odia; …).
 (function initLang() {
-  const LABEL = { en: 'EN', as: 'অস', hi: 'हि', or: 'ଓଡ଼ି' };
-  const opts = (EVENT && Array.isArray(EVENT.langs)) ? EVENT.langs : ['en', 'as', 'hi'];
+  const LABEL = { en: 'EN', as: 'অস', bn: 'বাং', hi: 'हि', or: 'ଓଡ଼ି' };
+  const opts = (EVENT && Array.isArray(EVENT.langs)) ? EVENT.langs : ['en', 'as', 'bn', 'hi'];
   $('lang').innerHTML = opts.map(l => `<option value="${l}">${LABEL[l] || l.toUpperCase()}</option>`).join('');
   if (!opts.includes(getLang())) setLang('en');   // saved language not offered here -> fall back to English
   $('lang').value = getLang();
@@ -1027,7 +1041,14 @@ $('m_send').onclick = async () => {
 };
 // helplines dropdown
 $('helpBtn').onclick = () => $('helpMenu').classList.toggle('show');
-$('helpMenu').innerHTML = ((EVENT && EVENT.helplines) ? EVENT.helplines : C.HELPLINES).map(h => `<a href="tel:${h.tel}">☎ ${esc(h.label)}</a>`).join('');
+// Base helplines (112 / ASDMA / NDRF) + any local control-room numbers from assam-live.json for the
+// districts flooding right now. Re-rendered once assam-live.json loads (see loadOfficialFlood).
+function renderHelplines() {
+  const base = (EVENT && EVENT.helplines) ? EVENT.helplines : C.HELPLINES;
+  const extra = (!EVENT && assamLive && Array.isArray(assamLive.helplines)) ? assamLive.helplines : [];
+  $('helpMenu').innerHTML = [...base, ...extra].map(h => `<a href="tel:${h.tel}">☎ ${esc(h.label)}</a>`).join('');
+}
+renderHelplines();
 // hamburger menu (the ☰ dropdown, on every screen size)
 $('menuBtn').onclick = e => { e.stopPropagation(); $('hdrActions').classList.toggle('show'); };
 document.addEventListener('click', e => { if (!$('hdrActions').contains(e.target) && !$('menuBtn').contains(e.target)) $('hdrActions').classList.remove('show'); });
