@@ -6,6 +6,9 @@
     { "label": "Sribhumi flood control room", "tel": "03843262335" },
     { "label": "District disaster helpline 1077", "tel": "1077" }
   ],
+  "gauges": [
+    { "station": "Kushiyara at Karimganj (Sribhumi)", "river": "Kushiyara", "lat": 24.865, "lng": 92.359, "level": 16.25, "danger": 14.94, "trend": "rising", "source": "CWC" }
+  ],
   "districts": {
     "Karimganj": "high",
     "Cachar": "high",

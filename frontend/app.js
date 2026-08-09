@@ -143,7 +143,7 @@ map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp
 const h = location.hash.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
 if (h) map.setView([+h[1], +h[2]], 11);
 
-const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), photos: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map), offers: L.layerGroup().addTo(map), blocked: L.layerGroup().addTo(map), facilities: L.layerGroup().addTo(map), evac: L.layerGroup().addTo(map) };
+const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), photos: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map), offers: L.layerGroup().addTo(map), blocked: L.layerGroup().addTo(map), facilities: L.layerGroup().addTo(map), evac: L.layerGroup().addTo(map), places: L.layerGroup().addTo(map) };
 const freshIcon = (emoji, stale) => L.divIcon({ html: `<div class="fresh-pin ${stale ? 'stale' : ''}">${emoji}</div>`, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
 const freshTxt = m => (m < 60 ? Math.max(1, m) + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd') + ' ago';
 const floodColor = s => ({ high: '#f0453a', medium: '#f5a623', receding: '#8fbaff' }[s] || '#f0453a');
@@ -194,6 +194,20 @@ function renderOfficial() {
   for (const c of (officialCamps.camps || [])) {
     L.marker([c.lat, c.lng], { icon: emojiIcon('🏕️') }).addTo(layers.official)
       .bindPopup(`<b>🏕️ ${esc(c.district)}</b><br>${c.camps ? c.camps + ' ' + t('reliefCamps') + '<br>' : ''}${c.people ? '~' + Number(c.people).toLocaleString() + ' ' + t('sheltered') + '<br>' : ''}${c.note ? esc(c.note) + '<br>' : ''}<small>${src} · ${esc(officialCamps.updated || '')}</small>`);
+  }
+  // River gauges (CWC): a circle coloured by whether the river is above its danger level, so you can
+  // see at a glance how far over danger each river is. Fed from assam-live.json (updated by hand).
+  for (const g of (assamLive && Array.isArray(assamLive.gauges) ? assamLive.gauges : [])) {
+    if (g.lat == null || g.lng == null) continue;
+    const over = g.level != null && g.danger != null && g.level >= g.danger;
+    const col = over ? '#f0453a' : (g.level != null ? '#28c76f' : '#8b97a6');
+    const delta = (g.level != null && g.danger != null) ? Math.abs(g.level - g.danger).toFixed(2) : null;
+    const line = delta != null ? `<b style="color:${over ? '#ff8079' : '#7fe6b0'}">${g.level} m · ${delta} m ${over ? 'above' : 'below'} danger</b><br><small>danger ${g.danger} m${g.trend ? ' · ' + esc(g.trend) : ''}</small>`
+      : '<small>level pending</small>';
+    L.circleMarker([g.lat, g.lng], { radius: 8, color: '#0b0f14', weight: 1.5, fillColor: col, fillOpacity: 0.95 })
+      .addTo(layers.official)
+      .bindTooltip(delta != null ? `${over ? '▲' : '▼'} ${delta} m` : '·', { permanent: true, direction: 'right', className: 'gauge-tip', offset: [8, 0] })
+      .bindPopup(`<b>🌊 ${esc(g.station)}</b><br>${line}<br><small>🏛️ ${esc(g.source || 'CWC')}</small>`);
   }
 }
 function renderFlood() {
@@ -745,6 +759,23 @@ $('timeseg').querySelectorAll('button').forEach(b => b.onclick = () => {
   b.classList.add('on'); currentView = b.dataset.v; renderAll();
 });
 ['ly_official', 'ly_flood', 'ly_needs', 'ly_photos', 'ly_cover', 'ly_routes', 'ly_ngo', 'ly_offers', 'ly_blocked', 'ly_facilities', 'ly_evac'].forEach(id => $(id).onchange = renderAll);
+// Key places (OpenStreetMap): hospitals, shelters (schools), police/fire, boat crossings for the
+// Barak Valley. Opt-in + lazy-loaded (weak connections), drawn once so it stays out of the 20s redraw.
+let placesData = null;
+const PLACE_ICON = { health: '🏥', shelter: '🏫', police: '👮', fire: '🚒', boat: '⛴️' };
+const PLACE_LABEL = { health: 'Health', shelter: 'Shelter / school', police: 'Police', fire: 'Fire station', boat: 'Boat crossing' };
+async function renderPlaces() {
+  const on = $('ly_places') && $('ly_places').checked;
+  if (!on) { layers.places.clearLayers(); return; }
+  if (!placesData) { try { placesData = await (await fetch('data/barak-facilities.geojson')).json(); } catch { placesData = { features: [] }; } }
+  if (layers.places.getLayers().length) return;   // static: draw once, then leave it
+  for (const f of (placesData.features || [])) {
+    const k = f.properties.kind, c = f.geometry.coordinates;
+    L.marker([c[1], c[0]], { icon: emojiIcon(PLACE_ICON[k] || '📍') }).addTo(layers.places)
+      .bindPopup(`<b>${PLACE_ICON[k] || ''} ${esc(f.properties.name || PLACE_LABEL[k] || '')}</b><br><small>${esc(PLACE_LABEL[k] || k)} · OpenStreetMap</small>`);
+  }
+}
+if ($('ly_places')) $('ly_places').onchange = renderPlaces;
 // Live rain radar (RainViewer, free, no key) - a togglable danger layer, off by default.
 let rainLayer = null;
 async function toggleRainLayer() {

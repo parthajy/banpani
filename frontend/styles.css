@@ -411,3 +411,8 @@ body{overscroll-behavior:none}
 }
 @keyframes ovlUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes ovlFade{from{opacity:0}to{opacity:1}}
+
+/* CWC river-gauge label: a small chip showing how far above/below danger the river is */
+.gauge-tip{background:rgba(11,15,20,.85);border:1px solid var(--line);color:#fff;font-size:11px;font-weight:700;
+  padding:1px 5px;border-radius:5px;box-shadow:none}
+.gauge-tip::before{display:none}
