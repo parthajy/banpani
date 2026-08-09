@@ -248,9 +248,7 @@ textarea{resize:vertical;min-height:50px}
 .toast.show{opacity:1}
 .modehint{position:absolute;top:64px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:8px 15px;border-radius:999px;font-size:13px;font-weight:600;z-index:800;box-shadow:var(--shadow);display:none}
 .modehint.show{display:block}
-.recenter-btn{position:absolute;right:12px;top:96px;z-index:600;width:40px;height:40px;border-radius:9px;
-  background:var(--panel);border:1px solid var(--line);color:#fff;font-size:18px;cursor:pointer;box-shadow:var(--shadow)}
-.recenter-btn:active{transform:scale(.94)}
+.recenter-ctl a{font-size:15px;line-height:26px;text-align:center}
 /* place search */
 .searchbox{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:620;width:min(420px,72vw)}
 .searchbox input{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:11px;
@@ -339,8 +337,7 @@ body.fs-lock{overflow:hidden}
 body.map-max .overlay,
 body.map-max .panel,
 body.map-max .panel-fab,
-body.map-max .modehint,
-body.map-max .recenter-btn{display:none!important}
+body.map-max .modehint{display:none!important}
 
 /* on small screens the always-visible primary buttons show icon only, so the header stays tight */
 @media(max-width:640px){ .hdr-primary .t{display:none} }

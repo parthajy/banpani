@@ -87,6 +87,20 @@ function isGap(n) {
 const B = L.latLngBounds(EVENT ? EVENT.bounds : C.BOUNDS);
 const map = L.map('map', { zoomControl: false, minZoom: EVENT ? (EVENT.minZoom || 5) : C.MIN_ZOOM, maxZoom: C.MAX_ZOOM, maxBounds: B, maxBoundsViscosity: 1.0 }).setView(EVENT ? EVENT.center : C.CENTER, EVENT ? EVENT.zoom : C.ZOOM);
 L.control.zoom({ position: 'topright' }).addTo(map);   // top-right, away from the View controls
+// Recenter to the worst-hit area - a proper map control so it sits IN the right-edge stack with
+// zoom / full screen / layers, instead of a floating button that overlapped them.
+const RecenterCtl = L.Control.extend({
+  options: { position: 'topright' },
+  onAdd() {
+    const c = L.DomUtil.create('div', 'leaflet-bar leaflet-control recenter-ctl');
+    const a = L.DomUtil.create('a', '', c); a.href = '#'; a.title = 'Go to where help is needed';
+    a.setAttribute('data-i18n-title', 'recenter'); a.setAttribute('role', 'button'); a.setAttribute('aria-label', 'Recenter'); a.textContent = '🎯';
+    L.DomEvent.disableClickPropagation(c);
+    L.DomEvent.on(a, 'click', e => { L.DomEvent.preventDefault(e); fitToHotspot(); });
+    return c;
+  },
+});
+map.addControl(new RecenterCtl());
 // Full-screen control lives ON the map (top-right, below zoom) so it's always visible - even in the
 // default view where the side panel covers the window's right edge. Hides the side panels
 // (body.map-max) + requests browser full screen. Guarded so the smoke test (no fullscreen.js) skips it.
@@ -1084,7 +1098,6 @@ function hotspotBounds() {
   return null;
 }
 function fitToHotspot() { const b = hotspotBounds(); if (b && b.isValid()) map.fitBounds(b, { padding: [40, 40], maxZoom: 9 }); }
-$('recenter').onclick = fitToHotspot;
 
 /* ------------------------------ place search ------------------------------ */
 let searchT, searchMarker = null;
