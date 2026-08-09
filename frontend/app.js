@@ -103,6 +103,25 @@ if (window.attachFullscreen) {
   });
   map.addControl(new FsCtl());
 }
+// Layers control: on phones there is no floating left panel - this button (grouped with zoom + full
+// screen on the right edge) opens the Layers + Status controls as a bottom-sheet, the pattern people
+// already know from map apps. On desktop it is hidden (the left panel is always visible there).
+const LayersCtl = L.Control.extend({
+  options: { position: 'topright' },
+  onAdd() {
+    const c = L.DomUtil.create('div', 'leaflet-bar leaflet-control layers-ctl');
+    const a = L.DomUtil.create('a', '', c); a.href = '#'; a.title = 'Layers'; a.setAttribute('role', 'button'); a.setAttribute('aria-label', 'Layers');
+    a.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M2 13l10 5 10-5"/></svg>';
+    L.DomEvent.disableClickPropagation(c);
+    L.DomEvent.on(a, 'click', e => { L.DomEvent.preventDefault(e); toggleLayersSheet(); });
+    return c;
+  },
+});
+map.addControl(new LayersCtl());
+function openLayersSheet() { const o = $('overlay'); o.classList.remove('min'); o.classList.add('sheet-open'); const b = $('ovlBackdrop'); if (b) b.classList.add('on'); }
+function closeLayersSheet() { $('overlay').classList.remove('sheet-open'); const b = $('ovlBackdrop'); if (b) b.classList.remove('on'); }
+function toggleLayersSheet() { $('overlay').classList.contains('sheet-open') ? closeLayersSheet() : openLayersSheet(); }
+
 C.addBasemap(map, { bounds: B });   // CARTO Dark Matter, auto-falls back to OSM if it ever fails
 map.setMaxBounds(B);
 map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp - no drift off Assam
@@ -726,7 +745,7 @@ document.querySelectorAll('.tab').forEach(tb => tb.onclick = () => {
   syncMarkers(tb.dataset.tab);
 });
 $('modehint').classList.add('show');
-if (window.innerWidth <= 860) { $('overlay').classList.add('min'); $('overlayToggle').firstChild.textContent = '▸ '; }
+// (mobile: the left panel is replaced by the Layers button + bottom-sheet - see LayersCtl above)
 
 // Draggable location pickers - one marker per point (need / drop / flood / convoy start+dest).
 const coordId = { need: 'n_coord', r: 'r_coord', rf: 'rf_coord', c: 'c_coord', f: 'f_coord', p: 'p_coord', o: 'o_coord', bl: 'bl_coord', fa: 'fa_coord', ef: 'ef_coord', et: 'et_coord' };
@@ -862,6 +881,8 @@ document.addEventListener('langchange', () => { renderAll(); renderAdvisory(); }
 $('advToggle').onclick = () => $('advisory').classList.toggle('collapsed');
 // collapsible side columns (so the full map is visible)
 $('overlayToggle').onclick = () => { const o = $('overlay'); o.classList.toggle('min'); $('overlayToggle').firstChild.textContent = o.classList.contains('min') ? '▸ ' : '▾ '; };
+// close the mobile layers bottom-sheet by tapping the backdrop or the grab handle
+{ const b = $('ovlBackdrop'); if (b) b.onclick = closeLayersSheet; const g = document.querySelector('.ovl-grab'); if (g) g.onclick = closeLayersSheet; }
 // left-panel tabs (Layers / Status) - one frame at a time, so no scrolling
 document.querySelectorAll('.ovl-tab').forEach(tb => tb.onclick = () => {
   document.querySelectorAll('.ovl-tab').forEach(x => x.classList.toggle('on', x === tb));

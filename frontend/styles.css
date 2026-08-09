@@ -394,3 +394,23 @@ body.map-max .recenter-btn{display:none!important}
 /* stop scroll-chaining / rubber-band jitter: a scroll inside a panel stays in that panel */
 body{overscroll-behavior:none}
 .tabbody,.overlay,.news-list,.gallery-grid,.modal-card,.helpmenu,.hdr-actions,.act-list{overscroll-behavior:contain}
+
+/* Layers control + mobile bottom-sheet: the native maps pattern that replaces the floating left
+   panel on phones. Desktop is untouched (the left panel stays; this button stays hidden). */
+.layers-ctl{display:none}
+.layers-ctl a{display:flex;align-items:center;justify-content:center}
+.ovl-grab,.ovl-backdrop{display:none}
+@media(max-width:860px){
+  .layers-ctl{display:block}
+  .overlay{display:none}
+  .overlay .ovl-toggle{display:none}
+  .overlay.sheet-open{display:flex;position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;max-width:none;
+    max-height:76vh;margin:0;padding:6px 14px calc(16px + env(safe-area-inset-bottom));gap:10px;
+    border-radius:18px 18px 0 0;background:var(--panel);box-shadow:0 -10px 34px rgba(0,0,0,.55);
+    z-index:1600;pointer-events:auto;animation:ovlUp .26s cubic-bezier(.32,.72,0,1)}
+  .overlay.sheet-open .ovl-grab{display:block;width:40px;height:4px;border-radius:2px;background:var(--line);margin:2px auto 8px;flex:0 0 auto}
+  .overlay.sheet-open .advisory{display:block}   /* let phone users finally see the weather / flood-now */
+  .ovl-backdrop.on{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1590;animation:ovlFade .2s ease}
+}
+@keyframes ovlUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes ovlFade{from{opacity:0}to{opacity:1}}
