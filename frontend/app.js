@@ -758,11 +758,11 @@ function activeKey() {
   return pickMode;
 }
 
-map.on('click', e => { if (pickMode) setPick(activeKey(), e.latlng.lat, e.latlng.lng); });
+map.on('click', e => { if (pickMode) { setPick(activeKey(), e.latlng.lat, e.latlng.lng); if (window.raiseSheet) window.raiseSheet(); } });
 function useGPS(key) {
   if (!navigator.geolocation) return toast('No GPS');
   toast('Getting location…');
-  navigator.geolocation.getCurrentPosition(p => { setPick(key, p.coords.latitude, p.coords.longitude, true); map.setView([p.coords.latitude, p.coords.longitude], 12); },
+  navigator.geolocation.getCurrentPosition(p => { setPick(key, p.coords.latitude, p.coords.longitude, true); map.setView([p.coords.latitude, p.coords.longitude], 12); if (window.raiseSheet) window.raiseSheet(); },
     () => toast('Could not get GPS'));
 }
 $('convoyTarget').querySelectorAll('button').forEach(b => b.onclick = () => {
@@ -916,6 +916,8 @@ $('panelReopen').onclick = () => { mainEl.classList.remove('hide-panel'); setTim
   document.querySelectorAll('.tab').forEach(tb => tb.addEventListener('click', () => { if (mq.matches && snap === 'peek') go('half'); }));
   // + FAB starts a report: jump to the Need tab and open to half
   $('panelFab').onclick = () => { const tb = document.querySelector('.tab[data-tab="need"]'); if (tb) tb.click(); go('half'); };
+  // After dropping a location pin while reporting, slide the form into view (place -> fill, one motion).
+  window.raiseSheet = () => { if (mq.matches && snap === 'peek') go('half'); };
   const bd = $('sheetBackdrop'); if (bd) bd.addEventListener('click', () => go('half'));
   function sync() {
     if (mq.matches) requestAnimationFrame(() => go(snap));
