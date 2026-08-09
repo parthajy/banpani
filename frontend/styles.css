@@ -384,3 +384,7 @@ body.map-max .recenter-btn{display:none!important}
 .ovl-pane{display:flex;flex-direction:column;gap:10px}
 .ovl-pane.hide{display:none}
 .overlay.min .ovl-tabs,.overlay.min .ovl-pane{display:none}
+
+/* stop scroll-chaining / rubber-band jitter: a scroll inside a panel stays in that panel */
+body{overscroll-behavior:none}
+.tabbody,.overlay,.news-list,.gallery-grid,.modal-card,.helpmenu,.hdr-actions,.act-list{overscroll-behavior:contain}

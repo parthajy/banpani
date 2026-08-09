@@ -663,7 +663,22 @@ $('modeswitch').querySelectorAll('button').forEach(b => b.onclick = () => {
   toast(currentMode === 'rehab' ? t('modeRehabOn') : t('modeReliefOn'));
 });
 
-async function refresh() {
+// A signature of the MEANINGFUL state (ids + status), ignoring time-derived fields like fresh_min /
+// server_time. Lets the 20s poll skip the full map redraw when nothing actually changed - which is
+// most of the time - so we don't wipe and rebuild every marker every 20s (a real mobile stutter).
+function stateSig(s) {
+  const j = (a, f) => (a || []).map(f).join(',');
+  return [
+    j(s.reports, r => r.id + r.verify_status + r.status + r.has_contact + (r.adopted_by || '')),
+    j(s.offers, o => o.id + o.kind), j(s.blocked, b => b.id),
+    j(s.facilities, f => f.id + f.status), j(s.evac, e => e.id),
+    j(s.flood_reports, f => f.id + f.severity), j(s.photos, p => p.id),
+    j(s.routes, r => r.id), j(s.collection_points, c => c.id),
+    j(s.ngos, n => n.id + n.verify_status), j(s.flood_polygons, p => p.id),
+  ].join('|');
+}
+let lastStateSig = null;
+async function refresh(force) {
   STATE = await api('/api/state' + (EVENT ? '?event=' + encodeURIComponent(EVENT.slug) : ''));
   if (!EVENT) {
     // Assam homepage: keep only reports inside Assam bounds so disasters reported elsewhere
@@ -671,6 +686,9 @@ async function refresh() {
     const bb = C.BOUNDS;
     STATE.reports = (STATE.reports || []).filter(r => r.lat >= bb[0][0] && r.lat <= bb[1][0] && r.lng >= bb[0][1] && r.lng <= bb[1][1]);
   }
+  const sig = stateSig(STATE);
+  if (!force && sig === lastStateSig) return;   // nothing meaningful changed -> skip the full redraw
+  lastStateSig = sig;
   renderAll();
 }
 
@@ -860,7 +878,10 @@ $('panelReopen').onclick = () => { mainEl.classList.remove('hide-panel'); setTim
   const mq = window.matchMedia('(max-width:860px)');
   let snap = 'peek', dragging = false, moved = false, startY = 0, startTY = 0, curTY = 0, lastY = 0, lastT = 0, vel = 0;
   // translateY (px) for each detent, measured from the sheet's own height
-  const detents = () => { const h = panel.offsetHeight, peekPx = 138, halfPx = Math.round(window.innerHeight * 0.52);
+  // Use a CACHED viewport height, not live window.innerHeight, so the mobile address bar showing/
+  // hiding (which changes innerHeight constantly) does not make the sheet recompute and jump.
+  let vpH = window.innerHeight;
+  const detents = () => { const h = panel.offsetHeight, peekPx = 138, halfPx = Math.round(vpH * 0.52);
     return { full: 4, half: Math.max(60, h - halfPx), peek: Math.max(0, h - peekPx) }; };
   const put = ty => { curTY = ty; panel.style.transform = `translateY(${ty}px)`; };
   function go(s) { snap = s; put(detents()[s]); mainEl.dataset.snap = s; mainEl.classList.toggle('sheet-full', s === 'full'); }
@@ -902,7 +923,14 @@ $('panelReopen').onclick = () => { mainEl.classList.remove('hide-panel'); setTim
     setTimeout(() => map.invalidateSize(), 80);
   }
   mq.addEventListener('change', sync);
-  window.addEventListener('resize', () => { if (mq.matches && !dragging) put(detents()[snap]); });
+  // Only re-lay-out on a REAL viewport change (orientation / big delta), never on the constant tiny
+  // address-bar resizes - those were the main source of the mobile jitter.
+  window.addEventListener('resize', () => {
+    if (!mq.matches || dragging) return;
+    if (Math.abs(window.innerHeight - vpH) < 100) return;   // address-bar toggle: ignore
+    vpH = window.innerHeight; put(detents()[snap]);
+    clearTimeout(window._rsz); window._rsz = setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 150);
+  });
   sync();
 })();
 $('shareMap').onclick = () => bp.shareMap();
