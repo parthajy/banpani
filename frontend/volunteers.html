@@ -154,6 +154,7 @@
         const res = await fetch((C.API || '') + '/api/volunteer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
         const j = await res.json();
         if (!res.ok) throw new Error(j.error || 'Something went wrong');
+        if (window.gtag) gtag('event', 'volunteer_signup', { event_category: 'engagement', country: sel.value });
         $('form').innerHTML = '<div class="done"><h3>You\'re signed up.</h3><p>Thank you. If a disaster is confirmed near you, you may be contacted to help. Your email is kept private.</p><p style="margin-top:14px"><a href="/world">See the live world map</a></p><p style="margin-top:10px;color:#667180;font-size:13px">Share it so more people can help:</p><p><a href="https://wa.me/?text=' + encodeURIComponent('I signed up to help with disaster response on Banpani. If a disaster hits your area you can be contacted to help. No account needed. https://banpani.org/volunteers') + '" target="_blank" rel="noopener">Share on WhatsApp</a></p></div>';
         $('count').innerHTML = fmtCount(j);
       } catch (err) {

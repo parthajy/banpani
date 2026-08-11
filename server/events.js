@@ -110,7 +110,10 @@ export function listEvents() {
     return {
       slug: e.slug, title: e.title, family: familyOf(e.disaster_type), disaster_type: e.disaster_type,
       lat: e.lat, lng: e.lng, source: e.source, modules: JSON.parse(e.modules || '[]'), listed: !!e.listed,
-      reports: c.reports, people: c.people, confirmations: c.confirmations, score, promoted: score >= 3,
+      reports: c.reports, people: c.people, confirmations: c.confirmations, score,
+      // Our hand-built flagship responses (Assam, seeded events like Odisha) are always SEO-worthy,
+      // so they belong in the sitemap even before community activity pushes their score up.
+      promoted: score >= 3 || e.source === 'assam' || e.source === 'seeded',
       unconfirmed: !active, status: e.status, reopenVotes: e.status === 'dormant' ? reopenVotes(e.id) : 0,
     };
   });
