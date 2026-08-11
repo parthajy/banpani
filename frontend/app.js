@@ -168,7 +168,14 @@ async function loadOfficialFlood() {
   // (Sribhumi today, Nagaon tomorrow, wherever the flood moves) + the date/source + local helplines.
   // We stamp its severities onto the static district outlines so the official shading follows the day.
   if (od === 'assam') {
-    try { assamLive = await (await fetch('data/assam-live.json')).json(); } catch { assamLive = null; }
+    // Live auto feed first (server refreshes it every 3h); fall back to the committed static file if
+    // the API is warming up or unreachable, so the map is never blank.
+    try {
+      assamLive = await (await fetch('/api/assam-live')).json();
+      if (!assamLive || !assamLive.districts || !Object.keys(assamLive.districts).length) throw 0;
+    } catch {
+      try { assamLive = await (await fetch('data/assam-live.json')).json(); } catch { assamLive = null; }
+    }
     if (assamLive && assamLive.districts && officialFlood && officialFlood.features) {
       for (const f of officialFlood.features) {
         const sev = assamLive.districts[f.properties.district || f.properties.name];
@@ -188,26 +195,33 @@ function renderOfficial() {
     interactive: false,
     style: f => ({ color: floodColor(f.properties.severity), weight: 1.4, fillColor: floodColor(f.properties.severity), fillOpacity: 0.20 }),
   }).addTo(layers.official);
-  const meta = assamLive || officialCamps;   // homepage freshness comes from assam-live.json
-  const src = meta.source ? '🏛️ Official · ' + meta.source : t('sourceASDMA');
+  const meta = assamLive || officialCamps;   // homepage freshness comes from the auto feed
+  const src = meta.source ? (meta.auto ? '🔄 ' + meta.source : '🏛️ Official · ' + meta.source) : t('sourceASDMA');
   const dn = $('officialDate'); if (dn) dn.textContent = meta.updated ? `${t('updated')} ${meta.updated} · ${src}` : '';
   for (const c of (officialCamps.camps || [])) {
     L.marker([c.lat, c.lng], { icon: emojiIcon('🏕️') }).addTo(layers.official)
       .bindPopup(`<b>🏕️ ${esc(c.district)}</b><br>${c.camps ? c.camps + ' ' + t('reliefCamps') + '<br>' : ''}${c.people ? '~' + Number(c.people).toLocaleString() + ' ' + t('sheltered') + '<br>' : ''}${c.note ? esc(c.note) + '<br>' : ''}<small>${src} · ${esc(officialCamps.updated || '')}</small>`);
   }
-  // River gauges (CWC): a circle coloured by whether the river is above its danger level, so you can
-  // see at a glance how far over danger each river is. Fed from assam-live.json (updated by hand).
+  // River gauges: a circle at a river point, coloured by risk (or by above/below danger for a manual
+  // CWC reading), with a small chip showing the trend. Fed automatically from the flood-risk feed.
   for (const g of (assamLive && Array.isArray(assamLive.gauges) ? assamLive.gauges : [])) {
     if (g.lat == null || g.lng == null) continue;
-    const over = g.level != null && g.danger != null && g.level >= g.danger;
-    const col = over ? '#f0453a' : (g.level != null ? '#28c76f' : '#8b97a6');
-    const delta = (g.level != null && g.danger != null) ? Math.abs(g.level - g.danger).toFixed(2) : null;
-    const line = delta != null ? `<b style="color:${over ? '#ff8079' : '#7fe6b0'}">${g.level} m · ${delta} m ${over ? 'above' : 'below'} danger</b><br><small>danger ${g.danger} m${g.trend ? ' · ' + esc(g.trend) : ''}</small>`
-      : '<small>level pending</small>';
+    let col, tip, line;
+    if (g.danger != null && g.level != null) {                     // manual CWC gauge height
+      const over = g.level >= g.danger, delta = Math.abs(g.level - g.danger).toFixed(2);
+      col = over ? '#f0453a' : '#28c76f'; tip = `${over ? '▲' : '▼'} ${delta} m`;
+      line = `<b style="color:${over ? '#ff8079' : '#7fe6b0'}">${g.level} m · ${delta} m ${over ? 'above' : 'below'} danger</b><br><small>danger ${g.danger} m${g.trend ? ' · ' + esc(g.trend) : ''}</small>`;
+    } else {                                                        // auto flood-risk gauge (GloFAS)
+      col = g.risk === 'high' ? '#f0453a' : g.risk === 'medium' ? '#f5a623' : '#8b97a6';
+      const arrow = g.trend === 'rising' ? '▲' : g.trend === 'falling' ? '▼' : '■';
+      tip = `${arrow} ${g.risk || ''}`.trim();
+      const flow = g.discharge != null ? `river flow ${Number(g.discharge).toLocaleString()} m³/s${g.pct != null ? ` (${g.pct}th percentile of last 90 days)` : ''}` : '';
+      line = `<b style="color:${g.risk === 'high' ? '#ff8079' : '#ffd479'}">${(g.risk || '').toUpperCase()} risk${g.trend ? ' · ' + esc(g.trend) : ''}</b>${flow ? '<br><small>' + flow + '</small>' : ''}`;
+    }
     L.circleMarker([g.lat, g.lng], { radius: 8, color: '#0b0f14', weight: 1.5, fillColor: col, fillOpacity: 0.95 })
       .addTo(layers.official)
-      .bindTooltip(delta != null ? `${over ? '▲' : '▼'} ${delta} m` : '·', { permanent: true, direction: 'right', className: 'gauge-tip', offset: [8, 0] })
-      .bindPopup(`<b>🌊 ${esc(g.station)}</b><br>${line}<br><small>🏛️ ${esc(g.source || 'CWC')}</small>`);
+      .bindTooltip(tip, { permanent: true, direction: 'right', className: 'gauge-tip', offset: [8, 0] })
+      .bindPopup(`<b>🌊 ${esc(g.station)}</b><br>${line}<br><small>${esc(g.source || 'auto')}</small>`);
   }
 }
 function renderFlood() {

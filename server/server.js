@@ -16,6 +16,7 @@ import { dirname, join, normalize, extname } from 'node:path';
 import { db, all, one, run, now, today, parseRows, decoratedReports, decoratedNgos } from './db.js';
 import { buildReport } from './report.js';
 import { updateWeather } from './weather.js';
+import { refreshFloodAuto, getFloodAuto } from './flood-auto.js';
 import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLifecycle, voteOver, voteReopen, archiveList, LIFECYCLE } from './events.js';
 import { DISASTERS, familyOf, HAZARD } from './disasters.js';
@@ -175,6 +176,9 @@ on('POST', '/api/events/:slug/reopen', async (req, res, params) => {
 });
 // The public archive: every response, past and present. Nothing is ever deleted.
 on('GET', '/api/archive', (req, res) => json(res, 200, { events: archiveList(), lifecycle: LIFECYCLE }));
+// Fully automatic Assam flood-risk feed (server refreshes it every 3h from GloFAS + rainfall). The
+// homepage reads this; if it's not warmed up yet, the frontend falls back to the committed static file.
+on('GET', '/api/assam-live', (req, res) => json(res, 200, getFloodAuto() || { warming: true }));
 // Standing volunteer registry. Email is encrypted with a public key the server CANNOT reverse
 // (see volunteers.js) - we store it, but nobody online (operator included) can read it. Coarse
 // location + families only. Rate-limited by hashed IP so it can't be scripted into a spam list.
@@ -719,6 +723,9 @@ http.createServer(async (req, res) => {
   // live with no admin action and no cron required (cron is still fine as a backup).
   updateWeather().catch(e => console.warn('weather update failed:', e.message));
   setInterval(() => updateWeather().catch(() => {}), 3 * 60 * 60 * 1000);
+  // Fully automatic flood-risk map: refresh on boot + every 3h. No human, no agent, no daily editing.
+  refreshFloodAuto().catch(e => console.warn('flood-auto failed:', e.message));
+  setInterval(() => refreshFloodAuto().catch(() => {}), 3 * 60 * 60 * 1000);
   // Pre-warm official GDACS signals so the world map is populated on first load.
   officialEvents().catch(() => {});
   // Event lifecycle: stop idle responses (45d) and archive dormant ones past the reopen window.
