@@ -3,7 +3,8 @@ const C = window.BANPANI;
 // When window.EVENT is present (served by /e/<slug>) the SAME app runs scoped to ONE event:
 // its bounds, its data, its disaster recipe. Absent = the Assam homepage, exactly as before.
 const EVENT = window.EVENT || null;
-const ITEMS = (EVENT && EVENT.items && EVENT.items.length) ? EVENT.items : C.ITEMS;
+const ITEMS = (EVENT && EVENT.items && EVENT.items.length) ? EVENT.items
+  : (EVENT && C.DISASTERS[EVENT.family] && C.DISASTERS[EVENT.family].needs) || C.ITEMS;   // family vocab, not flood items
 // Tailored per-family option catalogs (Offers supply kinds, Facility types) - injected by the
 // server from disasters.js; fall back to a generic set on the homepage / if an event lacks them.
 const DEFAULT_OFFER_KINDS = [['water', '💧 Water'], ['food', '🍚 Food'], ['medicine', '💊 Medicine'], ['shelter', '🏠 Shelter'], ['transport', '🚗 Transport'], ['other', '📦 Other']];

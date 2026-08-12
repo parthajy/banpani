@@ -618,7 +618,7 @@ async function serveEventApp(req, res, ev) {
     center: isAssam ? [26.5, 92.9] : isOdisha ? [20.5, 85.3] : isColombia ? [4.3, -76.0] : [ev.lat, ev.lng],
     zoom: isAssam ? 7 : isOdisha ? 7 : isColombia ? 7 : 9, minZoom: isAssam ? 7 : isOdisha ? 6 : isColombia ? 6 : 5,
     bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : isOdisha ? [[18.3, 82.2], [22.9, 87.8]] : isColombia ? [[2.5, -77.7], [6.6, -74.3]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
-    official: !!officialData, officialData, items: ev.needs || [], modules: ev.modules || [],
+    official: !!officialData, officialData, items: (ev.needs && ev.needs.length) ? ev.needs : (f.needs || []), modules: ev.modules || [],
     offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: isAssam ? null : helplinesForCountry(ev.family, cc),
     hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
     status: ev.status || 'active', dormantAt: ev.dormant_at || null, archivedAt: ev.archived_at || null,

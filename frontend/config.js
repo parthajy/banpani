@@ -65,7 +65,7 @@ window.BANPANI = {
     storm:   { color: '#8B5CF6', emoji: '🌪️', label: 'Storm & wind',   types: ['cyclone', 'hurricane', 'typhoon', 'tornado', 'thunderstorm', 'hailstorm', 'blizzard', 'ice-storm', 'dust-storm'],
       needs: ['Shelter', 'Drinking water', 'Food', 'Tarpaulin / roofing', 'Medicines', 'Power / lighting', 'Rescue'] },
     geo:     { color: '#B4652A', emoji: '⛰️', label: 'Geological',     types: ['earthquake', 'landslide', 'mudslide', 'avalanche', 'volcano', 'sinkhole'],
-      needs: ['Search & rescue', 'Medical / trauma', 'Tents / shelter', 'Drinking water', 'Food', 'Blankets', 'Heavy equipment'] },
+      needs: ['Search & rescue', 'People trapped', 'Medical / trauma', 'Drinking water', 'Food', 'Tents / shelter', 'Blankets', 'Heavy equipment', 'Sanitation', 'Power / lighting'] },
     climate: { color: '#EAB308', emoji: '☀️', label: 'Climate extreme', types: ['heatwave', 'coldwave', 'drought', 'water-scarcity'],
       needs: ['Drinking water', 'Cooling / shade', 'ORS / electrolytes', 'Medical', 'Fodder for livestock', 'Food'] },
     health:  { color: '#12B5A5', emoji: '🦠', label: 'Health',         types: ['pandemic', 'epidemic', 'outbreak'],

@@ -26,7 +26,7 @@ export const DISASTERS = {
   geo: {
     color: '#B4652A', emoji: '⛰️', label: 'Geological',
     types: ['earthquake', 'landslide', 'mudslide', 'avalanche', 'volcano', 'sinkhole'],
-    needs: ['Search & rescue', 'Medical / trauma', 'Tents / shelter', 'Drinking water', 'Food', 'Blankets', 'Heavy equipment'],
+    needs: ['Search & rescue', 'People trapped', 'Medical / trauma', 'Drinking water', 'Food', 'Tents / shelter', 'Blankets', 'Heavy equipment', 'Sanitation', 'Power / lighting'],
     offerKinds: [['medical', '🩹 Medical'], ['blood', '🩸 Blood'], ['shelter', '🏠 Shelter'], ['water', '💧 Water'], ['equipment', '🚜 Equipment'], ['other', '📦 Other']],
     facilityKinds: [['hospital', '🏥 Hospital'], ['clinic', '🩺 Clinic'], ['shelter', '⛺ Shelter']],
   },

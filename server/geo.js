@@ -66,6 +66,7 @@ const NEWS_LOCALE = {
   NZ: ['en-NZ', 'NZ'], IE: ['en-IE', 'IE'], BD: ['bn-BD', 'BD'], NP: ['ne-NP', 'NP'], LK: ['en-LK', 'LK'],
   PK: ['en-PK', 'PK'], PH: ['en-PH', 'PH'], ID: ['id-ID', 'ID'], MY: ['en-MY', 'MY'], SG: ['en-SG', 'SG'],
   NG: ['en-NG', 'NG'], KE: ['en-KE', 'KE'], ZA: ['en-ZA', 'ZA'], BR: ['pt-BR', 'BR'], MX: ['es-419', 'MX'],
+  CO: ['es-419', 'CO'], EC: ['es-419', 'EC'], PE: ['es-419', 'PE'], CL: ['es-CL', 'CL'], AR: ['es-AR', 'AR'],
   DE: ['de-DE', 'DE'], FR: ['fr-FR', 'FR'], ES: ['es-ES', 'ES'], IT: ['it-IT', 'IT'], NL: ['nl-NL', 'NL'],
   PT: ['pt-PT', 'PT'], SE: ['sv-SE', 'SE'], PL: ['pl-PL', 'PL'], GR: ['el-GR', 'GR'], TR: ['tr-TR', 'TR'],
   JP: ['ja-JP', 'JP'],
