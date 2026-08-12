@@ -1255,6 +1255,14 @@ function gateModules() {
     const on = m === 'official' ? !!EVENT.official : mods.includes(m);
     el.classList.toggle('mod-off', !on);
   });
+  // Live rain radar only makes sense for weather-driven disasters (floods, storms). Hide it for
+  // quakes, fires, outbreaks, etc. so the layer list stays relevant to the disaster.
+  const rainOK = ['water', 'storm', 'climate'].includes(EVENT.family);
+  const rainRow = $('ly_rain') && $('ly_rain').closest('.lyr');
+  if (rainRow) { rainRow.classList.toggle('mod-off', !rainOK); if (!rainOK && $('ly_rain').checked) { $('ly_rain').checked = false; toggleRainLayer(); } }
+  // "Key places" ships only the Assam / Barak Valley dataset; hide it on every other response.
+  const placesRow = $('ly_places') && $('ly_places').closest('.lyr');
+  if (placesRow) placesRow.classList.toggle('mod-off', EVENT.officialData !== 'assam');
 }
 
 (async function () {
