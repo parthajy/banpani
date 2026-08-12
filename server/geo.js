@@ -72,6 +72,22 @@ const NEWS_LOCALE = {
   JP: ['ja-JP', 'JP'],
 };
 
+// Official responders per country, shown on the event page and clearly separated from community
+// reports. The posture: Banpani is a free extra tool for local responders, not a replacement.
+const OFFICIAL = {
+  CO: [
+    { name: 'Cruz Roja Colombiana', url: 'https://www.cruzrojacolombiana.org' },
+    { name: 'Defensa Civil Colombiana', url: 'https://www.defensacivil.gov.co' },
+    { name: 'UNGRD - Gestión del Riesgo', url: 'https://portal.gestiondelriesgo.gov.co' },
+    { name: 'Servicio Geológico Colombiano', url: 'https://www.sgc.gov.co' },
+  ],
+  IN: [
+    { name: 'NDMA - National Disaster Management', url: 'https://ndma.gov.in' },
+    { name: 'Indian Red Cross Society', url: 'https://indianredcross.org' },
+  ],
+};
+export function officialSourcesFor(cc) { return OFFICIAL[cc] || []; }
+
 export function newsLocale(cc) {
   const [hl, gl] = NEWS_LOCALE[cc] || ['en-US', 'US'];   // sensible default: global English coverage
   return { hl, gl, ceid: `${gl}:${hl.split('-')[0]}` };

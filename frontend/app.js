@@ -294,7 +294,7 @@ function needPopup(n) {
     const cov = coverageOf(n);
     statusTxt = n.status === 'resolved' ? '' : cov
       ? (cov.type === 'offer'
-        ? `<div style="color:#7fe6b0">✅ ${esc(OFFER_LABEL[cov.o.kind] || 'Supply')} available nearby (~${cov.dist.toFixed(1)}km)</div>`
+        ? `<div style="color:#7fe6b0">✅ ${esc(vt(OFFER_LABEL[cov.o.kind] || "Supply"))} available nearby (~${cov.dist.toFixed(1)}km)</div>`
         : `<div style="color:#7fe6b0">🚚 ${esc(cov.r.name)} inbound (~${cov.dist.toFixed(1)}km)</div>`)
       : `<div style="color:#ff8079">⚠️ ${hasModule('offers') && !hasModule('convoys') ? 'no matching supply nearby' : 'nobody heading here yet'}</div>`;
     actionRow = `<div class="vbtns">
@@ -432,7 +432,7 @@ function renderOffers() {
   for (const o of (STATE.offers || [])) {
     if (o.lat == null) continue;
     const stale = o.fresh_min >= 480;
-    const pop = `<b>${esc(OFFER_LABEL[o.kind] || '📦')}</b>${o.note ? '<br>' + esc(o.note) : ''}<br><small>${stale ? '⚠ ' : '✅ '}${freshTxt(o.fresh_min)}</small>`
+    const pop = `<b>${esc(vt(OFFER_LABEL[o.kind] || '📦'))}</b>${o.note ? '<br>' + esc(o.note) : ''}<br><small>${stale ? '⚠ ' : '✅ '}${freshTxt(o.fresh_min)}</small>`
       + `<div class="vbtns"><button onclick="bp.offConfirm(${o.id})">✅ Still here</button><button onclick="bp.offGone(${o.id})">✖ Gone</button>${o.has_contact ? `<button onclick="bp.offContact(${o.id})">📞 Contact</button>` : ''}</div>`;
     L.marker([o.lat, o.lng], { icon: freshIcon('📦', stale) }).addTo(layers.offers).bindPopup(pop);
   }
@@ -455,7 +455,7 @@ function renderFacilities() {
     const st = f.status || 'open';
     const dot = st === 'closed' ? '🔴' : st === 'limited' ? '🟡' : '🟢';
     const stTxt = st === 'closed' ? '⛔ Closed' : st === 'limited' ? '🟡 Limited' : '✅ Open';
-    const pop = `<b>${esc(FAC_LABEL[f.kind] || '📍 Facility')}${f.name ? ' · ' + esc(f.name) : ''}</b>${f.note ? '<br>' + esc(f.note) : ''}<br><small>${stTxt} · ${freshTxt(f.fresh_min)}</small>`
+    const pop = `<b>${esc(vt(FAC_LABEL[f.kind] || '📍 Facility'))}${f.name ? ' · ' + esc(f.name) : ''}</b>${f.note ? '<br>' + esc(f.note) : ''}<br><small>${stTxt} · ${freshTxt(f.fresh_min)}</small>`
       + `<div class="vbtns"><button onclick="bp.facSet(${f.id},'open')">✅ Open</button><button onclick="bp.facSet(${f.id},'limited')">🟡 Limited</button><button onclick="bp.facSet(${f.id},'closed')">⛔ Closed</button></div>`;
     L.marker([f.lat, f.lng], { icon: freshIcon(dot) }).addTo(layers.facilities).bindPopup(pop);
   }
@@ -474,7 +474,7 @@ function renderEvac() {
 function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderOffers(); renderBlocked(); renderFacilities(); renderEvac(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
 
 /* -------------------------------- photos -------------------------------- */
-function photoTagLabel(k) { for (const m of ['relief', 'rehab']) { const f = (C.PHOTO_TAGS[m] || []).find(x => x.k === k); if (f) return f.l; } return k || ''; }
+function photoTagLabel(k) { for (const m of ['relief', 'rehab']) { const f = (C.PHOTO_TAGS[m] || []).find(x => x.k === k); if (f) return vt(f.l); } return k || ''; }
 function renderPhotos() {
   layers.photos.clearLayers();
   if (!$('ly_photos').checked) return;
@@ -506,7 +506,7 @@ function buildPhotoTags() {
   const el = $('p_tag'); if (!el) return;
   const tags = C.PHOTO_TAGS[currentMode] || C.PHOTO_TAGS.relief;
   photoTag = tags[0].k;
-  el.innerHTML = tags.map((t, i) => `<button data-k="${t.k}" class="${i === 0 ? 'on' : ''}">${esc(t.l)}</button>`).join('');
+  el.innerHTML = tags.map((t, i) => `<button data-k="${t.k}" class="${i === 0 ? 'on' : ''}">${esc(vt(t.l))}</button>`).join('');
   el.querySelectorAll('button').forEach(b => b.onclick = () => { el.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); photoTag = b.dataset.k; });
 }
 $('p_file').onchange = async () => {
@@ -884,7 +884,7 @@ $('f_submit').onclick = async () => {
   } catch (e) { toast('Failed: ' + e.message); }
 };
 
-function chips(elId, arr, set) { const el = $(elId); el.innerHTML = ''; arr.forEach(it => { const c = document.createElement('div'); c.className = 'chip' + (set.has(it) ? ' on' : ''); c.textContent = it; c.onclick = () => { set.has(it) ? set.delete(it) : set.add(it); c.classList.toggle('on'); if (elId === 'r_items') checkOverlap(); }; el.appendChild(c); }); }
+function chips(elId, arr, set) { const el = $(elId); el.innerHTML = ''; arr.forEach(it => { const c = document.createElement('div'); c.className = 'chip' + (set.has(it) ? ' on' : ''); c.textContent = vt(it); c.onclick = () => { set.has(it) ? set.delete(it) : set.add(it); c.classList.toggle('on'); if (elId === 'r_items') checkOverlap(); }; el.appendChild(c); }); }
 const nItems = new Set(), rItems = new Set(), cItems = new Set(), gFocus = new Set();
 chips('n_items', ITEMS, nItems); chips('r_items', ITEMS, rItems); chips('c_items', C.ACCEPTS, cItems); chips('g_focus', C.FOCUS, gFocus);
 
@@ -951,7 +951,13 @@ $('g_submit').onclick = async () => {
   $('lang').value = getLang();
 })();
 $('lang').onchange = e => setLang(e.target.value);
-document.addEventListener('langchange', () => { renderAll(); renderAdvisory(); });
+document.addEventListener('langchange', () => {
+  renderAll(); renderAdvisory(); applyEventLabels();
+  // re-localise the report vocabulary for the new language (selections are preserved)
+  chips('n_items', currentMode === 'rehab' ? C.REHAB_ITEMS : ITEMS, nItems);
+  chips('r_items', ITEMS, rItems); chips('c_items', C.ACCEPTS, cItems); chips('g_focus', C.FOCUS, gFocus);
+  buildPhotoTags();
+});
 $('advToggle').onclick = () => $('advisory').classList.toggle('collapsed');
 // collapsible side columns (so the full map is visible)
 $('overlayToggle').onclick = () => { const o = $('overlay'); o.classList.toggle('min'); $('overlayToggle').firstChild.textContent = o.classList.contains('min') ? '▸ ' : '▾ '; };
@@ -1205,7 +1211,7 @@ function segPick(elId, attr, setter) { const el = $(elId); if (!el) return; el.q
 // build the offer / facility kind chips from THIS event's tailored catalog (first = selected)
 function buildKindSeg(elId, kinds, setter) {
   const el = $(elId); if (!el) return null;
-  el.innerHTML = kinds.map(([k, l], i) => `<button type="button" data-k="${k}" class="${i === 0 ? 'on' : ''}">${l}</button>`).join('');
+  el.innerHTML = kinds.map(([k, l], i) => `<button type="button" data-k="${k}" class="${i === 0 ? 'on' : ''}">${esc(vt(l))}</button>`).join('');
   el.querySelectorAll('button').forEach(b => b.onclick = () => { el.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); setter(b.dataset.k); });
   return kinds[0] ? kinds[0][0] : null;
 }
@@ -1266,6 +1272,47 @@ function gateModules() {
   if (placesRow) placesRow.classList.toggle('mod-off', EVENT.officialData !== 'assam');
 }
 
+// Relabel the flood-framed UI for a non-water disaster, in the CURRENT language. Re-run on langchange
+// so a bilingual response (e.g. Colombia en/es) shows the hazard word, mode and severities translated.
+function applyEventLabels() {
+  if (!EVENT) return;
+  const mods = EVENT.modules || [];
+  const gapEl = document.querySelector('[data-i18n="nobody"]');
+  if (gapEl && !mods.includes('convoys')) gapEl.textContent = vt(mods.includes('offers') ? '⚠ No supply nearby' : '⚠ Unattended needs');
+  if (EVENT.family !== 'water') {
+    const relabel = (sel, emoji, word) => { const btn = document.querySelector(sel); if (!btn) return; const e = btn.querySelector('.mse'), t = btn.querySelector('.mst'); if (e) e.textContent = emoji; if (t) t.textContent = vt(word); };
+    relabel('.modeswitch [data-mode="relief"]', '🆘', 'Response');
+    relabel('.modeswitch [data-mode="rehab"]', '🌱', 'Recovery');
+  }
+  if (EVENT.hazardLabel && EVENT.family !== 'water') {
+    const hz = vt(EVENT.hazardLabel), spanish = getLang() === 'es';
+    const set = (sel, txt) => { const e = document.querySelector(sel); if (e) e.textContent = txt; };
+    set('.tab[data-tab="flood"]', EVENT.emoji + ' ' + hz);
+    set('[data-i18n="floodExtent"]', hz);
+    set('[data-i18n="floodNow"]', EVENT.emoji + ' ' + hz);
+    set('[data-i18n="floodIntro"]', spanish
+      ? `Marca la zona de ${hz.toLowerCase()} para que el mapa muestre la zona de peligro real. Toca el mapa o usa GPS.`
+      : `Mark the ${hz.toLowerCase()} area so the map shows the real danger zone. Tap the map or use GPS.`);
+    set('#f_submit', '⚠️ ' + vt('Mark') + ' ' + hz.toLowerCase());
+    if (EVENT.hazardSev && EVENT.hazardSev.length) {
+      $('f_sev').innerHTML = EVENT.hazardSev.map((x, i) => `<button data-s="${x[0]}" class="${i === 0 ? 'on' : ''}">${esc(vt(x[1]))}</button>`).join('');
+      fSev = EVENT.hazardSev[0][0];
+      $('f_sev').querySelectorAll('button').forEach(b => b.onclick = () => { $('f_sev').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); fSev = b.dataset.s; });
+    }
+  }
+}
+
+// Official-sources panel: the country's real responders, clearly separated from community reports.
+// Builds trust with NGOs/authorities ("we're an extra free tool, not a replacement").
+function renderOfficialSources() {
+  const box = $('offSrc'), list = $('offSrcList');
+  if (!box || !list) return;
+  const src = (EVENT && Array.isArray(EVENT.officialSources)) ? EVENT.officialSources : [];
+  if (!src.length) { box.hidden = true; return; }
+  box.hidden = false;
+  list.innerHTML = src.map(s => `<a class="offsrc" href="${esc(s.url)}" target="_blank" rel="noopener">🏛️ ${esc(s.name)}</a>`).join('');
+}
+
 (async function () {
   applyI18n();
   gateModules();
@@ -1281,28 +1328,9 @@ function gateModules() {
       svBtn.onclick = () => { const on = C.saved.toggle(ev); toast(on ? '★ Saved - find it on the world map' : 'Removed from Saved'); paint(); };
       paint();
     }
-    // the "gap" pane is convoy-framed by default; relabel it for supply-matched disasters
-    const mods = EVENT.modules || [], gapEl = document.querySelector('[data-i18n="nobody"]');
-    if (gapEl && !mods.includes('convoys')) { gapEl.textContent = mods.includes('offers') ? '⚠ No supply nearby' : '⚠ Unattended needs'; gapEl.removeAttribute('data-i18n'); }
-    if (EVENT.family !== 'water') {   // "Relief / Rehab" is flood framing → neutral for other disasters
-      const rb = document.querySelector('.modeswitch [data-mode="relief"]'), hb = document.querySelector('.modeswitch [data-mode="rehab"]');
-      const relabel = (btn, emoji, word) => { if (!btn) return; const e = btn.querySelector('.mse'), t = btn.querySelector('.mst'); if (e) e.textContent = emoji; if (t) { t.textContent = word; t.removeAttribute('data-i18n'); } };
-      relabel(rb, '🆘', 'Response'); relabel(hb, '🌱', 'Recovery');
-    }
-    // generalized hazard module: retitle the flood tab / layer / pane / severity per disaster
-    if (EVENT.hazardLabel && EVENT.family !== 'water') {
-      const hz = EVENT.hazardLabel, set = (sel, txt) => { const e = document.querySelector(sel); if (e) { e.textContent = txt; e.removeAttribute('data-i18n'); } };
-      set('.tab[data-tab="flood"]', EVENT.emoji + ' ' + hz);
-      set('[data-i18n="floodExtent"]', hz);
-      set('[data-i18n="floodNow"]', EVENT.emoji + ' ' + hz);
-      set('[data-i18n="floodIntro"]', 'Mark the ' + hz.toLowerCase() + ' area so the map shows the real danger zone. Tap the map or use GPS.');
-      set('#f_submit', '⚠️ Mark ' + hz.toLowerCase());
-      if (EVENT.hazardSev && EVENT.hazardSev.length) {
-        $('f_sev').innerHTML = EVENT.hazardSev.map((x, i) => `<button data-s="${x[0]}" class="${i === 0 ? 'on' : ''}">${esc(x[1])}</button>`).join('');
-        fSev = EVENT.hazardSev[0][0];
-        $('f_sev').querySelectorAll('button').forEach(b => b.onclick = () => { $('f_sev').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); fSev = b.dataset.s; });
-      }
-    }
+    // relabel the flood-framed UI for this disaster, in the current language (re-run on langchange)
+    applyEventLabels();
+    renderOfficialSources();
   }
   applyMode();
   await loadOfficialFlood();

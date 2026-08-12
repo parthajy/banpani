@@ -99,6 +99,7 @@ const STR = {
     contactIntro: 'Banpani is run by the community and owned by no one. There is no call centre. Leave a message and a maintainer will see it - no phone numbers are shown to anyone.',
     yourName: 'Your name (optional)', howReachYou: 'How to reach you back (optional)', yourMessage: 'Your message',
     send: 'Send', close: 'Close', messageSent: 'Message sent 🙏 - thank you',
+    officialSources: 'Official sources', notOfficial: 'Community reports on this map are not official. In an emergency, contact the official responders above.',
   },
   as: {
     tagline: 'সম্প্ৰদায়ভিত্তিক বান সাহাৰ্যৰ সমন্বয়',
@@ -517,6 +518,7 @@ const STR = {
     contactIntro: 'Banpani lo gestiona la comunidad y no es de nadie. No hay centro de llamadas. Deja un mensaje y un administrador lo verá, no se muestra ningún número de teléfono a nadie.',
     yourName: 'Tu nombre (opcional)', howReachYou: 'Cómo contactarte de vuelta (opcional)', yourMessage: 'Tu mensaje',
     send: 'Enviar', close: 'Cerrar', messageSent: 'Mensaje enviado 🙏, gracias',
+    officialSources: 'Fuentes oficiales', notOfficial: 'Los reportes comunitarios de este mapa no son oficiales. En una emergencia, contacte a los organismos oficiales de arriba.',
   },
 };
 
@@ -538,6 +540,23 @@ let LANG = detectLang();
 if (!STR[LANG]) LANG = 'en';
 window.t = (key) => (STR[LANG] && STR[LANG][key]) || STR.en[key] || key;
 window.getLang = () => LANG;
+// Vocabulary translation: report items, offer/facility kinds, hazard words and mode labels are free
+// strings (from the disaster-family config), not i18n keys. vt() localises them for DISPLAY while the
+// canonical English value is still what gets stored, so coordination/matching stays consistent.
+const VOCAB = {
+  es: {
+    'Search & rescue': 'Búsqueda y rescate', 'People trapped': 'Personas atrapadas', 'Medical / trauma': 'Médico / trauma',
+    'Drinking water': 'Agua potable', 'Food': 'Comida', 'Tents / shelter': 'Carpas / refugio', 'Blankets': 'Cobijas',
+    'Heavy equipment': 'Maquinaria pesada', 'Sanitation': 'Saneamiento', 'Power / lighting': 'Energía / iluminación',
+    '🩹 Medical': '🩹 Médico', '🩸 Blood': '🩸 Sangre', '🏠 Shelter': '🏠 Refugio', '💧 Water': '💧 Agua',
+    '🚜 Equipment': '🚜 Equipo', '📦 Other': '📦 Otro', '🏥 Hospital': '🏥 Hospital', '🩺 Clinic': '🩺 Clínica', '⛺ Shelter': '⛺ Refugio',
+    'Damage': 'Daño', 'Heavy damage': 'Daño grave', 'Some damage': 'Daño moderado', 'Minor': 'Leve', 'Cleared': 'Despejado',
+    'Response': 'Respuesta', 'Recovery': 'Recuperación', 'Mark': 'Marcar',
+    '📸 Situation': '📸 Situación', '🆘 Help needed': '🆘 Ayuda necesaria', '✅ Done': '✅ Hecho', '🔨 Damage': '🔨 Daño', '✅ Work done': '✅ Trabajo hecho',
+    '⚠ No supply nearby': '⚠ Sin suministro cerca', '⚠ Unattended needs': '⚠ Necesidades sin atender',
+  },
+};
+window.vt = (s) => (VOCAB[LANG] && VOCAB[LANG][s]) || s;
 window.applyI18n = (root = document) => {
   root.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
   root.querySelectorAll('[data-ph]').forEach(el => { el.setAttribute('placeholder', t(el.getAttribute('data-ph'))); });

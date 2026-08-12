@@ -21,7 +21,7 @@ import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLifecycle, voteOver, voteReopen, archiveList, LIFECYCLE } from './events.js';
 import { DISASTERS, familyOf, HAZARD } from './disasters.js';
 import { officialEvents } from './official.js';
-import { countryOf, helplinesFor as helplinesForCountry, newsLocale } from './geo.js';
+import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
 import { volunteersEnabled, validEmail, addVolunteer, volunteerSummary, listVolunteers } from './volunteers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -624,6 +624,7 @@ async function serveEventApp(req, res, ev) {
     status: ev.status || 'active', dormantAt: ev.dormant_at || null, archivedAt: ev.archived_at || null,
     reopenVotes: ev.reopenVotes || 0, reopenNeed: LIFECYCLE.REOPEN_VOTES, overNeed: LIFECYCLE.OVER_VOTES,
     langs: isColombia ? ['en', 'es'] : isOdisha ? ['en', 'or', 'hi'] : ['en', 'as', 'hi'],   // language options for this response's region
+    officialSources: officialSourcesFor(isAssam ? 'IN' : cc),   // real responders, shown separate from community reports
   };
   let html;
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }
