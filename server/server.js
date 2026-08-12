@@ -601,6 +601,32 @@ function timeAgo(iso) {
 }
 // Serve the FULL app (index.html + app.js) scoped to one event by injecting window.EVENT
 // before config.js loads. Same battle-tested app, running per-event with its disaster recipe.
+// Curated SEO for flagship responses: keyword-rich descriptions + crawlable text (for AI engines and
+// search crawlers that don't run JS). Bilingual where the audience is (Colombia = es/en). Others fall
+// back to a generic template built from the event + family.
+const EVENT_SEO = {
+  'colombia-earthquake-2026': {
+    keywords: 'Colombia earthquake, terremoto Colombia, sismo Colombia 2026, San José del Palmar, Cali, Manizales, Valle del Cauca, Chocó, Caldas, Risaralda, Quindío, ayuda terremoto, coordinación de ayuda humanitaria, Cruz Roja Colombiana, Defensa Civil Colombiana, UNGRD',
+    desc: 'Mapa comunitario gratuito para coordinar la ayuda tras el terremoto (sismo) de magnitud 7.4 en el occidente de Colombia (San José del Palmar; Valle del Cauca, Chocó, Caldas, Risaralda, Quindío; Cali, Manizales). Reporta necesidades, ofrece ayuda y encuentra las zonas que nadie ha atendido. Sin cuenta, sin costo, en español e inglés.',
+    body: '<h1>Colombia Earthquake 2026 - Community Relief Map / Mapa de ayuda</h1>'
+      + '<p>Banpani is a free, community-run live map to coordinate relief after the magnitude 7.4 earthquake that struck western Colombia on 10 August 2026, near San José del Palmar. It covers Valle del Cauca, Chocó, Caldas, Risaralda and Quindío, and cities including Cali and Manizales. Report needs such as search and rescue, people trapped, medical or trauma care, water, shelter and heavy equipment. No account, no cost. Available in Spanish and English.</p>'
+      + '<p>Banpani es un mapa comunitario gratuito para coordinar la ayuda tras el terremoto de magnitud 7.4 en el occidente de Colombia. Reporta necesidades, ofrece ayuda y encuentra las zonas afectadas que nadie ha atendido, sin cuenta y sin costo. Fuentes oficiales: Cruz Roja Colombiana, Defensa Civil Colombiana, UNGRD (Gestión del Riesgo), Servicio Geológico Colombiano. Emergencias: 123. Los reportes comunitarios de este mapa no son oficiales.</p>',
+  },
+  'odisha-flood-2026': {
+    keywords: 'Odisha flood, Odisha floods 2026, Odisha flood relief, Bhadrak, Baleshwar, Balasore, Jajpur, Mayurbhanj, Keonjhar, flood help Odisha, OSDMA, relief camps Odisha, disaster coordination',
+    desc: 'Free, community-run live map to coordinate flood relief in Odisha, India (Bhadrak, Baleshwar/Balasore, Jajpur, Mayurbhanj and more). Report needs, offer help, and find the areas nobody has reached. No account, no cost. In English, Odia and Hindi.',
+    body: '<h1>Odisha Floods 2026 - Community Relief Map</h1>'
+      + '<p>Banpani is a free, community-run live map to coordinate flood relief across Odisha, India, during the 2026 floods. Report a stranded family or a relief need such as a boat, drinking water, medicine, food or shelter, and volunteers nearby can act. It covers the worst-hit districts including Bhadrak, Baleshwar (Balasore), Jajpur, Mayurbhanj and Keonjhar. No account, no money, owned by no one. Available in English, Odia and Hindi. Official source: OSDMA (Odisha State Disaster Management Authority). Emergency: 112. Community reports on this map are not official.</p>',
+  },
+};
+function seoFor(ev, f) {
+  const c = EVENT_SEO[ev.slug];
+  return {
+    desc: c ? c.desc : `Report needs, offers, blocked roads and photos for ${ev.title}. A free, community-run ${f.label.toLowerCase()} relief map - no accounts, no money, owned by everyone.`,
+    keywords: c ? c.keywords : `${ev.title}, ${f.label} relief, disaster relief, community map, volunteer, coordination, banpani`,
+    body: c ? c.body : `<h1>${htmlEsc(ev.title)} - Community Relief Map</h1><p>A free, community-run live map to coordinate ${f.label.toLowerCase()} relief for ${htmlEsc(ev.title)}. Report needs, offer help, and find the areas nobody has reached yet. No account, no money, owned by no one. Community reports on this map are not official.</p>`,
+  };
+}
 async function serveEventApp(req, res, ev) {
   const f = DISASTERS[ev.family] || DISASTERS.water;
   const isAssam = ev.source === 'assam';
@@ -628,16 +654,24 @@ async function serveEventApp(req, res, ev) {
   };
   let html;
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }
+  const url = 'https://banpani.org/e/' + ev.slug;
+  const seo = seoFor(ev, f);
   const ld = JSON.stringify({
     '@context': 'https://schema.org', '@type': 'SpecialAnnouncement',
-    name: ev.title, text: `Live community relief coordination for ${ev.title} (${f.label}). Report needs, offers, blocked roads and photos - no accounts.`,
-    datePosted: ev.created_at, category: 'https://www.wikidata.org/wiki/Q3839081', url: 'https://banpani.org/e/' + ev.slug,
+    name: ev.title, text: seo.desc,
+    datePosted: ev.created_at, category: 'https://www.wikidata.org/wiki/Q3839081', url,
     ...(ev.lat != null ? { spatialCoverage: { '@type': 'Place', geo: { '@type': 'GeoCoordinates', latitude: ev.lat, longitude: ev.lng } } } : {}),
   }).replace(/</g, '\\u003c');
-  const inject = '<script>window.EVENT=' + JSON.stringify(cfg).replace(/</g, '\\u003c') + '</script>\n  <script type="application/ld+json">' + ld + '</script>\n  ';
+  const crumb = JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'World disaster map', item: 'https://banpani.org/world' },
+      { '@type': 'ListItem', position: 2, name: ev.title, item: url },
+    ],
+  }).replace(/</g, '\\u003c');
+  const inject = '<script>window.EVENT=' + JSON.stringify(cfg).replace(/</g, '\\u003c') + '</script>\n  <script type="application/ld+json">' + ld + '</script>\n  <script type="application/ld+json">' + crumb + '</script>\n  ';
   // Per-event SEO: a shared /e/<slug> link must preview as ITSELF (its title, blurb, family image),
   // not as the generic Assam homepage. Swap title/description + every OG/Twitter tag + canonical.
-  const url = 'https://banpani.org/e/' + ev.slug;
   const ogTitle = `${f.emoji} ${ev.title} - live ${f.label.toLowerCase()} relief coordination`;
   const ogDesc = `Report needs, offers, blocked roads and photos for ${ev.title}. A free, community-run relief map - no accounts, no money, owned by everyone.`;
   const ogImg = `https://banpani.org/og-${ev.family}.png`;
@@ -648,7 +682,9 @@ async function serveEventApp(req, res, ev) {
     .replace('<script src="config.js"></script>', inject + '<script src="config.js"></script>')
     .replace(/<title>[\s\S]*?<\/title>/, '<title>' + htmlEsc(ev.title + ' - ' + f.label + ' relief coordination · Banpani') + '</title>')
     .replace(/(<link rel="canonical" href=")[^"]*(")/, '$1' + url + '$2');
-  html = set(html, 'name="description"', ogDesc);
+  html = set(html, 'name="description"', seo.desc);
+  html = set(html, 'name="keywords"', seo.keywords);
+  html = html.replace(/<noscript id="seo">[\s\S]*?<\/noscript>/, '<noscript id="seo">' + seo.body + '</noscript>');   // per-event crawlable SEO text
   html = set(html, 'property="og:title"', ogTitle);
   html = set(html, 'property="og:description"', ogDesc);
   html = set(html, 'property="og:url"', url);
@@ -663,10 +699,11 @@ async function serveEventApp(req, res, ev) {
 const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not found · Banpani</title><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;background:#0f1419;color:#e7edf2;text-align:center;padding:14vh 20px"><h1>🌊 Nothing here (yet)</h1><p style="color:#9fb0bd">This response may have receded, or the link is old.</p><p><a href="/world" style="color:#4fc3f7">Open the world map →</a></p></body>`;
 function sitemapXml() {
   const evs = listEvents().filter(e => e.promoted);
+  const today = new Date().toISOString().slice(0, 10);
   const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/how-it-works', 'weekly', '0.7'], ['/press', 'weekly', '0.6'], ['/archive', 'daily', '0.8'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
     .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
-    + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')
+    + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')
     + `\n</urlset>`;
 }
 
