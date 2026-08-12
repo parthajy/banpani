@@ -1,0 +1,11 @@
+{
+  "source": "News reports (Aug 2026)",
+  "updated": "12 Aug 2026",
+  "camps": [
+    { "district": "San José del Palmar (epicentre)", "lat": 4.90, "lng": -76.24, "note": "Epicentre of the M7.4 earthquake (10 Aug 2026). Access roads damaged; rescue teams delayed reaching the area." },
+    { "district": "Cali, Valle del Cauca", "lat": 3.44, "lng": -76.52, "note": "Building collapses reported, including part of a hospital." },
+    { "district": "Manizales, Caldas", "lat": 5.07, "lng": -75.52, "note": "A tower of the cathedral collapsed onto the nave; structural damage across the city." },
+    { "district": "Pereira, Risaralda", "lat": 4.81, "lng": -75.69, "note": "Structural damage reported across the coffee axis (Eje Cafetero)." },
+    { "district": "Armenia, Quindío", "lat": 4.53, "lng": -75.68, "note": "Damage reported; region historically earthquake-prone." }
+  ]
+}

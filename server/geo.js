@@ -42,6 +42,8 @@ const HELP = {
   ZA: { name: 'South Africa', emerg: '10111', fam: { health: ['Ambulance (10177)', '10177'] } },
   BR: { name: 'Brazil', emerg: '190', fam: { health: ['Ambulance (192)', '192'], fire: ['Fire (193)', '193'] } },
   MX: { name: 'Mexico', emerg: '911', fam: {} },
+  CO: { name: 'Colombia', emerg: '123', fam: { health: ['Cruz Roja (132)', '132'], geo: ['Cruz Roja (132)', '132'] } },
+  EC: { name: 'Ecuador', emerg: '911', fam: {} },
 };
 
 // EU-wide + much of the world route emergency calls through 112; list the ones people expect to see.
