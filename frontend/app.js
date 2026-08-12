@@ -5,6 +5,8 @@ const C = window.BANPANI;
 const EVENT = window.EVENT || null;
 const ITEMS = (EVENT && EVENT.items && EVENT.items.length) ? EVENT.items
   : (EVENT && C.DISASTERS[EVENT.family] && C.DISASTERS[EVENT.family].needs) || C.ITEMS;   // family vocab, not flood items
+const NONWATER = EVENT && EVENT.family !== 'water';   // swap flood wording for generic hazard wording
+const hazSevLabel = s => { const m = (EVENT && EVENT.hazardSev || []).find(x => x[0] === s); return m ? vt(m[1]) : s; };
 // Tailored per-family option catalogs (Offers supply kinds, Facility types) - injected by the
 // server from disasters.js; fall back to a generic set on the homepage / if an event lacks them.
 const DEFAULT_OFFER_KINDS = [['water', '💧 Water'], ['food', '🍚 Food'], ['medicine', '💊 Medicine'], ['shelter', '🏠 Shelter'], ['transport', '🚗 Transport'], ['other', '📦 Other']];
@@ -244,7 +246,7 @@ function renderFlood() {
     const when = f.updated_at || f.created_at, age = ageH(when);
     const op = Math.max(0.15, 0.5 - age / 96);
     L.circle([f.lat, f.lng], { radius: 2500, color: floodColor(f.severity), weight: 1, fillColor: floodColor(f.severity), fillOpacity: op })
-      .bindPopup(`<b>🌊 ${t('floodedHere')}</b><br>${f.place ? esc(f.place) + '<br>' : ''}${t('status')}: <b>${esc(f.severity)}</b><br><small>${agoText(when)}</small>
+      .bindPopup(`<b>${NONWATER ? EVENT.emoji + ' ' + esc(vt(EVENT.hazardLabel)) : '🌊 ' + t('floodedHere')}</b><br>${f.place ? esc(f.place) + '<br>' : ''}${t('status')}: <b>${esc(NONWATER ? hazSevLabel(f.severity) : f.severity)}</b><br><small>${agoText(when)}</small>
         <div class="pmeta" style="margin-top:6px">${t('updateStatus')}:</div>
         <div class="vbtns">
           <button onclick="bp.floodStatus(${f.id},'high')">${t('sevSevere')}</button>
@@ -538,11 +540,12 @@ $('galleryModal').onclick = e => { if (e.target === $('galleryModal')) $('galler
 
 function renderFloodNow() {
   const box = $('floodNowList'), tick = $('floodTicker');
+  const nonWater = EVENT && EVENT.family !== 'water';   // "flood" wording -> generic hazard wording
   if (box) {
     const recent = (STATE.flood_reports || []).filter(f => f.severity !== 'receded' && ageH(f.created_at) <= 24)
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     if (tick) {
-      if (!STATE.flood_reports || !STATE.flood_reports.length) { tick.textContent = t('floodNoneYet'); tick.className = 'flood-tick stale'; }
+      if (!STATE.flood_reports || !STATE.flood_reports.length) { tick.textContent = nonWater ? t('hazNoneYet') : t('floodNoneYet'); tick.className = 'flood-tick stale'; }
       else {
         const latest = STATE.flood_reports.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
         const mins = (Date.now() - new Date(latest.created_at).getTime()) / 60000;
@@ -551,14 +554,16 @@ function renderFloodNow() {
       }
     }
     box.innerHTML = recent.length
-      ? recent.slice(0, 10).map(f => `<div class="fnow" data-lat="${f.lat}" data-lng="${f.lng}"><span class="fz ${f.severity}">${esc(f.place || t('floodedArea'))}</span><span class="fago">${agoText(f.created_at)}</span></div>`).join('')
-      : `<div class="none">${t('floodReportPrompt')}</div>`;
+      ? recent.slice(0, 10).map(f => `<div class="fnow" data-lat="${f.lat}" data-lng="${f.lng}"><span class="fz ${f.severity}">${esc(f.place || (nonWater ? t('hazArea') : t('floodedArea')))}</span><span class="fago">${agoText(f.created_at)}</span></div>`).join('')
+      : `<div class="none">${nonWater ? t('hazPrompt') : t('floodReportPrompt')}</div>`;
     box.querySelectorAll('.fnow').forEach(el => el.onclick = () => map.setView([+el.dataset.lat, +el.dataset.lng], 12));
   }
 }
 let evtWx = null, evtWxAt = 0;
 async function renderAdvisory() {
   renderFloodNow();
+  // A rain outlook only makes sense for weather-driven disasters. Skip it for quakes/fires/outbreaks.
+  if (EVENT && !['water', 'storm', 'climate'].includes(EVENT.family)) return;
   // Non-Assam events: the outlook must be for THIS place, not Assam. Fetch it from Open-Meteo
   // (free, no key) for the event's location, cached ~30 min. Assam homepage/event keep the server feed.
   const isAssam = EVENT && (EVENT.officialData === 'assam' || EVENT.source === 'assam');
@@ -880,7 +885,7 @@ $('f_submit').onclick = async () => {
     const fPlaceName = $('f_place').value.trim();
     await api('/api/flood-reports', { method: 'POST', body: { place: $('f_place').value.trim(), lat: pending.f.lat, lng: pending.f.lng, severity: fSev, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
     $('f_place').value = ''; pending.f = {}; $('f_coord').textContent = t('noLoc'); $('f_coord').classList.remove('set'); removeMarker('f');
-    await refresh(); await renderAdvisory(); toast(t('floodMarked')); maybeCert(fPlaceName);
+    await refresh(); await renderAdvisory(); toast(NONWATER ? (getLang() === 'es' ? '✅ Marcado, gracias' : '✅ Marked, thank you') : t('floodMarked')); maybeCert(fPlaceName);
   } catch (e) { toast('Failed: ' + e.message); }
 };
 
@@ -952,7 +957,7 @@ $('g_submit').onclick = async () => {
 })();
 $('lang').onchange = e => setLang(e.target.value);
 document.addEventListener('langchange', () => {
-  renderAll(); renderAdvisory(); applyEventLabels();
+  renderAll(); renderAdvisory(); applyEventLabels(); setupTutorial();
   // re-localise the report vocabulary for the new language (selections are preserved)
   chips('n_items', currentMode === 'rehab' ? C.REHAB_ITEMS : ITEMS, nItems);
   chips('r_items', ITEMS, rItems); chips('c_items', C.ACCEPTS, cItems); chips('g_focus', C.FOCUS, gFocus);
@@ -1056,6 +1061,21 @@ $('activityBtn').onclick = async () => {
 $('activity_close').onclick = () => $('activityModal').classList.remove('show');
 $('activityModal').onclick = e => { if (e.target === $('activityModal')) $('activityModal').classList.remove('show'); };
 // tutorial / first-visit welcome
+// Make the tutorial disaster-appropriate: neutral title, hazard-worded steps, and a per-family video
+// (the flood video is the default; other families show their own once made, or text-only until then).
+function setupTutorial() {
+  if (!EVENT || EVENT.family === 'water') return;   // homepage / flood keep the default copy + video
+  const spanish = getLang() === 'es', set = (sel, txt) => { const e = document.querySelector(sel); if (e) e.textContent = txt; };
+  set('[data-i18n="welcomeTitle"]', (spanish ? 'Bienvenido a Banpani ' : 'Welcome to Banpani ') + EVENT.emoji);
+  if (!spanish) set('[data-i18n="welcomeIntro"]', 'A free, community map to coordinate disaster relief. Report where help is needed, see the areas nobody has reached, and help verify. Here is a short walkthrough:');
+  const hz = vt(EVENT.hazardLabel || 'Damage');
+  set('[data-i18n="qs3"]', spanish ? `⚠️ ¿Ves ${hz.toLowerCase()}? Usa la pestaña ${hz} para marcarlo en el mapa.` : `⚠️ See ${hz.toLowerCase()}? Use the ${hz} tab to mark it on the map.`);
+  const vid = (C.TUTORIAL_VIDEO && C.TUTORIAL_VIDEO[EVENT.family]) || null, v = $('tutVideo');
+  if (v) {
+    if (vid) { v.dataset.id = vid; const img = v.querySelector('img'); if (img) img.src = `https://img.youtube.com/vi/${vid}/hqdefault.jpg`; v.style.display = ''; }
+    else v.style.display = 'none';   // no tutorial video for this disaster yet -> text-only tutorial
+  }
+}
 function openTutorial() { $('tutorialModal').classList.add('show'); }
 function loadTutVideo() {
   const v = $('tutVideo'); if (v.querySelector('iframe')) return;
@@ -1270,6 +1290,9 @@ function gateModules() {
   // "Key places" ships only the Assam / Barak Valley dataset; hide it on every other response.
   const placesRow = $('ly_places') && $('ly_places').closest('.lyr');
   if (placesRow) placesRow.classList.toggle('mod-off', EVENT.officialData !== 'assam');
+  // The rain/weather outlook block only belongs on weather-driven disasters.
+  const weatherFam = ['water', 'storm', 'climate'].includes(EVENT.family);
+  document.querySelectorAll('.adv-out, .adv-sep').forEach(el => el.classList.toggle('mod-off', !weatherFam));
 }
 
 // Relabel the flood-framed UI for a non-water disaster, in the CURRENT language. Re-run on langchange
@@ -1283,6 +1306,9 @@ function applyEventLabels() {
     const relabel = (sel, emoji, word) => { const btn = document.querySelector(sel); if (!btn) return; const e = btn.querySelector('.mse'), t = btn.querySelector('.mst'); if (e) e.textContent = emoji; if (t) t.textContent = vt(word); };
     relabel('.modeswitch [data-mode="relief"]', '🆘', 'Response');
     relabel('.modeswitch [data-mode="rehab"]', '🌱', 'Recovery');
+    // the Status tab's 🌊 -> this disaster's emoji
+    const st = document.querySelector('.ovl-tab[data-pane="status"]');
+    if (st && st.firstChild && st.firstChild.nodeType === 3) st.firstChild.textContent = EVENT.emoji + ' ';
   }
   if (EVENT.hazardLabel && EVENT.family !== 'water') {
     const hz = vt(EVENT.hazardLabel), spanish = getLang() === 'es';
@@ -1331,6 +1357,7 @@ function renderOfficialSources() {
     // relabel the flood-framed UI for this disaster, in the current language (re-run on langchange)
     applyEventLabels();
     renderOfficialSources();
+    setupTutorial();
   }
   applyMode();
   await loadOfficialFlood();

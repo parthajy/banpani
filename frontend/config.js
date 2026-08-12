@@ -77,6 +77,9 @@ window.BANPANI = {
     agri:    { color: '#84CC16', emoji: '🌾', label: 'Agriculture',    types: ['locust', 'livestock-disease', 'crop-pest', 'fisheries'],
       needs: ['Pesticide / control', 'Veterinary help', 'Fodder', 'Crop protection', 'Compensation'] },
   },
+  // Per-family tutorial video (YouTube id). The flood one is the default; add others (e.g. geo for
+  // earthquakes) as they are made. If a family has no video, the tutorial shows text only.
+  TUTORIAL_VIDEO: { water: '9LYnup1Mq1A' },
   WORLD: { center: [20, 60], zoom: 3, minZoom: 2 },
 
   // Saved events - pure client-side bookmarks (localStorage, no account, nothing sent to the server).
