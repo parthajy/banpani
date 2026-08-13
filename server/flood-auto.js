@@ -1,19 +1,14 @@
-// Fully automatic Assam flood-risk feed. NO human, NO agent, NO daily editing.
-// Every 3 hours the server pulls, for a river point in each district:
+// Fully automatic flood-risk feed for our flagship river regions. NO human, NO agent, NO daily editing.
+// Every 3 hours the server pulls, per river point:
 //   - GloFAS river discharge (past 90 days + 7-day forecast)  -> is the river high / rising?
 //   - rainfall forecast (next 3 days)                          -> is more water coming?
-// and derives a per-district severity + trend. It is model-based (Open-Meteo, free, no key), so it is
-// labelled as an auto flood-risk estimate, NOT an official ASDMA count. If a fetch fails, the last
-// good result is kept and served, so the map never goes blank or shows garbage.
+// and derives risk + trend. Model-based (Open-Meteo, free, no key), labelled as a flood-RISK estimate,
+// not an official count. If a fetch fails, the last good result is kept, so the map never goes blank.
 //
-// The community reports remain the real, granular, self-updating truth on top of this backdrop.
+// Two modes: 'districts' (Assam - one point per district, drives the shading) and 'gauges' (Bangladesh
+// - one point per major river, drives gauge markers on top of the hand-tagged district shading).
 
-// One river point per district (name MUST match assam-districts.geojson). Open-Meteo snaps each to
-// the nearest modelled river reach, so exact placement is not critical.
-// Calibrated to the nearest GloFAS main-river cell so discharge reflects the big river (Brahmaputra /
-// Barak), not a roadside stream. Hill districts (Karbi Anglong, Dima Hasao) have no big river, so they
-// are driven by rainfall - see the discharge guard in classify().
-const POINTS = [
+const ASSAM_POINTS = [
   { d: 'Dhubri', lat: 25.92, lng: 89.88 }, { d: 'South Salmara Mankachar', lat: 25.45, lng: 89.66 },
   { d: 'Goalpara', lat: 26.17, lng: 90.62 }, { d: 'Bongaigaon', lat: 26.28, lng: 90.75 },
   { d: 'Barpeta', lat: 26.22, lng: 90.9 }, { d: 'Kokrajhar', lat: 26.2, lng: 90.37 },
@@ -32,23 +27,35 @@ const POINTS = [
   { d: 'Cachar', lat: 24.83, lng: 92.78 }, { d: 'Karimganj', lat: 24.87, lng: 92.36 },
   { d: 'Hailakandi', lat: 24.68, lng: 92.56 },
 ];
-
-// River name shown on the gauge for the districts we surface (rest fall back to the district name).
-const RIVER = { Karimganj: 'Kushiyara', Cachar: 'Barak', Hailakandi: 'Katakhal / Barak', Dhubri: 'Brahmaputra',
+const ASSAM_RIVER = { Karimganj: 'Kushiyara', Cachar: 'Barak', Hailakandi: 'Katakhal / Barak', Dhubri: 'Brahmaputra',
   Dibrugarh: 'Brahmaputra', Nagaon: 'Kopili / Brahmaputra', Jorhat: 'Brahmaputra', Majuli: 'Brahmaputra' };
-
-// Local control-room helplines. These change at most once a season, so they live here in code, not in
-// any daily loop. Shown on top of the national 112 / ASDMA / NDRF numbers.
-const HELPLINES = [
+const ASSAM_HELPLINES = [
   { label: 'Sribhumi flood control room', tel: '03843262335' },
   { label: 'District disaster helpline 1077', tel: '1077' },
 ];
 
+// Bangladesh major rivers, calibrated to the nearest GloFAS reach (Surma / Kushiyara / Meghna / etc.).
+const BD_POINTS = [
+  { d: 'Surma at Sylhet', river: 'Surma', lat: 24.8, lng: 91.97 },
+  { d: 'Kushiyara at Fenchuganj', river: 'Kushiyara', lat: 24.88, lng: 92.13 },
+  { d: 'Surma at Sunamganj', river: 'Surma', lat: 24.97, lng: 91.2 },
+  { d: 'Kushiyara at Habiganj', river: 'Kushiyara', lat: 24.57, lng: 91.21 },
+  { d: 'Meghna at Bhairab', river: 'Meghna', lat: 23.95, lng: 90.88 },
+  { d: 'Gumti at Cumilla', river: 'Gumti', lat: 23.46, lng: 91.08 },
+  { d: 'Feni River', river: 'Feni', lat: 22.84, lng: 91.4 },
+  { d: 'Karnaphuli at Chattogram', river: 'Karnaphuli', lat: 22.32, lng: 91.8 },
+  { d: 'Sangu at Bandarban', river: 'Sangu', lat: 22.19, lng: 92.02 },
+  { d: 'Matamuhuri (Cox\'s Bazar)', river: 'Matamuhuri', lat: 21.7, lng: 91.98 },
+];
+
+const REGIONS = {
+  assam: { mode: 'districts', points: ASSAM_POINTS, river: ASSAM_RIVER, helplines: ASSAM_HELPLINES, tz: 'Asia/Kolkata', tzLabel: 'IST' },
+  bangladesh: { mode: 'gauges', points: BD_POINTS, helplines: [], tz: 'Asia/Dhaka', tzLabel: 'BST' },
+};
+
 const pctile = (x, arr) => { if (!arr.length) return 0; return arr.filter(v => v != null && v <= x).length / arr.length; };
 function classify(pctPeak, rain3, current) {
-  // Only trust the river-discharge signal on a real river (guards against a point that snapped to a
-  // tiny stream). Everywhere else, heavy rainfall alone can still raise the risk.
-  const river = current != null && current >= 300;
+  const river = current != null && current >= 300;   // trust the discharge signal only on a real river
   if ((river && pctPeak >= 0.90) || rain3 >= 150) return 'high';
   if ((river && pctPeak >= 0.72) || rain3 >= 80) return 'medium';
   return null;
@@ -60,7 +67,7 @@ function trendOf(cur, near) {
   return 'steady';
 }
 
-let cache = null;   // last good result, served to everyone
+const cache = {};   // region -> last good result
 
 async function fetchJSON(url) {
   const r = await fetch(url, { signal: AbortSignal.timeout(25000) });
@@ -68,22 +75,21 @@ async function fetchJSON(url) {
   return r.json();
 }
 
-export async function refreshFloodAuto() {
-  const lats = POINTS.map(p => p.lat).join(',');
-  const lngs = POINTS.map(p => p.lng).join(',');
+async function refreshRegion(key) {
+  const cfg = REGIONS[key], pts = cfg.points;
+  const lats = pts.map(p => p.lat).join(','), lngs = pts.map(p => p.lng).join(',');
   const floodUrl = `https://flood-api.open-meteo.com/v1/flood?latitude=${lats}&longitude=${lngs}&daily=river_discharge&past_days=90&forecast_days=7`;
-  const rainUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lngs}&daily=precipitation_sum&forecast_days=3&timezone=Asia%2FKolkata`;
-
+  const rainUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lngs}&daily=precipitation_sum&forecast_days=3&timezone=${encodeURIComponent(cfg.tz)}`;
   let flood, rain;
   try { [flood, rain] = await Promise.all([fetchJSON(floodUrl), fetchJSON(rainUrl)]); }
-  catch (e) { console.warn('[flood-auto] fetch failed, keeping last good:', e.message); return cache; }
+  catch (e) { console.warn(`[flood-auto:${key}] fetch failed, keeping last good:`, e.message); return cache[key]; }
   if (!Array.isArray(flood)) flood = [flood];
   if (!Array.isArray(rain)) rain = [rain];
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const districts = {}; const gauges = []; const highs = [];
+  const districts = {}, gauges = [], highs = [];
 
-  POINTS.forEach((p, i) => {
+  pts.forEach((p, i) => {
     const f = flood[i], rn = rain[i];
     if (!f || !f.daily || !f.daily.river_discharge) return;
     const disc = f.daily.river_discharge, times = f.daily.time;
@@ -95,32 +101,38 @@ export async function refreshFloodAuto() {
     const peak = forecast.length ? Math.max(...forecast) : current;
     const near = disc[Math.min(ti + 2, disc.length - 1)];
     const rain3 = rn && rn.daily ? (rn.daily.precipitation_sum || []).slice(0, 3).reduce((a, b) => a + (b || 0), 0) : 0;
-
     const pctPeak = pctile(peak, baseline);
     const sev = classify(pctPeak, rain3, current);
-    if (!sev) return;
-    districts[p.d] = sev;
     const trend = trendOf(current, near);
-    if (sev === 'high') {
-      highs.push(p.d);
-      gauges.push({ station: `${RIVER[p.d] || p.d} at ${p.d}`, river: RIVER[p.d] || p.d, lat: p.lat, lng: p.lng,
-        risk: sev, trend, discharge: current != null ? Math.round(current) : null, pct: Math.round(pctPeak * 100),
-        rain3: Math.round(rain3), source: 'GloFAS + rainfall (auto)' });
+    const gauge = { lat: p.lat, lng: p.lng, trend, discharge: current != null ? Math.round(current) : null,
+      pct: Math.round(pctPeak * 100), rain3: Math.round(rain3), source: 'GloFAS + rainfall (auto)' };
+
+    if (cfg.mode === 'districts') {
+      if (!sev) return;
+      districts[p.d] = sev;
+      if (sev === 'high') { highs.push(p.d); gauges.push({ ...gauge, station: `${cfg.river[p.d] || p.d} at ${p.d}`, river: cfg.river[p.d] || p.d, risk: sev }); }
+    } else {   // gauges mode: emit every major river with its status (high / medium / low)
+      const risk = sev || 'low';
+      if (risk === 'high') highs.push(p.river || p.d);
+      gauges.push({ ...gauge, station: p.d, river: p.river, risk });
     }
   });
 
-  const updated = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' IST';
-  cache = {
+  const updated = new Date().toLocaleString('en-GB', { timeZone: cfg.tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' ' + cfg.tzLabel;
+  cache[key] = {
     updated, auto: true,
     source: 'GloFAS river model + rainfall (auto, Open-Meteo)',
-    note: 'Auto-updated every 3 hours from modelled river discharge (GloFAS) and rainfall forecasts. This is a flood-RISK estimate, not an official ASDMA count. '
-      + (highs.length ? 'High risk right now: ' + highs.join(', ') + '.' : 'No district is at high modelled risk right now.'),
-    helplines: HELPLINES,
-    gauges,
-    districts,
+    note: 'Auto-updated every 3 hours from modelled river discharge (GloFAS) and rainfall forecasts. This is a flood-RISK estimate, not an official count. '
+      + (highs.length ? 'High risk right now: ' + highs.join(', ') + '.' : 'No point is at high modelled risk right now.'),
+    helplines: cfg.helplines || [], gauges,
+    ...(cfg.mode === 'districts' ? { districts } : {}),
   };
-  console.log(`[flood-auto] updated ${updated}: ${Object.keys(districts).length} districts flagged (${highs.length} high)`);
-  return cache;
+  console.log(`[flood-auto:${key}] updated ${updated}: ${gauges.length} gauges${cfg.mode === 'districts' ? `, ${Object.keys(districts).length} districts` : ''} (${highs.length} high)`);
+  return cache[key];
 }
 
-export function getFloodAuto() { return cache; }
+export async function refreshFloodAuto() {
+  for (const key of Object.keys(REGIONS)) { try { await refreshRegion(key); } catch (e) { console.warn('[flood-auto]', key, e.message); } }
+  return cache.assam;
+}
+export function getFloodAuto(region = 'assam') { return cache[region] || null; }

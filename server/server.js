@@ -178,7 +178,9 @@ on('POST', '/api/events/:slug/reopen', async (req, res, params) => {
 on('GET', '/api/archive', (req, res) => json(res, 200, { events: archiveList(), lifecycle: LIFECYCLE }));
 // Fully automatic Assam flood-risk feed (server refreshes it every 3h from GloFAS + rainfall). The
 // homepage reads this; if it's not warmed up yet, the frontend falls back to the committed static file.
-on('GET', '/api/assam-live', (req, res) => json(res, 200, getFloodAuto() || { warming: true }));
+on('GET', '/api/assam-live', (req, res) => json(res, 200, getFloodAuto('assam') || { warming: true }));
+// Per-region auto flood feed (gauges) for flagship events, e.g. /api/live?region=bangladesh.
+on('GET', '/api/live', (req, res, params, url) => json(res, 200, getFloodAuto((url && url.searchParams.get('region')) || 'assam') || { warming: true }));
 // Standing volunteer registry. Email is encrypted with a public key the server CANNOT reverse
 // (see volunteers.js) - we store it, but nobody online (operator included) can read it. Coarse
 // location + families only. Rate-limited by hashed IP so it can't be scripted into a spam list.

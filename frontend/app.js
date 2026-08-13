@@ -185,6 +185,13 @@ async function loadOfficialFlood() {
         if (sev) f.properties.severity = sev;
       }
     }
+  } else if (od) {
+    // Flagship events: pull the region's auto river-gauge feed (if any) so the map shows live river
+    // status on top of the hand-tagged district shading. No feed for a region -> just no gauges.
+    try {
+      assamLive = await (await fetch('/api/live?region=' + encodeURIComponent(od))).json();
+      if (!assamLive || !Array.isArray(assamLive.gauges) || !assamLive.gauges.length) assamLive = null;
+    } catch { assamLive = null; }
   }
   renderHelplines();
 }
@@ -198,7 +205,9 @@ function renderOfficial() {
     interactive: false,
     style: f => ({ color: floodColor(f.properties.severity), weight: 1.4, fillColor: floodColor(f.properties.severity), fillOpacity: 0.20 }),
   }).addTo(layers.official);
-  const meta = assamLive || officialCamps;   // homepage freshness comes from the auto feed
+  // District/camp freshness label: the auto feed only when it drives the shading (Assam districts);
+  // for gauge-only regions (Bangladesh) keep the camps/news source. Gauges render regardless.
+  const meta = (assamLive && assamLive.districts && Object.keys(assamLive.districts).length) ? assamLive : officialCamps;
   const src = meta.source ? (meta.auto ? '🔄 ' + meta.source : '🏛️ Official · ' + meta.source) : t('sourceASDMA');
   const dn = $('officialDate'); if (dn) dn.textContent = meta.updated ? `${t('updated')} ${meta.updated} · ${src}` : '';
   for (const c of (officialCamps.camps || [])) {
@@ -221,10 +230,12 @@ function renderOfficial() {
       const flow = g.discharge != null ? `river flow ${Number(g.discharge).toLocaleString()} m³/s${g.pct != null ? ` (${g.pct}th percentile of last 90 days)` : ''}` : '';
       line = `<b style="color:${g.risk === 'high' ? '#ff8079' : '#ffd479'}">${(g.risk || '').toUpperCase()} risk${g.trend ? ' · ' + esc(g.trend) : ''}</b>${flow ? '<br><small>' + flow + '</small>' : ''}`;
     }
-    L.circleMarker([g.lat, g.lng], { radius: 8, color: '#0b0f14', weight: 1.5, fillColor: col, fillOpacity: 0.95 })
+    // Label only the notable rivers permanently (a page can have ~10 gauges); the rest show on tap.
+    const notable = g.risk == null || g.risk === 'high' || g.risk === 'medium';
+    const m = L.circleMarker([g.lat, g.lng], { radius: notable ? 8 : 6, color: '#0b0f14', weight: 1.5, fillColor: col, fillOpacity: 0.95 })
       .addTo(layers.official)
-      .bindTooltip(tip, { permanent: true, direction: 'right', className: 'gauge-tip', offset: [8, 0] })
       .bindPopup(`<b>🌊 ${esc(g.station)}</b><br>${line}<br><small>${esc(g.source || 'auto')}</small>`);
+    if (notable) m.bindTooltip(tip, { permanent: true, direction: 'right', className: 'gauge-tip', offset: [8, 0] });
   }
 }
 function renderFlood() {
@@ -556,6 +567,14 @@ function renderFloodNow() {
     box.innerHTML = recent.length
       ? recent.slice(0, 10).map(f => `<div class="fnow" data-lat="${f.lat}" data-lng="${f.lng}"><span class="fz ${f.severity}">${esc(f.place || (nonWater ? t('hazArea') : t('floodedArea')))}</span><span class="fago">${agoText(f.created_at)}</span></div>`).join('')
       : `<div class="none">${nonWater ? t('hazPrompt') : t('floodReportPrompt')}</div>`;
+    // No community reports yet but we have live river gauges? Surface the at-risk rivers here so the
+    // panel is informative from day one (e.g. Bangladesh, before locals start reporting).
+    const gg = (assamLive && Array.isArray(assamLive.gauges)) ? assamLive.gauges.filter(g => g.risk === 'high' || g.risk === 'medium') : [];
+    if (!recent.length && gg.length) {
+      gg.sort((a, b) => (b.risk === 'high') - (a.risk === 'high'));
+      if (tick) { const nHigh = gg.filter(g => g.risk === 'high').length; tick.textContent = `● ${nHigh || gg.length} ${getLang() === 'bn' ? 'নদী ঝুঁকিতে' : 'rivers at risk'}`; tick.className = 'flood-tick live'; }
+      box.innerHTML = gg.slice(0, 8).map(g => `<div class="fnow" data-lat="${g.lat}" data-lng="${g.lng}"><span class="fz ${g.risk}">🌊 ${esc(g.station)}</span><span class="fago">${esc(g.trend || '')}</span></div>`).join('');
+    }
     box.querySelectorAll('.fnow').forEach(el => el.onclick = () => map.setView([+el.dataset.lat, +el.dataset.lng], 12));
   }
 }
