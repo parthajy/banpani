@@ -1,0 +1,13 @@
+{
+  "source": "UN / news reports (Jul-Aug 2026)",
+  "updated": "13 Aug 2026",
+  "camps": [
+    { "district": "Chattogram (Chittagong)", "lat": 22.36, "lng": 91.83, "note": "Flash floods and landslides; among the worst-hit districts." },
+    { "district": "Cox's Bazar", "lat": 21.44, "lng": 92.01, "note": "Heavy rain and flooding; low-lying areas and camps at risk." },
+    { "district": "Bandarban", "lat": 22.19, "lng": 92.22, "note": "Landslide risk in the hill district; roads cut in places." },
+    { "district": "Rangamati", "lat": 22.65, "lng": 92.18, "note": "Hill district; landslide and flash-flood risk." },
+    { "district": "Sylhet", "lat": 24.90, "lng": 91.87, "note": "North-east flash floods from the Surma and Kushiyara rivers." },
+    { "district": "Moulvibazar", "lat": 24.48, "lng": 91.77, "note": "North-east flooding; haor (wetland) areas affected." },
+    { "district": "Habiganj", "lat": 24.37, "lng": 91.41, "note": "North-east flooding along the Kushiyara basin." }
+  ]
+}

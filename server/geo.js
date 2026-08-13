@@ -85,6 +85,11 @@ const OFFICIAL = {
     { name: 'NDMA - National Disaster Management', url: 'https://ndma.gov.in' },
     { name: 'Indian Red Cross Society', url: 'https://indianredcross.org' },
   ],
+  BD: [
+    { name: 'Bangladesh Red Crescent Society', url: 'https://bdrcs.org' },
+    { name: 'Dept. of Disaster Management (DDM)', url: 'https://ddm.gov.bd' },
+    { name: 'Flood Forecasting & Warning Centre (FFWC)', url: 'https://ffwc.gov.bd' },
+  ],
 };
 export function officialSourcesFor(cc) { return OFFICIAL[cc] || []; }
 

@@ -612,6 +612,13 @@ const EVENT_SEO = {
       + '<p>Banpani is a free, community-run live map to coordinate relief after the magnitude 7.4 earthquake that struck western Colombia on 10 August 2026, near San José del Palmar. It covers Valle del Cauca, Chocó, Caldas, Risaralda and Quindío, and cities including Cali and Manizales. Report needs such as search and rescue, people trapped, medical or trauma care, water, shelter and heavy equipment. No account, no cost. Available in Spanish and English.</p>'
       + '<p>Banpani es un mapa comunitario gratuito para coordinar la ayuda tras el terremoto de magnitud 7.4 en el occidente de Colombia. Reporta necesidades, ofrece ayuda y encuentra las zonas afectadas que nadie ha atendido, sin cuenta y sin costo. Fuentes oficiales: Cruz Roja Colombiana, Defensa Civil Colombiana, UNGRD (Gestión del Riesgo), Servicio Geológico Colombiano. Emergencias: 123. Los reportes comunitarios de este mapa no son oficiales.</p>',
   },
+  'bangladesh-floods-2026': {
+    keywords: 'Bangladesh floods, Bangladesh floods 2026, বাংলাদেশ বন্যা, বন্যা ত্রাণ, flood relief Bangladesh, Sylhet flood, Chattogram flood, Cox\'s Bazar, Feni, Habiganj, Moulvibazar, Sunamganj, monsoon flood, Bangladesh Red Crescent, FFWC, ত্রাণ সমন্বয়',
+    desc: 'বাংলাদেশের বন্যার জন্য বিনামূল্যের সম্প্রদায়-ভিত্তিক লাইভ ত্রাণ-সমন্বয় মানচিত্র (সিলেট, চট্টগ্রাম, কক্সবাজার, ফেনী, হবিগঞ্জ, মৌলভীবাজার, সুনামগঞ্জ)। প্রয়োজন জানান, সাহায্যের প্রস্তাব দিন, কোথায় কেউ পৌঁছায়নি দেখুন। অ্যাকাউন্ট লাগে না। Free community-run flood-relief map for Bangladesh, in Bengali and English.',
+    body: '<h1>Bangladesh Floods 2026 - Community Relief Map / বন্যা ত্রাণ মানচিত্র</h1>'
+      + '<p>Banpani is a free, community-run live map to coordinate flood relief during the 2026 Bangladesh monsoon floods, which have affected more than a million people across the north-east (Sylhet, Sunamganj, Habiganj, Moulvibazar) and the south-east (Chattogram/Chittagong, Cox\'s Bazar, Feni, Bandarban, Rangamati, Khagrachhari). Report a stranded family or a need such as a boat, drinking water, medicine, food or shelter, and volunteers nearby can act. No account, no money, owned by no one. Available in Bengali and English.</p>'
+      + '<p>বানপানী একটি বিনামূল্যের, সম্প্রদায়-পরিচালিত লাইভ মানচিত্র যা ২০২৬ সালের বাংলাদেশের বন্যায় ত্রাণ সমন্বয়ে সাহায্য করে। যে কেউ প্রয়োজন জানাতে পারে, স্বেচ্ছাসেবকরা কাছাকাছি থেকে সাড়া দিতে পারে। অ্যাকাউন্ট বা খরচ ছাড়াই। সরকারি সূত্র: Bangladesh Red Crescent Society, Department of Disaster Management (DDM), Flood Forecasting & Warning Centre (FFWC)। জরুরি নম্বর: 999। এই মানচিত্রের রিপোর্টগুলো সম্প্রদায়ের, সরকারি নয়।</p>',
+  },
   'odisha-flood-2026': {
     keywords: 'Odisha flood, Odisha floods 2026, Odisha flood relief, Bhadrak, Baleshwar, Balasore, Jajpur, Mayurbhanj, Keonjhar, flood help Odisha, OSDMA, relief camps Odisha, disaster coordination',
     desc: 'Free, community-run live map to coordinate flood relief in Odisha, India (Bhadrak, Baleshwar/Balasore, Jajpur, Mayurbhanj and more). Report needs, offer help, and find the areas nobody has reached. No account, no cost. In English, Odia and Hindi.',
@@ -632,24 +639,25 @@ async function serveEventApp(req, res, ev) {
   const isAssam = ev.source === 'assam';
   const isOdisha = ev.slug === 'odisha-flood-2026';
   const isColombia = ev.slug === 'colombia-earthquake-2026';
+  const isBangladesh = ev.slug === 'bangladesh-floods-2026';
   // Flagship events ship an official affected-areas dataset (district polygons + relief camps),
   // loaded per-event by the app (data/<officialData>-districts.geojson + -camps.json).
-  const officialData = isAssam ? 'assam' : isOdisha ? 'odisha' : isColombia ? 'colombia' : null;
+  const officialData = isAssam ? 'assam' : isOdisha ? 'odisha' : isColombia ? 'colombia' : isBangladesh ? 'bangladesh' : null;
   // Country-aware helplines: Assam keeps its own set (app falls back to C.HELPLINES); every other
   // event resolves its coordinates to a country and shows that country's emergency + family line.
   const cc = isAssam ? null : await countryOf(ev.lat, ev.lng);
   const cfg = {
     id: ev.id, slug: ev.slug, title: ev.title, disaster_type: ev.disaster_type, family: ev.family,
     color: f.color, emoji: f.emoji,
-    center: isAssam ? [26.5, 92.9] : isOdisha ? [20.5, 85.3] : isColombia ? [4.3, -76.0] : [ev.lat, ev.lng],
-    zoom: isAssam ? 7 : isOdisha ? 7 : isColombia ? 7 : 9, minZoom: isAssam ? 7 : isOdisha ? 6 : isColombia ? 6 : 5,
-    bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : isOdisha ? [[18.3, 82.2], [22.9, 87.8]] : isColombia ? [[2.5, -77.7], [6.6, -74.3]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
+    center: isAssam ? [26.5, 92.9] : isOdisha ? [20.5, 85.3] : isColombia ? [4.3, -76.0] : isBangladesh ? [23.3, 91.7] : [ev.lat, ev.lng],
+    zoom: isAssam ? 7 : isOdisha ? 7 : isColombia ? 7 : isBangladesh ? 7 : 9, minZoom: isAssam ? 7 : isOdisha ? 6 : isColombia ? 6 : isBangladesh ? 6 : 5,
+    bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : isOdisha ? [[18.3, 82.2], [22.9, 87.8]] : isColombia ? [[2.5, -77.7], [6.6, -74.3]] : isBangladesh ? [[20.9, 89.7], [25.4, 92.8]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
     official: !!officialData, officialData, items: (ev.needs && ev.needs.length) ? ev.needs : (f.needs || []), modules: ev.modules || [],
     offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: isAssam ? null : helplinesForCountry(ev.family, cc),
     hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
     status: ev.status || 'active', dormantAt: ev.dormant_at || null, archivedAt: ev.archived_at || null,
     reopenVotes: ev.reopenVotes || 0, reopenNeed: LIFECYCLE.REOPEN_VOTES, overNeed: LIFECYCLE.OVER_VOTES,
-    langs: isColombia ? ['en', 'es'] : isOdisha ? ['en', 'or', 'hi'] : ['en', 'as', 'hi'],   // language options for this response's region
+    langs: isColombia ? ['en', 'es'] : isBangladesh ? ['bn', 'en'] : isOdisha ? ['en', 'or', 'hi'] : ['en', 'as', 'hi'],   // language options for this response's region
     officialSources: officialSourcesFor(isAssam ? 'IN' : cc),   // real responders, shown separate from community reports
   };
   let html;
