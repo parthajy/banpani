@@ -67,7 +67,7 @@
   <div class="wrap">
     <div class="hero">
       <h1>Volunteer for disaster response</h1>
-      <p class="lead">If a flood, fire, cyclone, or outbreak hits near you, help is needed fast. Sign up once, and you can be contacted to help when a disaster happens near you.</p>
+      <p class="lead">Sign up once. If a disaster hits near you, you can be contacted to help. We are not building a big passive list, we want to know exactly what you can do, so we can reach the right person at the right moment.</p>
       <div class="count" id="count">Loading…</div>
     </div>
 
@@ -80,15 +80,18 @@
       <label for="country">Your country</label>
       <select id="country" required><option value="">Select your country…</option></select>
 
+      <label>How can you help? <span class="opt">(pick everything you can genuinely do)</span></label>
+      <div class="chips" id="caps"></div>
+
+      <label>Which disasters? <span class="opt">(optional)</span></label>
+      <div class="chips" id="families"></div>
+
       <label for="region">Your state / area <span class="opt">(optional)</span></label>
       <input id="region" type="text" maxlength="80" placeholder="e.g. Odisha, or your city" />
       <button type="button" class="gps" id="gps">📍 Use my location for finer alerts (optional)</button>
 
-      <label>What can you help with? <span class="opt">(optional)</span></label>
-      <div class="chips" id="families"></div>
-
-      <label for="skills">Skills / resources <span class="opt">(optional)</span></label>
-      <input id="skills" type="text" maxlength="120" placeholder="e.g. boat, first aid, transport, shelter space" />
+      <label for="skills">Anything else? Skills, resources, local contacts <span class="opt">(optional)</span></label>
+      <input id="skills" type="text" maxlength="140" placeholder="e.g. I run a Sylhet WhatsApp group, I have a boat, fluent Bengali + English" />
 
       <button type="submit" class="submit" id="submit">Sign up</button>
       <div class="msg" id="msg"></div>
@@ -114,6 +117,23 @@
       b.textContent = f.emoji + ' ' + f.label;
       b.onclick = () => { b.classList.toggle('on'); b.classList.contains('on') ? fams.add(key) : fams.delete(key); };
       fbox.appendChild(b);
+    }
+
+    // capabilities - the SPECIFIC thing this person can actually do (stored in the skills field, so we
+    // know what each volunteer offers instead of a passive list). At least one is required.
+    const caps = new Set();
+    const CAPS = [
+      ['🙌', 'Help on the ground near me'], ['✅', 'Verify reports on the map'], ['📣', 'Spread the word / share online'],
+      ['🌐', 'Translate / native-language review'], ['🤝', 'Connect us to local groups, NGOs or media'],
+      ['🚗', 'Transport / boat / vehicle'], ['🩹', 'Medical / first aid'], ['📦', 'Collect or distribute supplies'], ['📷', 'Photograph / document'],
+    ];
+    const cbox = $('caps');
+    for (const [emoji, label] of CAPS) {
+      const b = document.createElement('div');
+      b.className = 'chip'; b.style.setProperty('--c', '#2f81f7');
+      b.textContent = emoji + ' ' + label;
+      b.onclick = () => { b.classList.toggle('on'); b.classList.contains('on') ? caps.add(label) : caps.delete(label); };
+      cbox.appendChild(b);
     }
 
     // optional finer location - coarse coords only (server rounds them further)
@@ -145,10 +165,11 @@
       e.preventDefault();
       const email = $('email').value.trim();
       if (!email || !sel.value) return msg('Please add your email and country.', 'err');
+      if (caps.size === 0) return msg('Please pick at least one way you can help.', 'err');
       $('submit').disabled = true; $('submit').textContent = 'Joining…';
       try {
         const body = { email, country: sel.value === 'OT' ? null : sel.value, region: $('region').value.trim(),
-          families: [...fams], skills: $('skills').value.trim() ? [$('skills').value.trim()] : [],
+          families: [...fams], skills: [...caps, ...($('skills').value.trim() ? [$('skills').value.trim()] : [])],
           device: localStorage.getItem('banpani.device') || '' };
         if (coords) { body.lat = coords.lat; body.lng = coords.lng; }
         const res = await fetch((C.API || '') + '/api/volunteer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });

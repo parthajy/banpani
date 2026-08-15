@@ -57,7 +57,7 @@
   <div class="doc-hero">
     <div class="in">
       <h1>The people building Banpani</h1>
-      <p>Banpani is built and run by volunteers, owned by no one. This page shows who is doing what, as public recognition. Every contributor, code and non-code, is credited here.</p>
+      <p>Banpani is built and run by volunteers, owned by no one. This page shows who is doing what, as public recognition. Right now we are looking for people in outreach, marketing, PR, translation and community verification, not code (the tech is handled in-house). We are not after a big passive list, we want to know the specific thing each person can do.</p>
       <div class="updated">Want to be on this page? See <a href="#join" style="color:inherit;text-decoration:underline">how to join</a>.</div>
     </div>
   </div>
@@ -69,19 +69,20 @@
       <div class="cards" id="cards"></div>
 
       <h2 id="join" style="margin-top:26px"><span class="n">🙌</span> Open roles - join us</h2>
-      <p>You earn trust and access by showing up and doing solid work, decided by maintainers, not by a vote. Start small, pick any of these:</p>
+      <p>Tell us the specific thing you can do. We would rather have ten people who each own one real task than a hundred names who do nothing. You are recognised for what you actually do.</p>
       <ul class="open-list">
-        <li><b>Code</b> - fixes, features, performance, accessibility. Start with an issue on GitHub.</li>
-        <li><b>Translation & native review</b> - improve or add a language (Bengali, Spanish, Hindi, Odia, Assamese, and more). Native-speaker review is especially valuable.</li>
-        <li><b>Marketing & outreach</b> - help the right people find Banpani when a disaster hits.</li>
+        <li><b>Outreach & distribution</b> - get Banpani to affected communities, local groups and volunteers when a disaster hits. This is our single biggest need.</li>
+        <li><b>Marketing & PR</b> - social, press, partnerships. Help more people know Banpani exists (within the brand guardrails).</li>
+        <li><b>Local contacts</b> - if you know NGOs, journalists or community groups in an affected area, that is gold. One introduction can activate a whole region.</li>
+        <li><b>Translation & native review</b> - improve or add a language (Bengali, Spanish, Hindi, Odia, Assamese, and more).</li>
         <li><b>Community verification</b> - verify reports on the live map during an active response.</li>
         <li><b>Design & docs</b> - make it clearer and easier to use under stress.</li>
       </ul>
       <p style="margin-top:14px">
-        <a class="cta" href="https://github.com/parthajy/banpani/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Read the contributor guide</a>
-        <a class="cta alt" href="/volunteers">Volunteer on the ground</a>
+        <a class="cta" href="mailto:parthajy@gmail.com?subject=I%20can%20help%20Banpani&body=Hi%2C%20I%20would%20like%20to%20help.%20Here%20is%20the%20specific%20thing%20I%20can%20do%3A%0A%0A(for%20example%3A%20outreach%20in%20___%2C%20translation%20for%20___%2C%20I%20know%20NGOs%2Fjournalists%20in%20___)%0A%0AHow%20I%27d%20like%20to%20be%20credited%3A%20">Offer to help - email us</a>
+        <a class="cta alt" href="/volunteers">Sign up to volunteer</a>
       </p>
-      <p style="color:var(--muted);font-size:13.5px">Read our promises in the <a href="/manifesto">manifesto</a>. Marketing volunteers: see the brand guardrails in <a href="https://github.com/parthajy/banpani/blob/main/BRAND.md" target="_blank" rel="noopener">BRAND.md</a>. To be added here, open an issue or email <a href="mailto:parthajy@gmail.com">parthajy@gmail.com</a> with how you'd like to be credited.</p>
+      <p style="color:var(--muted);font-size:13.5px">Read our promises in the <a href="/manifesto">manifesto</a>. Marketing volunteers: see the brand guardrails in <a href="https://github.com/parthajy/banpani/blob/main/BRAND.md" target="_blank" rel="noopener">BRAND.md</a>. The code is open source (MIT) and pull requests are welcome on <a href="https://github.com/parthajy/banpani" target="_blank" rel="noopener">GitHub</a>, but we are not onboarding code contributors right now - the tech is handled in-house.</p>
 
       <div class="share">
         <span style="align-self:center;color:var(--muted);font-size:13px">Share this recognition:</span>
@@ -114,9 +115,8 @@
   // Edit this list to add or update contributors. Each person chooses how they are credited
   // (a handle, a first name, or "A volunteer"). status: 'active' | 'onboarding' | 'open'.
   const TEAM = [
-    { name: 'The volunteer behind Banpani', area: 'Maintainer', doing: 'Builds and runs Banpani, reviews and deploys changes, and keeps it true to the manifesto.', since: '2026', status: 'active', link: '' },
-    { name: 'Onboarding', area: 'System architecture', doing: 'Backend and overall system architecture. Currently getting set up as a contributor.', since: '2026', status: 'onboarding', link: '' },
-    { name: 'Onboarding', area: 'Marketing & outreach', doing: 'Helping the right people find Banpani when a disaster strikes. Currently getting set up.', since: '2026', status: 'onboarding', link: '' },
+    { name: 'The volunteer behind Banpani', area: 'Maintainer', doing: 'Builds and runs Banpani, reviews and deploys changes, and keeps it true to the manifesto. Tech is handled in-house.', since: '2026', status: 'active', link: '' },
+    { name: 'Onboarding', area: 'Marketing & outreach', doing: 'Helping the right people find Banpani when a disaster strikes, social, press and partnerships. Currently getting set up.', since: '2026', status: 'onboarding', link: '' },
     { name: 'The community + AI drafts', area: 'Translation', doing: 'Assamese, Bengali, Hindi, Odia, English and Spanish. Native-speaker review is welcome and needed.', since: '2026', status: 'open', link: '' },
   ];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

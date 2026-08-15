@@ -7,6 +7,11 @@ is reviewed, and how contributors are recognised.
 Everything here is designed around one idea: **you can contribute freely without anyone having to
 trust you first, because nothing goes live until it is reviewed and deployed by a maintainer.**
 
+> **Current focus:** the core tech is deliberately small and handled in-house, so we are **not actively
+> onboarding code contributors** right now. Pull requests are always welcome (this guide tells you how),
+> but the project's biggest need is **distribution and outreach**, not more code. If you want to help the
+> most, see [banpani.org/contributors](https://banpani.org/contributors).
+
 ## The non-negotiables (please read first)
 
 Any change, from anyone, is rejected if it breaks one of these. They are the soul of the project:
