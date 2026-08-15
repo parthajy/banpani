@@ -710,7 +710,7 @@ const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not fou
 function sitemapXml() {
   const evs = listEvents().filter(e => e.promoted);
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/how-it-works', 'weekly', '0.7'], ['/press', 'weekly', '0.6'], ['/archive', 'daily', '0.8'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
+  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/how-it-works', 'weekly', '0.7'], ['/manifesto', 'monthly', '0.6'], ['/contributors', 'weekly', '0.6'], ['/press', 'weekly', '0.6'], ['/archive', 'daily', '0.8'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
     .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
     + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')
@@ -721,7 +721,7 @@ function sitemapXml() {
 // Assam winds down. Until then `/` stays the Assam relief map. Assam always lives at
 // /e/assam-floods-2026 too. One flag, reversible - the user's timing call.
 const PRETTY = { '/': process.env.BANPANI_WORLD_HOME === '1' ? '/world.html' : '/index.html', '/world': '/world.html', '/volunteers': '/volunteers.html',
-  '/press': '/press.html', '/how-it-works': '/how-it-works.html',
+  '/press': '/press.html', '/how-it-works': '/how-it-works.html', '/manifesto': '/manifesto.html', '/contributors': '/contributors.html',
   '/archive': '/archive.html', '/admin': '/admin.html', '/parthajy/admin': '/admin.html' };   // one admin, reachable at either path
 async function serveStatic(req, res, pathname) {
   countView(req, pathname);
