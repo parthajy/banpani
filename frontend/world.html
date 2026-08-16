@@ -29,7 +29,7 @@
   <style>
     #wmap{flex:1;min-height:0;background:#0b0f14;z-index:1}
     #wsearchbox{top:60px}
-    #wfilters{position:absolute;top:108px;left:10px;right:10px;z-index:600;display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+    #wfilters{position:absolute;top:108px;left:10px;right:10px;z-index:600;display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;justify-content:safe center}
     #wfilters::-webkit-scrollbar{display:none}
     .wchip{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:20px;
       padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;opacity:.55}
@@ -87,6 +87,11 @@
     .wsaved-empty{color:var(--muted);font-size:13px;padding:10px 2px;line-height:1.5}
     .pulse-ring{display:block;width:30px;height:30px;border-radius:50%;opacity:.5;animation:wpulse 2.2s ease-out infinite}
   @keyframes wpulse{0%{transform:scale(.35);opacity:.55}70%{opacity:.12}100%{transform:scale(1.95);opacity:0}}
+  .wonboard{position:absolute;right:16px;bottom:132px;z-index:660;max-width:250px;background:var(--accent);color:#fff;padding:11px 30px 11px 14px;border-radius:14px;font-size:13px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.45);animation:wobin .3s}
+  .wonboard::after{content:"";position:absolute;right:26px;bottom:-8px;border:8px solid transparent;border-top-color:var(--accent);border-bottom:0}
+  .wonboard b{font-weight:800}
+  .wonboard button{position:absolute;top:6px;right:6px;background:rgba(255,255,255,.25);border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1}
+  @keyframes wobin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   </style>
 </head>
 <body>
@@ -120,7 +125,10 @@
   <div class="wbeta" id="wbeta">
     🇮🇳 <b>India disaster map.</b> <span class="wcount" id="wc">…</span> live markers. <b>Pulsing dots</b> = active responses; dashed rings = official alerts (GDACS). Tap a dot to open its relief map.
     <a href="/volunteers.html">🙋 Become a volunteer →</a>
+    <span style="opacity:.55">· © OpenStreetMap · CARTO · open source (MIT)</span>
   </div>
+
+  <div class="wonboard" id="wonboard" hidden>👉 New here? Tap <b>＋ Report</b> below, then drop a pin where a disaster is happening.<button id="wobX" aria-label="Dismiss">✕</button></div>
 
   <button class="wexpand" id="wexpandBtn" title="Full screen">⛶</button>
   <button class="wrain" id="wrainBtn" title="Live rain radar" onclick="return toggleRain()">🌧</button>
@@ -150,5 +158,6 @@
   <script src="config.js"></script>
   <script src="fullscreen.js"></script>
   <script src="world.js"></script>
+  <script>(function(){var ob=document.getElementById("wonboard");if(ob&&!localStorage.getItem("banpani.wob"))ob.hidden=false;function d(){if(ob)ob.hidden=true;localStorage.setItem("banpani.wob","1");}var x=document.getElementById("wobX");if(x)x.onclick=d;var rb=document.getElementById("wreportBtn");if(rb)rb.addEventListener("click",d);})();</script>
 </body>
 </html>

@@ -16,11 +16,18 @@ function familyOf(type) { type = type || 'flood'; if (FAM[type]) return type; fo
 let toastT; function toast(m) { const t = $('wtoast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
 
 const V = C.INDIA || C.WORLD;   // India-focused front door: bounded to India, not the whole globe
-const map = L.map('wmap', { minZoom: V.minZoom, maxZoom: 16, zoomControl: false, maxBounds: V.bounds, maxBoundsViscosity: 1.0 })
+const map = L.map('wmap', { minZoom: V.minZoom, maxZoom: 16, zoomControl: false, maxBounds: V.bounds, maxBoundsViscosity: 1.0, attributionControl: false })
   .setView(V.center, V.zoom);
 L.control.zoom({ position: 'topright' }).addTo(map);
-if (window.attachFullscreen) window.attachFullscreen(document.getElementById('wexpandBtn'), document.documentElement, map);   // expand the whole world map
+if (window.attachFullscreen) window.attachFullscreen(document.getElementById('wexpandBtn'), document.documentElement, map);   // full-screen the India map
 C.addBasemap(map);   // CARTO Dark Matter, auto-falls back to OSM if it ever fails
+// Spotlight India: grey out everything OUTSIDE India (a big rectangle with India cut out as a hole),
+// so it reads as "India is in scope, the rest is out of scope". File coords are [lng,lat].
+fetch('data/india-outline.json').then(r => r.json()).then(rings => {
+  const outer = [[-40, 30], [-40, 140], [60, 140], [60, 30]];              // [lat,lng] rect over the whole view
+  const holes = rings.map(r => r.map(p => [p[1], p[0]]));                  // India rings, swapped to [lat,lng]
+  L.polygon([outer, ...holes], { stroke: false, fill: true, fillColor: '#cdd2d8', fillOpacity: 0.93, interactive: false }).addTo(map);
+}).catch(() => {});
 
 const active = new Set(Object.keys(FAM));   // all families visible by default
 const pins = [];                            // { marker, family }
