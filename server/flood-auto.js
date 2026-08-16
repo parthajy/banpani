@@ -48,9 +48,56 @@ const BD_POINTS = [
   { d: 'Matamuhuri (Cox\'s Bazar)', river: 'Matamuhuri', lat: 21.7, lng: 91.98 },
 ];
 
+// All-India river network: one point per major river reach, calibrated near known gauge towns so GloFAS
+// reads the main channel (not a tributary). Drives the nationwide "rivers on flood alert" layer on the
+// gateway map. Points on genuinely large rivers clear the discharge>=300 guard; small ones just read 'low'.
+const INDIA_POINTS = [
+  // Ganga and tributaries
+  { d: 'Ganga at Patna', river: 'Ganga', lat: 25.62, lng: 85.14 },
+  { d: 'Ganga at Bhagalpur', river: 'Ganga', lat: 25.25, lng: 86.98 },
+  { d: 'Ganga at Varanasi', river: 'Ganga', lat: 25.31, lng: 83.01 },
+  { d: 'Ganga at Kanpur', river: 'Ganga', lat: 26.47, lng: 80.32 },
+  { d: 'Ganga at Farakka', river: 'Ganga', lat: 24.80, lng: 87.93 },
+  { d: 'Yamuna at Prayagraj', river: 'Yamuna', lat: 25.42, lng: 81.88 },
+  { d: 'Yamuna at Delhi', river: 'Yamuna', lat: 28.66, lng: 77.23 },
+  { d: 'Ghaghara at Ayodhya', river: 'Ghaghara', lat: 26.79, lng: 82.15 },
+  { d: 'Kosi at Kursela', river: 'Kosi', lat: 25.41, lng: 87.24 },
+  { d: 'Gandak at Hajipur', river: 'Gandak', lat: 25.69, lng: 85.21 },
+  { d: 'Chambal at Kota', river: 'Chambal', lat: 25.18, lng: 75.86 },
+  // Brahmaputra and the north-east
+  { d: 'Brahmaputra at Guwahati', river: 'Brahmaputra', lat: 26.19, lng: 91.69 },
+  { d: 'Brahmaputra at Dibrugarh', river: 'Brahmaputra', lat: 27.48, lng: 94.91 },
+  { d: 'Barak at Silchar', river: 'Barak', lat: 24.82, lng: 92.80 },
+  { d: 'Teesta at Jalpaiguri', river: 'Teesta', lat: 26.52, lng: 88.72 },
+  // East-flowing peninsular rivers
+  { d: 'Mahanadi at Cuttack', river: 'Mahanadi', lat: 20.47, lng: 85.88 },
+  { d: 'Mahanadi at Sambalpur', river: 'Mahanadi', lat: 21.47, lng: 83.97 },
+  { d: 'Brahmani (lower)', river: 'Brahmani', lat: 20.95, lng: 85.30 },
+  { d: 'Godavari at Rajahmundry', river: 'Godavari', lat: 17.00, lng: 81.78 },
+  { d: 'Godavari at Bhadrachalam', river: 'Godavari', lat: 17.67, lng: 80.89 },
+  { d: 'Krishna at Vijayawada', river: 'Krishna', lat: 16.51, lng: 80.62 },
+  { d: 'Krishna at Nagarjuna Sagar', river: 'Krishna', lat: 16.57, lng: 79.31 },
+  { d: 'Cauvery at Tiruchirapalli', river: 'Cauvery', lat: 10.80, lng: 78.69 },
+  { d: 'Cauvery at Mettur', river: 'Cauvery', lat: 11.79, lng: 77.80 },
+  { d: 'Penna at Nellore', river: 'Penna', lat: 14.44, lng: 79.99 },
+  { d: 'Subarnarekha at Jamshedpur', river: 'Subarnarekha', lat: 22.80, lng: 86.18 },
+  { d: 'Damodar at Durgapur', river: 'Damodar', lat: 23.50, lng: 87.30 },
+  // West-flowing rivers
+  { d: 'Narmada at Hoshangabad', river: 'Narmada', lat: 22.75, lng: 77.72 },
+  { d: 'Narmada at Bharuch', river: 'Narmada', lat: 21.70, lng: 72.98 },
+  { d: 'Tapti at Surat', river: 'Tapti', lat: 21.20, lng: 72.85 },
+  { d: 'Periyar (Kerala)', river: 'Periyar', lat: 10.18, lng: 76.40 },
+  { d: 'Bharathapuzha (Kerala)', river: 'Bharathapuzha', lat: 10.77, lng: 76.20 },
+];
+const INDIA_HELPLINES = [
+  { label: 'Emergency 112', tel: '112' },
+  { label: 'NDMA disaster helpline 1078', tel: '1078' },
+];
+
 const REGIONS = {
   assam: { mode: 'districts', points: ASSAM_POINTS, river: ASSAM_RIVER, helplines: ASSAM_HELPLINES, tz: 'Asia/Kolkata', tzLabel: 'IST' },
   bangladesh: { mode: 'gauges', points: BD_POINTS, helplines: [], tz: 'Asia/Dhaka', tzLabel: 'BST' },
+  india: { mode: 'gauges', points: INDIA_POINTS, helplines: INDIA_HELPLINES, tz: 'Asia/Kolkata', tzLabel: 'IST' },
 };
 
 const pctile = (x, arr) => { if (!arr.length) return 0; return arr.filter(v => v != null && v <= x).length / arr.length; };

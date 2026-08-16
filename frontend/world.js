@@ -103,6 +103,82 @@ window.toggleHeat = async function () {
   return false;
 };
 
+// Live flood-risk on India's rivers: reads the server's auto GloFAS feed (/api/live?region=india) and
+// plots the reaches at high/medium modelled risk. Same engine as the Assam and Bangladesh gauges.
+let riskLayer = null;
+window.toggleFloodRisk = async function () {
+  const btn = $('wriskBtn');
+  if (riskLayer) { map.removeLayer(riskLayer); riskLayer = null; if (btn) btn.classList.remove('on'); return false; }
+  try {
+    const j = await (await fetch((C.API || '') + '/api/live?region=india')).json();
+    if (j && j.warming) { toast('Flood-risk feed is still warming up - try again in a minute'); return false; }
+    const gauges = (j && j.gauges) || [];
+    riskLayer = L.layerGroup();
+    let n = 0;
+    gauges.forEach(g => {
+      if (g.risk !== 'high' && g.risk !== 'medium') return;
+      n++;
+      const color = g.risk === 'high' ? '#e11d1d' : '#f59e0b';
+      const arrow = g.trend === 'rising' ? '↑ rising' : g.trend === 'falling' ? '↓ falling' : '→ steady';
+      L.circleMarker([g.lat, g.lng], { radius: g.risk === 'high' ? 10 : 8, weight: 2, color, fillColor: color, fillOpacity: .3 })
+        .bindPopup(`<b>🌊 ${esc(g.station || g.river || 'River')}</b><br><b style="color:${color};text-transform:capitalize">${esc(g.risk)} flood risk</b> · ${esc(arrow)}<br>Discharge at ${g.pct}th percentile · ${g.rain3}mm rain (3d)<br><small>${esc(j.source || 'GloFAS river model (auto)')}</small>`)
+        .addTo(riskLayer);
+    });
+    riskLayer.addTo(map);
+    if (btn) btn.classList.add('on');
+    toast(n ? `Flood-risk layer on - ${n} river reach(es) elevated` : 'No river at elevated modelled risk right now');
+  } catch { toast('Could not load flood-risk data'); }
+  return false;
+};
+
+// Live drought stress: approximate dryness (soil moisture + last-14-day rain) for India's drought-prone
+// belts, from Open-Meteo. Labelled as an estimate, not an official IMD drought declaration.
+let droughtLayer = null;
+const DROUGHT_POINTS = [
+  { n: 'Aurangabad', lat: 19.88, lng: 75.34 }, { n: 'Beed', lat: 18.99, lng: 75.76 }, { n: 'Latur', lat: 18.40, lng: 76.58 },
+  { n: 'Osmanabad', lat: 18.19, lng: 76.04 }, { n: 'Amravati', lat: 20.93, lng: 77.75 }, { n: 'Yavatmal', lat: 20.39, lng: 78.13 },
+  { n: 'Kalaburagi', lat: 17.33, lng: 76.83 }, { n: 'Vijayapura', lat: 16.83, lng: 75.71 }, { n: 'Ballari', lat: 15.14, lng: 76.92 },
+  { n: 'Raichur', lat: 16.20, lng: 77.36 }, { n: 'Anantapur', lat: 14.68, lng: 77.60 }, { n: 'Kurnool', lat: 15.83, lng: 78.04 },
+  { n: 'Kadapa', lat: 14.47, lng: 78.82 }, { n: 'Mahbubnagar', lat: 16.74, lng: 78.00 }, { n: 'Nalgonda', lat: 17.05, lng: 79.27 },
+  { n: 'Jhansi', lat: 25.45, lng: 78.57 }, { n: 'Banda', lat: 25.48, lng: 80.34 }, { n: 'Chhatarpur', lat: 24.92, lng: 79.59 },
+  { n: 'Tikamgarh', lat: 24.74, lng: 78.83 }, { n: 'Bhawanipatna', lat: 19.91, lng: 83.16 }, { n: 'Bolangir', lat: 20.71, lng: 83.48 },
+  { n: 'Rajkot', lat: 22.30, lng: 70.80 }, { n: 'Bhuj', lat: 23.25, lng: 69.67 }, { n: 'Jamnagar', lat: 22.47, lng: 70.06 },
+  { n: 'Barmer', lat: 25.75, lng: 71.39 }, { n: 'Jaisalmer', lat: 26.92, lng: 70.92 }, { n: 'Bikaner', lat: 28.02, lng: 73.31 },
+  { n: 'Nagaur', lat: 27.20, lng: 73.73 }, { n: 'Ramanathapuram', lat: 9.37, lng: 78.83 }, { n: 'Thoothukudi', lat: 8.76, lng: 78.13 },
+];
+window.toggleDrought = async function () {
+  const btn = $('wdroughtBtn');
+  if (droughtLayer) { map.removeLayer(droughtLayer); droughtLayer = null; if (btn) btn.classList.remove('on'); return false; }
+  try {
+    const lats = DROUGHT_POINTS.map(c => c.lat).join(','), lngs = DROUGHT_POINTS.map(c => c.lng).join(',');
+    const data = await (await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lats + '&longitude=' + lngs + '&hourly=soil_moisture_0_to_7cm,soil_moisture_7_to_28cm&daily=precipitation_sum&past_days=14&forecast_days=1&timezone=auto')).json();
+    const arr = Array.isArray(data) ? data : [data];
+    const avgTail = (a, k) => { if (!a) return null; const v = a.filter(x => x != null); if (!v.length) return null; const s = v.slice(-k); return s.reduce((x, y) => x + y, 0) / s.length; };
+    droughtLayer = L.layerGroup();
+    let dry = 0;
+    arr.forEach((d, i) => {
+      const c = DROUGHT_POINTS[i]; if (!c || !d) return;
+      const h = d.hourly || {};
+      const sm07 = avgTail(h.soil_moisture_0_to_7cm, 24), sm728 = avgTail(h.soil_moisture_7_to_28cm, 24);
+      const sm = sm07 != null && sm728 != null ? (sm07 + sm728) / 2 : (sm07 != null ? sm07 : sm728);
+      if (sm == null) return;
+      const rain14 = d.daily && d.daily.precipitation_sum ? d.daily.precipitation_sum.reduce((a, b) => a + (b || 0), 0) : 0;
+      let level = null, color = null;
+      if (sm < 0.09 && rain14 < 12) { level = 'Severe dry'; color = '#8a4b1a'; }
+      else if (sm < 0.15 && rain14 < 35) { level = 'Dry stress'; color = '#c98a3a'; }
+      if (!level) return;
+      dry++;
+      L.circleMarker([c.lat, c.lng], { radius: level === 'Severe dry' ? 10 : 8, weight: 1, color: '#0b0f14', fillColor: color, fillOpacity: .5 })
+        .bindPopup(`<b>🏜️ ${esc(c.n)}</b><br><span style="color:${color};font-weight:700">${level}</span><br>Soil moisture ~${Math.round(sm * 100)}% · ${Math.round(rain14)}mm rain in 14 days<br><small>Approximate (soil moisture + rainfall, Open-Meteo) · official: IMD</small>`)
+        .addTo(droughtLayer);
+    });
+    droughtLayer.addTo(map);
+    if (btn) btn.classList.add('on');
+    toast(dry ? `Drought-stress layer on - ${dry} area(s) dry` : 'No notable dry-stress areas right now');
+  } catch { toast('Could not load drought data'); }
+  return false;
+};
+
 const dot = (lat, lng, color, popup, radius = 7, unconfirmed = false) => L.circleMarker([lat, lng], {
   radius, weight: unconfirmed ? 2 : 1.5, color: unconfirmed ? color : '#0b0f14',
   fillColor: color, fillOpacity: unconfirmed ? .3 : .9, dashArray: unconfirmed ? '2 3' : null,

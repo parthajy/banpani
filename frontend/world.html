@@ -56,7 +56,7 @@
       border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--muted);box-shadow:var(--shadow);line-height:1.5}
     .wbeta a{color:var(--accent);font-weight:600}
     .wcount{color:var(--text);font-weight:700}
-    @media(max-width:860px){ .wtitle{display:none} header .hdr-primary .t{display:none} header{gap:7px;padding:8px 10px} .wmast{padding:6px 10px;font-size:11.5px} #wfilters{top:92px} .leaflet-top.leaflet-left{top:46px} .wbeta{font-size:11px;padding:8px 12px} .wsearch-wrap{width:auto;left:48px;right:104px;transform:none;max-width:none} header .logo{margin-right:auto} .wexpand,.wrain,.wheat{width:36px;height:36px} }
+    @media(max-width:860px){ .wtitle{display:none} header .hdr-primary .t{display:none} header{gap:7px;padding:8px 10px} .wmast{padding:6px 10px;font-size:11.5px} #wfilters{top:92px} .leaflet-top.leaflet-left{top:46px} .wbeta{font-size:11px;padding:8px 12px} .wsearch-wrap{width:auto;left:48px;right:104px;transform:none;max-width:none} header .logo{margin-right:auto} .wexpand{width:36px;height:36px} .wlayers{top:150px;padding:6px 5px;gap:5px} .wlbtn{width:34px;height:34px;font-size:15px} }
     /* report-from-anywhere */
     .wfab{position:absolute;right:16px;bottom:74px;z-index:650;background:var(--accent);color:#fff;border:none;border-radius:26px;
       padding:13px 18px;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
@@ -64,14 +64,16 @@
     .wexpand{position:absolute;right:12px;top:104px;z-index:640;width:40px;height:40px;border-radius:9px;
       background:var(--panel);border:1px solid var(--line);color:#fff;font-size:17px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
     .wexpand:active{transform:scale(.94)}
-    .wrain{position:absolute;right:12px;top:150px;z-index:640;width:40px;height:40px;border-radius:9px;
-      background:var(--panel);border:1px solid var(--line);font-size:17px;cursor:pointer;box-shadow:var(--shadow)}
-    .wrain.on{border-color:#4fa3ff;background:#183050}
-    .wrain:active{transform:scale(.94)}
-    .wheat{position:absolute;right:12px;top:196px;z-index:640;width:40px;height:40px;border-radius:9px;
-      background:var(--panel);border:1px solid var(--line);font-size:17px;cursor:pointer;box-shadow:var(--shadow)}
-    .wheat.on{border-color:#ff8a3d;background:#3a2413}
-    .wheat:active{transform:scale(.94)}
+    /* live data-layer toggles, grouped so it's clear they're live feeds (rain / heat / flood / drought) */
+    .wlayers{position:absolute;right:12px;top:150px;z-index:640;display:flex;flex-direction:column;align-items:center;gap:6px;
+      background:rgba(15,20,25,.55);border:1px solid var(--line);border-radius:13px;padding:7px 6px;box-shadow:var(--shadow)}
+    .wlayers-h{font-size:8.5px;letter-spacing:1.5px;color:var(--muted);font-weight:800}
+    .wlbtn{width:38px;height:38px;border-radius:9px;background:var(--panel);border:1px solid var(--line);font-size:16px;cursor:pointer;line-height:1}
+    .wlbtn:active{transform:scale(.94)}
+    #wrainBtn.on{border-color:#4fa3ff;background:#183050}
+    #wheatBtn.on{border-color:#ff8a3d;background:#3a2413}
+    #wriskBtn.on{border-color:#ff5a5a;background:#3a1616}
+    #wdroughtBtn.on{border-color:#c98a3a;background:#332413}
     .whint{position:absolute;top:104px;left:50%;transform:translateX(-50%);z-index:640;background:var(--accent);color:#fff;
       padding:8px 15px;border-radius:20px;font-size:13px;font-weight:600;display:none;box-shadow:var(--shadow)}
     .whint.show{display:block}
@@ -154,7 +156,7 @@
   <div id="wfilters"></div>
 
   <div class="wbeta" id="wbeta">
-    🇮🇳 <b>India disaster map.</b> <span class="wcount" id="wc">…</span> live markers. <b>Pulsing dots</b> = active responses; dashed rings = official alerts (GDACS). Tap a dot to open its relief map.
+    🇮🇳 <b>India disaster map.</b> <span class="wcount" id="wc">…</span> live markers. <b>Pulsing dots</b> = active responses; dashed rings = official alerts (GDACS). Tap the <b>LIVE</b> panel (right) for rain, heatwave, river flood-risk and drought layers. Tap a dot to open its relief map.
     <a href="/volunteers.html">🙋 Become a volunteer →</a>
     <span style="opacity:.55">· © OpenStreetMap · CARTO · open source (MIT)</span>
   </div>
@@ -162,8 +164,13 @@
   <div class="wonboard" id="wonboard" hidden>👉 New here? Tap <b>＋ Report</b> below, then drop a pin where a disaster is happening.<button id="wobX" aria-label="Dismiss">✕</button></div>
 
   <button class="wexpand" id="wexpandBtn" title="Full screen">⛶</button>
-  <button class="wrain" id="wrainBtn" title="Live rain radar" onclick="return toggleRain()">🌧</button>
-  <button class="wheat" id="wheatBtn" title="Heatwave alerts (live)" onclick="return toggleHeat()">🌡</button>
+  <div class="wlayers" id="wlayers">
+    <div class="wlayers-h">LIVE</div>
+    <button class="wlbtn" id="wrainBtn" title="Rain radar (live)" onclick="return toggleRain()">🌧</button>
+    <button class="wlbtn" id="wheatBtn" title="Heatwave alerts (live)" onclick="return toggleHeat()">🌡</button>
+    <button class="wlbtn" id="wriskBtn" title="Flood risk on rivers (live)" onclick="return toggleFloodRisk()">🌊</button>
+    <button class="wlbtn" id="wdroughtBtn" title="Drought stress (live)" onclick="return toggleDrought()">🏜️</button>
+  </div>
   <button class="wfab" id="wreportBtn">＋ Report</button>
   <div class="whint" id="whint">Tap the map where it’s happening 📍</div>
 
