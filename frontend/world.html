@@ -35,8 +35,19 @@
     .wsearch-wrap input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:20px;padding:8px 15px;font-size:14px;font-family:inherit}
     .wsearch-wrap input:focus{outline:none;border-color:var(--accent)}
     .wsearch-wrap .searchresults{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:700}
-    #wfilters{position:absolute;top:58px;left:10px;right:10px;z-index:600;display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;justify-content:safe center}
+    /* masthead: the named active responses, a slim bar under the header */
+    .wmast{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+      background:var(--panel);border-bottom:1px solid var(--line);padding:7px 14px;font-size:12.5px;white-space:nowrap}
+    .wmast::-webkit-scrollbar{display:none}
+    .wmast-label{color:var(--muted);font-weight:600;flex:0 0 auto}
+    .wmast a{flex:0 0 auto;color:var(--text);font-weight:700;text-decoration:none;background:var(--panel2);
+      border:1px solid var(--line);border-radius:16px;padding:4px 12px}
+    .wmast a:hover{border-color:var(--accent);color:var(--accent)}
+    #wfilters{position:absolute;top:98px;left:10px;right:10px;z-index:600;display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;justify-content:safe center}
     #wfilters::-webkit-scrollbar{display:none}
+    /* keep Leaflet's zoom control clear of the filter/masthead overlays */
+    .leaflet-top.leaflet-left{top:52px}
+    .leaflet-top.leaflet-left .leaflet-control-zoom{margin-left:12px}
     .wchip{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:20px;
       padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;opacity:.55}
     .wchip::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--c)}
@@ -45,7 +56,7 @@
       border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--muted);box-shadow:var(--shadow);line-height:1.5}
     .wbeta a{color:var(--accent);font-weight:600}
     .wcount{color:var(--text);font-weight:700}
-    @media(max-width:860px){ .wtitle{display:none} header .hdr-primary .t{display:none} header{gap:7px;padding:8px 10px} #wfilters{top:56px} .wbeta{font-size:11px;padding:8px 12px} .wsearch-wrap{width:auto;left:48px;right:104px;transform:none;max-width:none} header .logo{margin-right:auto} .wexpand,.wrain{width:36px;height:36px} }
+    @media(max-width:860px){ .wtitle{display:none} header .hdr-primary .t{display:none} header{gap:7px;padding:8px 10px} .wmast{padding:6px 10px;font-size:11.5px} #wfilters{top:92px} .leaflet-top.leaflet-left{top:46px} .wbeta{font-size:11px;padding:8px 12px} .wsearch-wrap{width:auto;left:48px;right:104px;transform:none;max-width:none} header .logo{margin-right:auto} .wexpand,.wrain,.wheat{width:36px;height:36px} }
     /* report-from-anywhere */
     .wfab{position:absolute;right:16px;bottom:74px;z-index:650;background:var(--accent);color:#fff;border:none;border-radius:26px;
       padding:13px 18px;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
@@ -57,6 +68,10 @@
       background:var(--panel);border:1px solid var(--line);font-size:17px;cursor:pointer;box-shadow:var(--shadow)}
     .wrain.on{border-color:#4fa3ff;background:#183050}
     .wrain:active{transform:scale(.94)}
+    .wheat{position:absolute;right:12px;top:196px;z-index:640;width:40px;height:40px;border-radius:9px;
+      background:var(--panel);border:1px solid var(--line);font-size:17px;cursor:pointer;box-shadow:var(--shadow)}
+    .wheat.on{border-color:#ff8a3d;background:#3a2413}
+    .wheat:active{transform:scale(.94)}
     .whint{position:absolute;top:104px;left:50%;transform:translateX(-50%);z-index:640;background:var(--accent);color:#fff;
       padding:8px 15px;border-radius:20px;font-size:13px;font-weight:600;display:none;box-shadow:var(--shadow)}
     .whint.show{display:block}
@@ -113,12 +128,10 @@
     <button class="hamburger" id="wmenuBtn" aria-label="Menu" aria-haspopup="true">☰</button>
     <div class="hdr-actions" id="wmenu">
       <button class="link ic-btn" id="wshareBtn"><span class="e">↗</span><span class="t">Share</span></button>
-      <a class="link ic-btn" id="wnewsBtn" href="https://news.google.com/search?q=india%20flood%20OR%20cyclone%20OR%20earthquake%20disaster&hl=en-IN&gl=IN" target="_blank" rel="noopener"><span class="e">📰</span><span class="t">News</span></a>
       <a class="link ic-btn" href="/archive"><span class="e">🧾</span><span class="t">Activity</span></a>
       <a class="link ic-btn" href="mailto:parthajy@gmail.com?subject=Banpani"><span class="e">✉</span><span class="t">Contact</span></a>
       <button class="link ic-btn" id="wguideBtn"><span class="e">▶</span><span class="t">Guide</span></button>
       <a class="link ic-btn" href="/volunteers.html"><span class="e">🙋</span><span class="t">Volunteer</span></a>
-      <a class="link ic-btn" href="/e/assam-floods-2026"><span class="e">🆘</span><span class="t">Assam floods</span></a>
       <a class="link ic-btn" href="/how-it-works"><span class="e">📘</span><span class="t">How it works</span></a>
       <a class="link ic-btn" href="/about.html"><span class="e">ℹ️</span><span class="t">About</span></a>
       <a class="link ic-btn" href="/press"><span class="e">🗞️</span><span class="t">Press</span></a>
@@ -128,6 +141,13 @@
       <div style="opacity:.55;font-size:11px;padding:9px 12px;line-height:1.4">Made by Partha Borthakur and volunteers</div>
     </div>
   </header>
+
+  <!-- Masthead: the named, actively-coordinated responses in India. Always one tap away. -->
+  <div class="wmast" id="wmast">
+    <span class="wmast-label">🆘 Active responses:</span>
+    <a href="/e/assam-floods-2026">Assam floods</a>
+    <a href="/e/odisha-flood-2026">Odisha floods</a>
+  </div>
 
   <div id="wmap"></div>
 
@@ -143,6 +163,7 @@
 
   <button class="wexpand" id="wexpandBtn" title="Full screen">⛶</button>
   <button class="wrain" id="wrainBtn" title="Live rain radar" onclick="return toggleRain()">🌧</button>
+  <button class="wheat" id="wheatBtn" title="Heatwave alerts (live)" onclick="return toggleHeat()">🌡</button>
   <button class="wfab" id="wreportBtn">＋ Report</button>
   <div class="whint" id="whint">Tap the map where it’s happening 📍</div>
 

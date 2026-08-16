@@ -17,15 +17,13 @@ let toastT; function toast(m) { const t = $('wtoast'); t.textContent = m; t.clas
 
 // India-focused front door. The world is visible but greyed out; India is big and FIXED (unzoomable),
 // filling the view on both mobile and desktop. Tapping a dot opens that response's own zoomable map.
+// Zoomable, but leashed to India: minZoom keeps India filling the view, maxBounds stops it drifting off
+// the country. This lets people search a town, zoom in, and drop a precise pin - while staying India-only.
 const map = L.map('wmap', { zoomControl: true, attributionControl: false, zoomSnap: 0.25,
-  maxBoundsViscosity: 1.0 });
+  minZoom: 4, maxZoom: 16, maxBounds: L.latLngBounds([[6.0, 67.0], [37.6, 98.0]]).pad(0.1), maxBoundsViscosity: 1.0 });
 const FIT_INDIA = [[6.6, 68.0], [35.6, 97.4]];
 function fitIndia() { map.fitBounds(FIT_INDIA, { padding: [10, 10] }); }
 fitIndia();
-// Zoomable, but leashed to India: can't zoom out past "India fills the view", can't drag off the country.
-// This lets people search a town, zoom in, and drop a precise pin - while the map stays India-only.
-map.setMinZoom(map.getZoom());
-map.setMaxBounds(L.latLngBounds(FIT_INDIA).pad(0.15));
 window.addEventListener('resize', () => { clearTimeout(window._wfit); window._wfit = setTimeout(() => map.invalidateSize(), 150); });
 if (window.attachFullscreen) window.attachFullscreen(document.getElementById('wexpandBtn'), document.documentElement, map);   // full-screen the India map
 C.addBasemap(map);   // CARTO Dark Matter, auto-falls back to OSM if it ever fails
@@ -58,6 +56,50 @@ window.toggleRain = async function () {
     if (btn) btn.classList.add('on');
     toast('Live rain radar on - blue/green = rain, red = intense');
   } catch { toast('Could not load rain radar'); }
+  return false;
+};
+
+// Live heatwave alerts: today's forecast max temperature for major Indian cities (Open-Meteo, free, no key).
+// Cities at 40C+ glow orange->red, so the gateway map shows where India is baking right now.
+let heatLayer = null;
+const HEAT_CITIES = [
+  { n: 'Delhi', lat: 28.61, lng: 77.21 }, { n: 'Mumbai', lat: 19.07, lng: 72.87 }, { n: 'Kolkata', lat: 22.57, lng: 88.36 },
+  { n: 'Chennai', lat: 13.08, lng: 80.27 }, { n: 'Bengaluru', lat: 12.97, lng: 77.59 }, { n: 'Hyderabad', lat: 17.38, lng: 78.48 },
+  { n: 'Ahmedabad', lat: 23.02, lng: 72.57 }, { n: 'Pune', lat: 18.52, lng: 73.85 }, { n: 'Jaipur', lat: 26.91, lng: 75.79 },
+  { n: 'Lucknow', lat: 26.85, lng: 80.95 }, { n: 'Kanpur', lat: 26.45, lng: 80.33 }, { n: 'Nagpur', lat: 21.15, lng: 79.09 },
+  { n: 'Patna', lat: 25.59, lng: 85.14 }, { n: 'Indore', lat: 22.72, lng: 75.86 }, { n: 'Bhopal', lat: 23.26, lng: 77.41 },
+  { n: 'Prayagraj', lat: 25.44, lng: 81.85 }, { n: 'Agra', lat: 27.18, lng: 78.01 }, { n: 'Varanasi', lat: 25.32, lng: 82.97 },
+  { n: 'Ranchi', lat: 23.34, lng: 85.31 }, { n: 'Raipur', lat: 21.25, lng: 81.63 }, { n: 'Guwahati', lat: 26.14, lng: 91.74 },
+  { n: 'Bhubaneswar', lat: 20.30, lng: 85.82 }, { n: 'Visakhapatnam', lat: 17.69, lng: 83.22 }, { n: 'Vijayawada', lat: 16.51, lng: 80.65 },
+  { n: 'Coimbatore', lat: 11.02, lng: 76.96 }, { n: 'Madurai', lat: 9.93, lng: 78.12 }, { n: 'Kochi', lat: 9.93, lng: 76.27 },
+  { n: 'Amritsar', lat: 31.63, lng: 74.87 }, { n: 'Ludhiana', lat: 30.90, lng: 75.86 }, { n: 'Jodhpur', lat: 26.24, lng: 73.02 },
+  { n: 'Bikaner', lat: 28.02, lng: 73.31 }, { n: 'Gwalior', lat: 26.22, lng: 78.18 }, { n: 'Jabalpur', lat: 23.18, lng: 79.99 },
+  { n: 'Surat', lat: 21.17, lng: 72.83 }, { n: 'Nashik', lat: 19.99, lng: 73.79 }, { n: 'Srinagar', lat: 34.08, lng: 74.80 },
+];
+window.toggleHeat = async function () {
+  const btn = $('wheatBtn');
+  if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; if (btn) btn.classList.remove('on'); return false; }
+  try {
+    const lats = HEAT_CITIES.map(c => c.lat).join(','), lngs = HEAT_CITIES.map(c => c.lng).join(',');
+    const data = await (await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lats + '&longitude=' + lngs + '&daily=temperature_2m_max&forecast_days=1&timezone=auto')).json();
+    const arr = Array.isArray(data) ? data : [data];
+    heatLayer = L.layerGroup();
+    let hot = 0;
+    arr.forEach((d, i) => {
+      const c = HEAT_CITIES[i]; if (!c) return;
+      const t = d && d.daily && d.daily.temperature_2m_max && d.daily.temperature_2m_max[0];
+      if (t == null || t < 40) return;
+      hot++;
+      const color = t >= 45 ? '#c81e1e' : t >= 42 ? '#f5551d' : '#f59e0b';
+      const level = t >= 45 ? 'Severe heatwave' : t >= 42 ? 'Heatwave' : 'Very hot';
+      L.circleMarker([c.lat, c.lng], { radius: 8 + Math.min(9, t - 40), weight: 1, color: '#0b0f14', fillColor: color, fillOpacity: .5 })
+        .bindPopup(`<b>🌡️ ${esc(c.n)}</b><br><b style="color:${color};font-size:15px">${Math.round(t)}°C</b> forecast today<br><span style="color:${color};font-weight:700">${level}</span><br><small>Source: Open-Meteo · official: IMD</small>`)
+        .addTo(heatLayer);
+    });
+    heatLayer.addTo(map);
+    if (btn) btn.classList.add('on');
+    toast(hot ? `Heat alerts on - ${hot} city(s) at 40°C+ today` : 'No 40°C+ heat in the forecast right now');
+  } catch { toast('Could not load heat data'); }
   return false;
 };
 
