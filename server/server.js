@@ -720,7 +720,7 @@ function sitemapXml() {
 // Homepage flip: set BANPANI_WORLD_HOME=1 (env) + restart to serve the WORLD map at `/` when
 // Assam winds down. Until then `/` stays the Assam relief map. Assam always lives at
 // /e/assam-floods-2026 too. One flag, reversible - the user's timing call.
-const PRETTY = { '/': process.env.BANPANI_WORLD_HOME === '1' ? '/world.html' : '/index.html', '/world': '/world.html', '/volunteers': '/volunteers.html',
+const PRETTY = { '/': '/world.html', '/world': '/world.html', '/india': '/world.html', '/volunteers': '/volunteers.html',
   '/press': '/press.html', '/how-it-works': '/how-it-works.html', '/manifesto': '/manifesto.html', '/contributors': '/contributors.html',
   '/archive': '/archive.html', '/admin': '/admin.html', '/parthajy/admin': '/admin.html' };   // one admin, reachable at either path
 async function serveStatic(req, res, pathname) {

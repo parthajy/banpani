@@ -15,8 +15,9 @@ function familyOf(type) { type = type || 'flood'; if (FAM[type]) return type; fo
 
 let toastT; function toast(m) { const t = $('wtoast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
 
-const map = L.map('wmap', { worldCopyJump: true, minZoom: C.WORLD.minZoom, maxZoom: 16, zoomControl: false })
-  .setView(C.WORLD.center, C.WORLD.zoom);
+const V = C.INDIA || C.WORLD;   // India-focused front door: bounded to India, not the whole globe
+const map = L.map('wmap', { minZoom: V.minZoom, maxZoom: 16, zoomControl: false, maxBounds: V.bounds, maxBoundsViscosity: 1.0 })
+  .setView(V.center, V.zoom);
 L.control.zoom({ position: 'topright' }).addTo(map);
 if (window.attachFullscreen) window.attachFullscreen(document.getElementById('wexpandBtn'), document.documentElement, map);   // expand the whole world map
 C.addBasemap(map);   // CARTO Dark Matter, auto-falls back to OSM if it ever fails
@@ -46,6 +47,13 @@ const dot = (lat, lng, color, popup, radius = 7, unconfirmed = false) => L.circl
   radius, weight: unconfirmed ? 2 : 1.5, color: unconfirmed ? color : '#0b0f14',
   fillColor: color, fillOpacity: unconfirmed ? .3 : .9, dashArray: unconfirmed ? '2 3' : null,
 }).bindPopup(popup);
+// Pulsing ring under an active response, in its disaster-family colour, so live crises draw the eye.
+const pulseMarker = (lat, lng, color) => L.marker([lat, lng], { interactive: false, zIndexOffset: -100,
+  icon: L.divIcon({ className: '', iconSize: [30, 30], iconAnchor: [15, 15], html: `<span class="pulse-ring" style="background:${color}"></span>` }) });
+const INDIA_B = V.bounds || [[6, 67], [37.6, 98]];
+const inIndia = (lat, lng) => lat != null && lng != null && lat >= INDIA_B[0][0] && lat <= INDIA_B[1][0] && lng >= INDIA_B[0][1] && lng <= INDIA_B[1][1];
+// These flagship responses live at their own URLs but are NOT shown on the India front door.
+const FOREIGN = new Set(['colombia-earthquake-2026', 'bangladesh-floods-2026']);
 
 function render() {
   group.clearLayers();
@@ -60,6 +68,7 @@ async function load() {
   try {
     const evs = (await (await fetch((C.API || '') + '/api/events')).json()).events || [];
     evs.forEach(ev => {
+      if (FOREIGN.has(ev.slug) || !inIndia(ev.lat, ev.lng)) return;   // India front door only
       const f = FAM[ev.family] || FAM.water;
       const radius = 6 + Math.min(16, Math.sqrt(ev.reports || 1) * 3.2);
       evBySlug[ev.slug] = { slug: ev.slug, title: ev.title, family: ev.family, emoji: f.emoji };
@@ -70,11 +79,13 @@ async function load() {
           ? `<br><span style="color:#c9a227;font-size:12px">⏳ Unconfirmed - needs a 2nd report or a confirmation to be verified.</span>` : '';
       const popup = `<b>${f.emoji} ${esc(ev.title)}</b><br>${ev.reports} report(s)${ev.confirmations ? ' · ' + ev.confirmations + ' confirmed' : ''}${note}<br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span><br><a href="/e/${ev.slug}" style="color:${f.color};font-weight:700">Open coordination page →</a><br><a href="#" onclick="return toggleSave('${esc(ev.slug)}',this)" style="color:#c9a227;font-size:12px">${sv ? '★ Saved' : '☆ Save'}</a> · <a href="#" onclick="return flagEvent('${esc(ev.slug)}')" style="color:#8a94a6;font-size:12px">⚑ Flag</a>`;
       pins.push({ marker: dot(ev.lat, ev.lng, f.color, popup, radius, ev.unconfirmed || dormant), family: ev.family });
+      if (!dormant && !ev.unconfirmed) pins.push({ marker: pulseMarker(ev.lat, ev.lng, f.color), family: ev.family });   // live response pulses
     });
   } catch {}
   try {
     const off = (await (await fetch((C.API || '') + '/api/official')).json()).official || [];
     off.forEach(o => {
+      if (!inIndia(o.lat, o.lng)) return;   // India front door only
       const f = FAM[o.family] || FAM.water;
       const m = L.circleMarker([o.lat, o.lng], { radius: 12, weight: 3, color: f.color, opacity: .95, fillColor: f.color, fillOpacity: .1, dashArray: '3 4' })
         .bindPopup(`<b>🛰️ ${esc(o.title)}</b><br><span style="color:${f.color};font-weight:700">${esc(f.label)}</span> · <b style="text-transform:capitalize">${esc(o.level)}</b> alert<br><small>Official signal - GDACS${o.country ? ' · ' + esc(o.country) : ''}</small><br><a href="${esc(o.url)}" target="_blank" rel="noopener">Official report →</a>`);

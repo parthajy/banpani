@@ -81,6 +81,8 @@ window.BANPANI = {
   // earthquakes) as they are made. If a family has no video, the tutorial shows text only.
   TUTORIAL_VIDEO: { water: '9LYnup1Mq1A' },
   WORLD: { center: [20, 60], zoom: 3, minZoom: 2 },
+  // Banpani is India-focused: the front-door map is bounded to India.
+  INDIA: { center: [22.8, 80.5], zoom: 5, minZoom: 4, bounds: [[6.0, 67.0], [37.6, 98.0]] },
 
   // Saved events - pure client-side bookmarks (localStorage, no account, nothing sent to the server).
   // Shared by the world map and the per-event page so ★ Save works from either side.

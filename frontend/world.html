@@ -3,24 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>Banpani - Live world disaster map</title>
-  <meta name="description" content="A live, community-run world map of disasters - floods, fires, storms and more. Report a disaster anywhere, find who needs help. No accounts, no login. Open source, owned by everyone." />
-  <link rel="canonical" href="https://banpani.org/world" />
+  <title>Banpani - Live India disaster map</title>
+  <meta name="description" content="A live, community-run India map of disasters - floods, fires, storms and more. Report a disaster anywhere in India, find who needs help. No accounts, no login. Open source, owned by everyone." />
+  <link rel="canonical" href="https://banpani.org/" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon.png" sizes="any" />
   <meta name="theme-color" content="#0f1419" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Banpani" />
-  <meta property="og:title" content="The world's disasters, coordinated by everyone - Banpani" />
-  <meta property="og:description" content="A live, community-run world map of floods, fires, storms and more. Report a disaster anywhere - no accounts, no login. Open source." />
-  <meta property="og:url" content="https://banpani.org/world" />
+  <meta property="og:title" content="India's disasters, coordinated by everyone - Banpani" />
+  <meta property="og:description" content="A live, community-run India map of floods, fires, storms and more. Report a disaster anywhere in India - no accounts, no login. Open source." />
+  <meta property="og:url" content="https://banpani.org/" />
   <meta property="og:image" content="https://banpani.org/og-world.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Banpani - live world disaster map" />
+  <meta property="og:image:alt" content="Banpani - live India disaster map" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="The world's disasters, coordinated by everyone - Banpani" />
-  <meta name="twitter:description" content="Live community world map of floods, fires, storms and more. Report anywhere, no accounts. Open source." />
+  <meta name="twitter:title" content="India's disasters, coordinated by everyone - Banpani" />
+  <meta name="twitter:description" content="Live community India map of floods, fires, storms and more. Report anywhere, no accounts. Open source." />
   <meta name="twitter:image" content="https://banpani.org/og-world.png" />
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -85,35 +85,41 @@
     .wsaved-item a{color:var(--text);font-weight:600;text-decoration:none;flex:1}
     .wsaved-item .rm{color:var(--muted);cursor:pointer;font-size:17px;background:none;border:none;line-height:1}
     .wsaved-empty{color:var(--muted);font-size:13px;padding:10px 2px;line-height:1.5}
+    .pulse-ring{display:block;width:30px;height:30px;border-radius:50%;opacity:.5;animation:wpulse 2.2s ease-out infinite}
+  @keyframes wpulse{0%{transform:scale(.35);opacity:.55}70%{opacity:.12}100%{transform:scale(1.95);opacity:0}}
   </style>
 </head>
 <body>
   <header>
     <img class="logo" src="favicon.png" alt="Banpani" width="28" height="28" />
-    <div><h1>Banpani <span style="color:var(--muted);font-weight:400;font-size:13px">· World map</span></h1></div>
+    <div><h1>Banpani <span style="color:var(--muted);font-weight:400;font-size:13px">· India</span></h1></div>
     <div class="spacer"></div>
     <a class="link ic-btn hdr-primary" href="/volunteers.html"><span class="e">🙋</span><span class="t">Volunteer</span></a>
     <a class="link ic-btn hdr-primary" href="#" id="wsavedBtn"><span class="e">★</span><span class="t">Saved</span></a>
     <button class="hamburger" id="wmenuBtn" aria-label="Menu" aria-haspopup="true">☰</button>
     <div class="hdr-actions" id="wmenu">
-      <a class="link ic-btn" href="/"><span class="e">🆘</span><span class="t">Assam relief map</span></a>
+      <a class="link ic-btn" href="/e/assam-floods-2026"><span class="e">🆘</span><span class="t">Assam floods</span></a>
+      <a class="link ic-btn" href="/how-it-works"><span class="e">📘</span><span class="t">How it works</span></a>
       <a class="link ic-btn" href="/about.html"><span class="e">ℹ️</span><span class="t">About</span></a>
+      <a class="link ic-btn" href="/manifesto"><span class="e">📜</span><span class="t">Manifesto</span></a>
+      <a class="link ic-btn" href="/contributors"><span class="e">🤝</span><span class="t">Contributors</span></a>
       <a class="link ic-btn" href="/privacy.html"><span class="e">🔒</span><span class="t">Privacy</span></a>
+      <div style="opacity:.55;font-size:11px;padding:9px 12px;line-height:1.4">Made by Partha Borthakur and volunteers</div>
     </div>
   </header>
 
   <div id="wmap"></div>
 
   <div class="searchbox" id="wsearchbox">
-    <input id="wsearch" type="search" autocomplete="off" placeholder="Search any place on Earth…" />
+    <input id="wsearch" type="search" autocomplete="off" placeholder="Search any place in India…" />
     <div class="searchresults" id="wresults"></div>
   </div>
 
   <div id="wfilters"></div>
 
   <div class="wbeta" id="wbeta">
-    🌍 <b>Beta.</b> <span class="wcount" id="wc">…</span> markers. Solid dots = <b>community reports</b>; dashed rings = <b>official alerts</b> (GDACS).
-    Report a disaster anywhere - no accounts. <a href="/volunteers.html">🙋 Become a volunteer →</a>
+    🇮🇳 <b>India disaster map.</b> <span class="wcount" id="wc">…</span> live markers. <b>Pulsing dots</b> = active responses; dashed rings = official alerts (GDACS). Tap a dot to open its relief map.
+    <a href="/volunteers.html">🙋 Become a volunteer →</a>
   </div>
 
   <button class="wexpand" id="wexpandBtn" title="Full screen">⛶</button>
