@@ -15,10 +15,14 @@ function familyOf(type) { type = type || 'flood'; if (FAM[type]) return type; fo
 
 let toastT; function toast(m) { const t = $('wtoast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
 
-const V = C.INDIA || C.WORLD;   // India-focused front door: bounded to India, not the whole globe
-const map = L.map('wmap', { minZoom: V.minZoom, maxZoom: 16, zoomControl: false, maxBounds: V.bounds, maxBoundsViscosity: 1.0, attributionControl: false })
-  .setView(V.center, V.zoom);
-L.control.zoom({ position: 'topright' }).addTo(map);
+// India-focused front door. The world is visible but greyed out; India is big and FIXED (unzoomable),
+// filling the view on both mobile and desktop. Tapping a dot opens that response's own zoomable map.
+const map = L.map('wmap', { zoomControl: false, attributionControl: false, scrollWheelZoom: false,
+  doubleClickZoom: false, touchZoom: false, boxZoom: false, keyboard: false, dragging: false, zoomSnap: 0.05 });
+const FIT_INDIA = [[6.6, 68.0], [35.6, 97.4]];
+function fitIndia() { map.fitBounds(FIT_INDIA, { padding: [10, 10] }); }
+fitIndia();
+window.addEventListener('resize', () => { clearTimeout(window._wfit); window._wfit = setTimeout(fitIndia, 150); });
 if (window.attachFullscreen) window.attachFullscreen(document.getElementById('wexpandBtn'), document.documentElement, map);   // full-screen the India map
 C.addBasemap(map);   // CARTO Dark Matter, auto-falls back to OSM if it ever fails
 // Spotlight India: grey out everything OUTSIDE India (a big rectangle with India cut out as a hole),
@@ -26,7 +30,10 @@ C.addBasemap(map);   // CARTO Dark Matter, auto-falls back to OSM if it ever fai
 fetch('data/india-outline.json').then(r => r.json()).then(rings => {
   const outer = [[-40, 30], [-40, 140], [60, 140], [60, 30]];              // [lat,lng] rect over the whole view
   const holes = rings.map(r => r.map(p => [p[1], p[0]]));                  // India rings, swapped to [lat,lng]
-  L.polygon([outer, ...holes], { stroke: false, fill: true, fillColor: '#cdd2d8', fillOpacity: 0.93, interactive: false }).addTo(map);
+  // Soft grey so the world's countries stay visible underneath but read as out-of-scope; India (the
+  // hole) shows the full dark basemap and pops. A faint outline frames India.
+  L.polygon([outer, ...holes], { stroke: false, fill: true, fillColor: '#aeb6bf', fillOpacity: 0.6, interactive: false }).addTo(map);
+  holes.forEach(h => L.polyline(h, { color: '#5b6470', weight: 1, opacity: 0.6, interactive: false }).addTo(map));
 }).catch(() => {});
 
 const active = new Set(Object.keys(FAM));   // all families visible by default
@@ -123,13 +130,13 @@ $('wsearch').oninput = () => {
     box.innerHTML = list.map(x => `<div class="sr" data-lat="${x.lat}" data-lng="${x.lng}" data-name="${esc(x.name)}">🔎 ${esc(x.name.split(',')[0])}<div class="sub">${esc(x.name)}</div></div>`).join('');
     box.classList.add('show');
     box.querySelectorAll('.sr').forEach(el => el.onclick = () => {
-      map.flyTo([+el.dataset.lat, +el.dataset.lng], 9);
-      if (smarker) smarker.remove(); smarker = L.marker([+el.dataset.lat, +el.dataset.lng]).addTo(map);
+      // The India map is fixed, so don't move it - just mark the searched place (India fills the view).
+      if (smarker) smarker.remove(); smarker = L.marker([+el.dataset.lat, +el.dataset.lng]).addTo(map).bindPopup(esc(el.dataset.name || 'Selected place')).openPopup();
       box.classList.remove('show'); $('wsearch').value = el.dataset.name || '';
     });
   }, 300);
 };
-document.addEventListener('click', e => { if (!$('wsearchbox').contains(e.target)) $('wresults').classList.remove('show'); });
+document.addEventListener('click', e => { if (!e.target.closest('.wsearch-wrap')) $('wresults').classList.remove('show'); });
 
 /* ---------------- report a disaster from anywhere ---------------- */
 let placing = false, repMarker = null, repFam = null, repNeeds = new Set();

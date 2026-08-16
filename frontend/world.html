@@ -28,8 +28,12 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
   <style>
     #wmap{flex:1;min-height:0;background:#0b0f14;z-index:1}
-    #wsearchbox{top:60px}
-    #wfilters{position:absolute;top:108px;left:10px;right:10px;z-index:600;display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;justify-content:safe center}
+    .wtitle h1{font-size:16px;margin:0;white-space:nowrap}
+    .wsearch-wrap{flex:1;position:relative;max-width:460px;margin:0 6px}
+    .wsearch-wrap input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:20px;padding:8px 15px;font-size:14px;font-family:inherit}
+    .wsearch-wrap input:focus{outline:none;border-color:var(--accent)}
+    .wsearch-wrap .searchresults{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:700}
+    #wfilters{position:absolute;top:58px;left:10px;right:10px;z-index:600;display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;justify-content:safe center}
     #wfilters::-webkit-scrollbar{display:none}
     .wchip{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:20px;
       padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;opacity:.55}
@@ -39,19 +43,19 @@
       border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--muted);box-shadow:var(--shadow);line-height:1.5}
     .wbeta a{color:var(--accent);font-weight:600}
     .wcount{color:var(--text);font-weight:700}
-    @media(max-width:860px){ #wfilters{top:104px} .wbeta{font-size:11.5px} }
+    @media(max-width:860px){ .wtitle{display:none} header .hdr-primary .t{display:none} header{gap:7px;padding:8px 10px} #wfilters{top:54px} .wbeta{font-size:11px;padding:8px 12px} .wsearch-wrap{max-width:none;margin:0 4px} .wexpand,.wrain{width:36px;height:36px} }
     /* report-from-anywhere */
     .wfab{position:absolute;right:16px;bottom:74px;z-index:650;background:var(--accent);color:#fff;border:none;border-radius:26px;
       padding:13px 18px;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
     .wfab:active{transform:scale(.95)}
-    .wexpand{position:absolute;right:12px;top:150px;z-index:640;width:40px;height:40px;border-radius:9px;
+    .wexpand{position:absolute;right:12px;top:104px;z-index:640;width:40px;height:40px;border-radius:9px;
       background:var(--panel);border:1px solid var(--line);color:#fff;font-size:17px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
     .wexpand:active{transform:scale(.94)}
-    .wrain{position:absolute;right:12px;top:196px;z-index:640;width:40px;height:40px;border-radius:9px;
+    .wrain{position:absolute;right:12px;top:150px;z-index:640;width:40px;height:40px;border-radius:9px;
       background:var(--panel);border:1px solid var(--line);font-size:17px;cursor:pointer;box-shadow:var(--shadow)}
     .wrain.on{border-color:#4fa3ff;background:#183050}
     .wrain:active{transform:scale(.94)}
-    .whint{position:absolute;top:150px;left:50%;transform:translateX(-50%);z-index:640;background:var(--accent);color:#fff;
+    .whint{position:absolute;top:104px;left:50%;transform:translateX(-50%);z-index:640;background:var(--accent);color:#fff;
       padding:8px 15px;border-radius:20px;font-size:13px;font-weight:600;display:none;box-shadow:var(--shadow)}
     .whint.show{display:block}
     .wreport{position:fixed;left:0;right:0;bottom:0;z-index:1000;max-width:520px;margin:0 auto;background:var(--panel);
@@ -97,8 +101,11 @@
 <body>
   <header>
     <img class="logo" src="favicon.png" alt="Banpani" width="28" height="28" />
-    <div><h1>Banpani <span style="color:var(--muted);font-weight:400;font-size:13px">· India</span></h1></div>
-    <div class="spacer"></div>
+    <div class="wtitle"><h1>Banpani <span style="color:var(--muted);font-weight:400;font-size:13px">· India</span></h1></div>
+    <div class="wsearch-wrap">
+      <input id="wsearch" type="search" autocomplete="off" placeholder="Search a place in India…" />
+      <div class="searchresults" id="wresults"></div>
+    </div>
     <a class="link ic-btn hdr-primary" href="/volunteers.html"><span class="e">🙋</span><span class="t">Volunteer</span></a>
     <a class="link ic-btn hdr-primary" href="#" id="wsavedBtn"><span class="e">★</span><span class="t">Saved</span></a>
     <button class="hamburger" id="wmenuBtn" aria-label="Menu" aria-haspopup="true">☰</button>
@@ -114,11 +121,6 @@
   </header>
 
   <div id="wmap"></div>
-
-  <div class="searchbox" id="wsearchbox">
-    <input id="wsearch" type="search" autocomplete="off" placeholder="Search any place in India…" />
-    <div class="searchresults" id="wresults"></div>
-  </div>
 
   <div id="wfilters"></div>
 
