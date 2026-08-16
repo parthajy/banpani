@@ -64,7 +64,7 @@ const dot = (lat, lng, color, popup, radius = 7, unconfirmed = false) => L.circl
 // Pulsing ring under an active response, in its disaster-family colour, so live crises draw the eye.
 const pulseMarker = (lat, lng, color) => L.marker([lat, lng], { interactive: false, zIndexOffset: -100,
   icon: L.divIcon({ className: '', iconSize: [30, 30], iconAnchor: [15, 15], html: `<span class="pulse-ring" style="background:${color}"></span>` }) });
-const INDIA_B = V.bounds || [[6, 67], [37.6, 98]];
+const INDIA_B = (C.INDIA && C.INDIA.bounds) || [[6, 67], [37.6, 98]];
 const inIndia = (lat, lng) => lat != null && lng != null && lat >= INDIA_B[0][0] && lat <= INDIA_B[1][0] && lng >= INDIA_B[0][1] && lng <= INDIA_B[1][1];
 // These flagship responses live at their own URLs but are NOT shown on the India front door.
 const FOREIGN = new Set(['colombia-earthquake-2026', 'bangladesh-floods-2026']);

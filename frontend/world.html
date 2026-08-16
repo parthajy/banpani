@@ -28,8 +28,10 @@
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-VHTJ828EM6');</script>
   <style>
     #wmap{flex:1;min-height:0;background:#0b0f14;z-index:1}
+    .wtitle{flex:1}
     .wtitle h1{font-size:16px;margin:0;white-space:nowrap}
-    .wsearch-wrap{flex:1;position:relative;max-width:460px;margin:0 6px}
+    header{position:relative}
+    .wsearch-wrap{position:absolute;left:50%;transform:translateX(-50%);width:42vw;max-width:460px;z-index:5}
     .wsearch-wrap input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:20px;padding:8px 15px;font-size:14px;font-family:inherit}
     .wsearch-wrap input:focus{outline:none;border-color:var(--accent)}
     .wsearch-wrap .searchresults{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:700}
@@ -43,7 +45,7 @@
       border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--muted);box-shadow:var(--shadow);line-height:1.5}
     .wbeta a{color:var(--accent);font-weight:600}
     .wcount{color:var(--text);font-weight:700}
-    @media(max-width:860px){ .wtitle{display:none} header .hdr-primary .t{display:none} header{gap:7px;padding:8px 10px} #wfilters{top:54px} .wbeta{font-size:11px;padding:8px 12px} .wsearch-wrap{max-width:none;margin:0 4px} .wexpand,.wrain{width:36px;height:36px} }
+    @media(max-width:860px){ .wtitle{display:none} header .hdr-primary .t{display:none} header{gap:7px;padding:8px 10px} #wfilters{top:56px} .wbeta{font-size:11px;padding:8px 12px} .wsearch-wrap{width:auto;left:48px;right:104px;transform:none;max-width:none} header .logo{margin-right:auto} .wexpand,.wrain{width:36px;height:36px} }
     /* report-from-anywhere */
     .wfab{position:absolute;right:16px;bottom:74px;z-index:650;background:var(--accent);color:#fff;border:none;border-radius:26px;
       padding:13px 18px;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
