@@ -17,12 +17,16 @@ let toastT; function toast(m) { const t = $('wtoast'); t.textContent = m; t.clas
 
 // India-focused front door. The world is visible but greyed out; India is big and FIXED (unzoomable),
 // filling the view on both mobile and desktop. Tapping a dot opens that response's own zoomable map.
-const map = L.map('wmap', { zoomControl: false, attributionControl: false, scrollWheelZoom: false,
-  doubleClickZoom: false, touchZoom: false, boxZoom: false, keyboard: false, dragging: false, zoomSnap: 0.05 });
+const map = L.map('wmap', { zoomControl: true, attributionControl: false, zoomSnap: 0.25,
+  maxBoundsViscosity: 1.0 });
 const FIT_INDIA = [[6.6, 68.0], [35.6, 97.4]];
 function fitIndia() { map.fitBounds(FIT_INDIA, { padding: [10, 10] }); }
 fitIndia();
-window.addEventListener('resize', () => { clearTimeout(window._wfit); window._wfit = setTimeout(fitIndia, 150); });
+// Zoomable, but leashed to India: can't zoom out past "India fills the view", can't drag off the country.
+// This lets people search a town, zoom in, and drop a precise pin - while the map stays India-only.
+map.setMinZoom(map.getZoom());
+map.setMaxBounds(L.latLngBounds(FIT_INDIA).pad(0.15));
+window.addEventListener('resize', () => { clearTimeout(window._wfit); window._wfit = setTimeout(() => map.invalidateSize(), 150); });
 if (window.attachFullscreen) window.attachFullscreen(document.getElementById('wexpandBtn'), document.documentElement, map);   // full-screen the India map
 C.addBasemap(map);   // CARTO Dark Matter, auto-falls back to OSM if it ever fails
 // Spotlight India: grey out everything OUTSIDE India (a big rectangle with India cut out as a hole),
@@ -130,8 +134,11 @@ $('wsearch').oninput = () => {
     box.innerHTML = list.map(x => `<div class="sr" data-lat="${x.lat}" data-lng="${x.lng}" data-name="${esc(x.name)}">🔎 ${esc(x.name.split(',')[0])}<div class="sub">${esc(x.name)}</div></div>`).join('');
     box.classList.add('show');
     box.querySelectorAll('.sr').forEach(el => el.onclick = () => {
-      // The India map is fixed, so don't move it - just mark the searched place (India fills the view).
-      if (smarker) smarker.remove(); smarker = L.marker([+el.dataset.lat, +el.dataset.lng]).addTo(map).bindPopup(esc(el.dataset.name || 'Selected place')).openPopup();
+      // Zoom to the searched place so people can drop a precise pin there (search Jorhat -> zoom -> Report).
+      const lat = +el.dataset.lat, lng = +el.dataset.lng;
+      if (smarker) smarker.remove();
+      smarker = L.marker([lat, lng]).addTo(map).bindPopup(esc(el.dataset.name || 'Selected place') + '<br><small>Tap ＋ Report to drop a pin here</small>').openPopup();
+      map.flyTo([lat, lng], 11, { duration: 0.8 });
       box.classList.remove('show'); $('wsearch').value = el.dataset.name || '';
     });
   }, 300);
@@ -241,5 +248,22 @@ window.reopenEvent = async function (slug) {
   m.addEventListener('click', () => m.classList.remove('show'));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') m.classList.remove('show'); });
 })();
+
+// Share the India map (native share sheet, or copy the link as a fallback).
+const wshare = $('wshareBtn');
+if (wshare) wshare.onclick = async () => {
+  const url = location.origin + '/';
+  const text = 'Banpani - live India disaster map. See who needs help and where nobody has reached: ' + url;
+  try {
+    if (navigator.share) { await navigator.share({ title: 'Banpani - India disaster map', text, url }); return; }
+    await navigator.clipboard.writeText(url); toast('Link copied - share it anywhere');
+  } catch {}
+};
+// Guide: open the how-to video (defaults to the flood tutorial).
+const wguide = $('wguideBtn');
+if (wguide) wguide.onclick = () => {
+  const id = (C.TUTORIAL_VIDEO && C.TUTORIAL_VIDEO.water) || '';
+  window.open(id ? 'https://www.youtube.com/watch?v=' + id : '/how-it-works', '_blank', 'noopener');
+};
 
 load();
