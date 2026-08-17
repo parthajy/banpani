@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>India disaster tracker · Banpani</title>
-  <meta name="description" content="A live, filterable tracker of disasters across India - floods, earthquakes, cyclones, storms and more, by state and disaster type. Community needs plus official and modelled hazard signals. Automated, open data." />
+  <meta name="description" content="A live, filterable tracker of disasters across India - floods, earthquakes, cyclones, heatwaves, drought, landslides, poor air and more, by state and district. Community needs plus official and modelled hazard signals. Automated, open data." />
   <link rel="canonical" href="https://banpani.org/status" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon.png" sizes="any" />
@@ -13,11 +13,11 @@
   <style>
     body{overflow:auto}
     .swrap{max-width:1080px;margin:0 auto;padding:14px 16px 60px}
-    header.shead{display:flex;align-items:center;gap:10px;padding:11px 16px;background:linear-gradient(180deg,#141b23,#10161d);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+    header.shead{display:flex;align-items:center;gap:10px;padding:11px 16px;background:linear-gradient(180deg,#141b23,#10161d);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
     header.shead .logo{width:28px;height:28px;border-radius:7px}
     header.shead h1{font-size:16px;margin:0;font-weight:800;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    header.shead a{color:var(--text);text-decoration:none;font-weight:700;font-size:13px;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:6px 12px;white-space:nowrap}
-    header.shead a.cta{background:var(--accent);border-color:var(--accent);color:#fff}
+    header.shead a.cta{color:#fff;text-decoration:none;font-weight:700;font-size:13px;background:var(--accent);border:1px solid var(--accent);border-radius:16px;padding:6px 12px;white-space:nowrap}
+    header.shead .hamburger{display:flex}
     .sintro{color:var(--muted);font-size:13px;line-height:1.5;margin:14px 2px 4px}
     .supd{color:var(--muted);font-size:12px;margin:8px 2px 14px}
     .supd b{color:var(--text)}
@@ -26,17 +26,15 @@
     .scard .n{font-size:25px;font-weight:800;line-height:1.1}
     .scard .l{color:var(--muted);font-size:12px;margin-top:3px}
     .scard.alert .n{color:#e11d1d}
-    /* filters */
-    .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;position:sticky;top:52px;z-index:9;
+    .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;position:sticky;top:53px;z-index:15;
       background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line)}
     .fam{display:flex;flex-wrap:wrap;gap:6px}
     .fchip{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:18px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
     .fchip.on{color:var(--text);border-color:var(--c,var(--accent));background:var(--panel2)}
     .fchip .dot{width:8px;height:8px;border-radius:50%;background:var(--c,#888)}
-    .fspace{flex:1}
-    .filters select,.filters input{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:16px;padding:8px 12px;font-size:13px;font-family:inherit}
-    .filters input{min-width:150px}
-    /* signal rows */
+    .fspace{flex:1;min-width:8px}
+    .filters select,.filters input{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:16px;padding:8px 12px;font-size:13px;font-family:inherit;max-width:46vw}
+    .filters input{min-width:130px}
     .sigs{display:flex;flex-direction:column;gap:8px}
     .sig{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px;display:flex;gap:11px;align-items:flex-start}
     .sig .em{font-size:20px;line-height:1.2;flex:0 0 auto}
@@ -53,18 +51,30 @@
     .badge.info{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
     .sempty{color:var(--muted);font-size:14px;padding:34px 4px;text-align:center}
     .sfoot{color:var(--muted);font-size:11.5px;line-height:1.55;margin-top:24px;padding-top:14px;border-top:1px solid var(--line)}
-    @media(max-width:560px){ header.shead h1{font-size:14px} .filters{top:50px} .fspace{flex-basis:100%;height:0} }
+    @media(max-width:560px){ header.shead h1{font-size:14px} .filters{top:51px} .fspace{flex-basis:100%;height:0} .filters select,.filters input{max-width:none;flex:1} }
   </style>
 </head>
 <body>
   <header class="shead">
     <img class="logo" src="favicon.png" alt="Banpani" />
     <h1>India disaster tracker</h1>
-    <a href="/">🗺️ Map</a>
     <a class="cta" href="/volunteers.html">🙋 Volunteer</a>
+    <button class="hamburger" id="smenuBtn" aria-label="Menu" aria-haspopup="true">☰</button>
+    <div class="hdr-actions" id="smenu">
+      <a class="link ic-btn" href="/"><span class="e">🗺️</span><span class="t">India map</span></a>
+      <a class="link ic-btn" href="/e/assam-floods-2026"><span class="e">🆘</span><span class="t">Assam floods</span></a>
+      <a class="link ic-btn" href="/e/odisha-flood-2026"><span class="e">🌊</span><span class="t">Odisha floods</span></a>
+      <a class="link ic-btn" href="/volunteers.html"><span class="e">🙋</span><span class="t">Volunteer</span></a>
+      <a class="link ic-btn" href="/how-it-works"><span class="e">📘</span><span class="t">How it works</span></a>
+      <a class="link ic-btn" href="/about.html"><span class="e">ℹ️</span><span class="t">About</span></a>
+      <a class="link ic-btn" href="/press"><span class="e">🗞️</span><span class="t">Press</span></a>
+      <a class="link ic-btn" href="/contributors"><span class="e">🤝</span><span class="t">Contributors</span></a>
+      <a class="link ic-btn" href="/manifesto"><span class="e">📜</span><span class="t">Manifesto</span></a>
+      <a class="link ic-btn" href="/privacy.html"><span class="e">🔒</span><span class="t">Privacy</span></a>
+    </div>
   </header>
   <div class="swrap">
-    <p class="sintro">A live, filterable picture of disasters across India - community-reported needs plus modelled river flood-risk (GloFAS), official multi-hazard alerts (GDACS) and active cyclones. Filter by disaster type, state or place. Automated from open data; not an official government figure. Always call <b>112</b> in an emergency.</p>
+    <p class="sintro">A live, filterable picture of disasters across India - community-reported needs plus modelled river flood-risk (GloFAS), official multi-hazard alerts (GDACS), active cyclones, and live weather hazards (heatwave, drought, landslide, thunderstorm, air quality). Filter by disaster type, state or district. Automated from open data; not an official government figure. Always call <b>112</b> in an emergency.</p>
     <div class="supd" id="supd">Loading live tracker…</div>
 
     <div class="scards" id="scards"></div>
@@ -73,43 +83,68 @@
       <div class="fam" id="fam"></div>
       <span class="fspace"></span>
       <select id="stateSel"><option value="">All states</option></select>
+      <select id="distSel"><option value="">All districts</option></select>
       <input id="search" type="search" placeholder="Search place / river…" autocomplete="off" />
     </div>
 
     <div class="sigs" id="sigs"></div>
 
     <div class="sfoot">
-      Signals are a mix of community reports (unverified unless confirmed by others), modelled flood-risk (GloFAS, auto every 3h - an estimate, not an official warning) and official alerts (GDACS). State is assigned by nearest centroid and is approximate near borders. Emergency: 112.
+      Signals are a mix of community reports (unverified unless confirmed by others), modelled flood-risk and weather hazards (estimates, not official warnings) and official alerts (GDACS). State and district are assigned by nearest district centroid. Emergency: 112.
     </div>
   </div>
 
+  <script src="india-hazards.js"></script>
   <script>
     var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); };
-    var DATA = null, activeFam = '', activeState = '', q = '';
+    var FM = {
+      water: { e: '💧', c: '#2E77FF', l: 'Water' }, fire: { e: '🔥', c: '#F5551D', l: 'Fire' }, storm: { e: '🌪️', c: '#8B5CF6', l: 'Storm & wind' },
+      geo: { e: '⛰️', c: '#B4652A', l: 'Geological' }, climate: { e: '☀️', c: '#EAB308', l: 'Climate extreme' }, health: { e: '🦠', c: '#12B5A5', l: 'Health' },
+      tech: { e: '☣️', c: '#D6409F', l: 'Industrial' }, infra: { e: '🏗️', c: '#64748B', l: 'Infrastructure' }, agri: { e: '🌾', c: '#84CC16', l: 'Agriculture' },
+    };
+    var SIGNALS = [], activeFam = '', activeState = '', activeDistrict = '', q = '', updated = '';
 
-    function card(n, label, cls) { return '<div class="scard ' + (cls || '') + '"><div class="n">' + n + '</div><div class="l">' + label + '</div></div>'; }
-    function badge(level) {
-      var cls = (level === 'high' || level === 'red') ? 'high' : (level === 'medium' || level === 'orange') ? 'medium' : level === 'need' ? 'need' : 'info';
-      var txt = cls === 'high' ? 'High' : cls === 'medium' ? 'Watch' : cls === 'need' ? 'Needs' : 'Info';
-      return '<span class="badge ' + cls + '">' + txt + '</span>';
-    }
+    // hamburger
+    (function () { var b = document.getElementById('smenuBtn'), m = document.getElementById('smenu');
+      b.onclick = function (e) { e.stopPropagation(); m.classList.toggle('show'); };
+      document.addEventListener('click', function (e) { if (!m.contains(e.target) && !b.contains(e.target)) m.classList.remove('show'); }); })();
 
-    function render() {
-      var sigs = DATA.signals.filter(function (s) {
+    function uniq(a) { var seen = {}, out = []; a.forEach(function (x) { if (x && !seen[x]) { seen[x] = 1; out.push(x); } }); return out.sort(); }
+    function facetFamilies() { var m = {}; SIGNALS.forEach(function (s) { m[s.family] = (m[s.family] || 0) + 1; }); return Object.keys(m).map(function (k) { return { key: k, count: m[k] }; }).sort(function (a, b) { return b.count - a.count; }); }
+    function facetStates() { return uniq(SIGNALS.map(function (s) { return s.state; })); }
+    function facetDistricts() { return uniq(SIGNALS.filter(function (s) { return (!activeState || s.state === activeState) && (!activeFam || s.family === activeFam); }).map(function (s) { return s.district; })); }
+    function filtered() {
+      return SIGNALS.filter(function (s) {
         if (activeFam && s.family !== activeFam) return false;
         if (activeState && s.state !== activeState) return false;
-        if (q) { var hay = (s.title + ' ' + (s.district || '') + ' ' + (s.state || '') + ' ' + (s.detail || '')).toLowerCase(); if (hay.indexOf(q) < 0) return false; }
+        if (activeDistrict && s.district !== activeDistrict) return false;
+        if (q) { var h = (s.title + ' ' + (s.district || '') + ' ' + (s.state || '') + ' ' + (s.detail || '')).toLowerCase(); if (h.indexOf(q) < 0) return false; }
         return true;
       });
-      var box = document.getElementById('sigs');
+    }
+
+    function card(n, label, cls) { return '<div class="scard ' + (cls || '') + '"><div class="n">' + n + '</div><div class="l">' + label + '</div></div>'; }
+    function badge(level) { var cls = (level === 'high' || level === 'red') ? 'high' : (level === 'medium' || level === 'orange') ? 'medium' : level === 'need' ? 'need' : 'info'; var txt = cls === 'high' ? 'High' : cls === 'medium' ? 'Watch' : cls === 'need' ? 'Needs' : 'Info'; return '<span class="badge ' + cls + '">' + txt + '</span>'; }
+
+    function renderCards() {
+      var comm = SIGNALS.filter(function (s) { return s.kind === 'community'; }).length;
+      var flood = SIGNALS.filter(function (s) { return s.kind === 'flood-risk'; }).length;
+      document.getElementById('scards').innerHTML =
+        card(SIGNALS.length, 'Live signals') +
+        card(facetStates().length, 'States affected') +
+        card(comm, 'Community need areas', (comm ? 'alert' : '')) +
+        card(flood, 'River reaches at flood-risk', (flood ? 'alert' : ''));
+    }
+    function renderList() {
+      var sigs = filtered(), box = document.getElementById('sigs');
       if (!sigs.length) { box.innerHTML = '<div class="sempty">No signals match. Try clearing the filters.</div>'; return; }
-      var fam = {};
-      DATA.families.forEach(function (f) { fam[f.key] = f; });
+      var rank = { high: 3, red: 3, need: 2, medium: 2, orange: 2, info: 1 };
+      sigs.sort(function (a, b) { return (rank[b.level] || 0) - (rank[a.level] || 0) || String(a.state).localeCompare(String(b.state)); });
       box.innerHTML = sigs.map(function (s) {
-        var f = fam[s.family] || { emoji: '•' };
+        var f = FM[s.family] || { e: '•' };
         var loc = (s.state || 'India') + (s.district ? ' · ' + s.district : '');
         var link = s.url ? '<a class="mini" href="' + esc(s.url) + '" target="_blank" rel="noopener">details →</a>' : (s.kind === 'community' ? '<a class="mini" href="/">on map →</a>' : '');
-        return '<div class="sig"><span class="em">' + (f.emoji || '•') + '</span><div class="body">'
+        return '<div class="sig"><span class="em">' + (f.e || '•') + '</span><div class="body">'
           + '<div class="t">' + esc(s.title) + '</div>'
           + '<div class="meta"><span class="st">' + esc(loc) + '</span> · ' + esc(s.source) + '</div>'
           + (s.detail ? '<div class="det">' + esc(s.detail) + '</div>' : '')
@@ -117,37 +152,43 @@
       }).join('');
     }
 
-    function buildFilters() {
-      var famBox = document.getElementById('fam');
-      var total = DATA.signals.length;
-      var pills = ['<button class="fchip on" data-k="" style="--c:var(--accent)"><span class="dot"></span>All <b>' + total + '</b></button>'];
-      DATA.families.forEach(function (f) {
-        pills.push('<button class="fchip" data-k="' + f.key + '" style="--c:' + f.color + '">' + f.emoji + ' ' + esc(f.label) + ' <b>' + f.count + '</b></button>');
-      });
-      famBox.innerHTML = pills.join('');
-      famBox.querySelectorAll('.fchip').forEach(function (b) {
-        b.onclick = function () { activeFam = b.dataset.k; famBox.querySelectorAll('.fchip').forEach(function (x) { x.classList.remove('on'); }); b.classList.add('on'); render(); };
-      });
+    function buildFamilyPills() {
+      var fams = facetFamilies(), box = document.getElementById('fam');
+      var pills = ['<button class="fchip' + (activeFam ? '' : ' on') + '" data-k="" style="--c:var(--accent)"><span class="dot"></span>All <b>' + SIGNALS.length + '</b></button>'];
+      fams.forEach(function (f) { var m = FM[f.key] || { e: '•', c: '#888', l: f.key }; pills.push('<button class="fchip' + (activeFam === f.key ? ' on' : '') + '" data-k="' + f.key + '" style="--c:' + m.c + '">' + m.e + ' ' + esc(m.l) + ' <b>' + f.count + '</b></button>'); });
+      box.innerHTML = pills.join('');
+      box.querySelectorAll('.fchip').forEach(function (b) { b.onclick = function () { activeFam = b.dataset.k; if (facetDistricts().indexOf(activeDistrict) < 0) activeDistrict = ''; refreshFilterUI(); renderList(); }; });
+    }
+    function buildStateSelect() {
       var sel = document.getElementById('stateSel');
-      DATA.states.forEach(function (st) { var o = document.createElement('option'); o.value = st; o.textContent = st; sel.appendChild(o); });
-      sel.onchange = function () { activeState = sel.value; render(); };
-      document.getElementById('search').oninput = function (e) { q = e.target.value.trim().toLowerCase(); render(); };
+      sel.innerHTML = '<option value="">All states</option>' + facetStates().map(function (s) { return '<option value="' + esc(s) + '"' + (s === activeState ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('');
+    }
+    function buildDistrictSelect() {
+      var sel = document.getElementById('distSel'), ds = facetDistricts();
+      sel.innerHTML = '<option value="">' + (activeState ? 'All districts' : 'All districts (' + ds.length + ')') + '</option>' + ds.map(function (d) { return '<option value="' + esc(d) + '"' + (d === activeDistrict ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('');
+    }
+    function refreshFilterUI() { buildFamilyPills(); buildStateSelect(); buildDistrictSelect(); }
+
+    function boot() {
+      document.getElementById('filters').hidden = false;
+      refreshFilterUI();
+      document.getElementById('stateSel').onchange = function (e) { activeState = e.target.value; activeDistrict = ''; buildDistrictSelect(); renderList(); };
+      document.getElementById('distSel').onchange = function (e) { activeDistrict = e.target.value; renderList(); };
+      document.getElementById('search').oninput = function (e) { q = e.target.value.trim().toLowerCase(); renderList(); };
+      renderCards(); renderList();
     }
 
     fetch('/api/tracker').then(function (r) { return r.json(); }).then(function (j) {
       if (j.error) { document.getElementById('supd').textContent = 'Could not load the tracker right now.'; return; }
-      DATA = j;
-      var t = j.totals || {};
-      document.getElementById('supd').innerHTML = j.updated ? ('Flood-risk auto-updated <b>' + esc(j.updated) + '</b>. Community needs update the moment people report.') : 'Live, automated from open data.';
-      document.getElementById('scards').innerHTML =
-        card(t.signals || 0, 'Live signals') +
-        card(t.states || 0, 'States affected') +
-        card(t.communityNeeds || 0, 'Open community needs', (t.communityNeeds ? 'alert' : '')) +
-        card(t.floodRisk || 0, 'River reaches at flood-risk', (t.floodRisk ? 'alert' : ''));
-      if (!DATA.signals.length) { document.getElementById('sigs').innerHTML = '<div class="sempty">All quiet across India right now - no active hazard signals or open needs. This page fills automatically when something happens.</div>'; return; }
-      document.getElementById('filters').hidden = false;
-      buildFilters();
-      render();
+      SIGNALS = j.signals || []; updated = j.updated || '';
+      document.getElementById('supd').innerHTML = updated ? ('Flood-risk auto-updated <b>' + esc(updated) + '</b> · adding live weather…') : 'Live, automated from open data · adding live weather…';
+      if (!SIGNALS.length) document.getElementById('sigs').innerHTML = '<div class="sempty">Loading…</div>';
+      boot();
+      // merge live weather hazards (heat / AQI / drought / landslide / thunderstorm), then re-render
+      if (window.fetchWeatherSignals) window.fetchWeatherSignals().then(function (w) {
+        if (w && w.length) { SIGNALS = SIGNALS.concat(w); refreshFilterUI(); renderCards(); renderList(); }
+        document.getElementById('supd').innerHTML = updated ? ('Flood-risk auto-updated <b>' + esc(updated) + '</b>. Weather + needs are live.') : 'Live, automated from open data.';
+      }).catch(function () { document.getElementById('supd').innerHTML = updated ? ('Flood-risk auto-updated <b>' + esc(updated) + '</b>.') : 'Live, automated from open data.'; });
     }).catch(function () { document.getElementById('supd').textContent = 'Could not load the tracker right now. Try again in a moment.'; });
   </script>
 </body>

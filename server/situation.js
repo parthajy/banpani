@@ -12,7 +12,7 @@ import { decoratedReports } from './db.js';
 import { getFloodAuto, ASSAM_DISTRICTS } from './flood-auto.js';
 import { officialEvents, tropicalCyclones } from './official.js';
 import { familyOf, DISASTERS } from './disasters.js';
-import { stateOf, inIndia } from './india-geo.js';
+import { districtOf, inIndia } from './india-geo.js';
 
 const FRONTEND = join(dirname(fileURLToPath(import.meta.url)), '..', 'frontend');
 let CAMPS = [];
@@ -27,10 +27,11 @@ export async function trackerData() {
   const fr = getFloodAuto('india');
   if (fr && fr.gauges) for (const g of fr.gauges) {
     if (g.risk !== 'high' && g.risk !== 'medium') continue;
+    const dd = districtOf(g.lat, g.lng);
     signals.push({
-      family: 'water', kind: 'flood-risk', title: g.station || g.river || 'River', state: g.state || stateOf(g.lat, g.lng),
-      district: g.river || null, lat: g.lat, lng: g.lng, level: g.risk,
-      detail: `Flow ${num(g.discharge)} m³/s · ${g.pct}th percentile · ${g.trend}`, source: 'GloFAS river model',
+      family: 'water', kind: 'flood-risk', title: g.station || g.river || 'River', state: g.state || (dd && dd.s),
+      district: dd ? dd.d : null, lat: g.lat, lng: g.lng, level: g.risk,
+      detail: `${g.river ? g.river + ' · ' : ''}Flow ${num(g.discharge)} m³/s · ${g.pct}th percentile · ${g.trend}`, source: 'GloFAS river model',
     });
   }
 
@@ -38,8 +39,9 @@ export async function trackerData() {
   try {
     for (const o of (await officialEvents())) {
       if (!inIndia(o.lat, o.lng)) continue;
+      const dd = districtOf(o.lat, o.lng);
       signals.push({
-        family: o.family, kind: 'official', title: o.title, state: stateOf(o.lat, o.lng), district: null,
+        family: o.family, kind: 'official', title: o.title, state: dd ? dd.s : null, district: dd ? dd.d : null,
         lat: o.lat, lng: o.lng, level: o.level || 'info', detail: 'Official alert (GDACS)' + (o.date ? ' · ' + o.date : ''),
         source: 'GDACS', url: o.url,
       });
@@ -50,9 +52,10 @@ export async function trackerData() {
   try {
     for (const c of (await tropicalCyclones())) {
       if (c.lat == null || c.lng == null || c.lat < 0 || c.lat > 40 || c.lng < 55 || c.lng > 100) continue;
+      const dd = inIndia(c.lat, c.lng) ? districtOf(c.lat, c.lng) : null;
       signals.push({
-        family: 'storm', kind: 'cyclone', title: c.name, state: inIndia(c.lat, c.lng) ? stateOf(c.lat, c.lng) : 'Offshore / sea',
-        district: null, lat: c.lat, lng: c.lng, level: c.level || 'info',
+        family: 'storm', kind: 'cyclone', title: c.name, state: dd ? dd.s : 'Offshore / sea',
+        district: dd ? dd.d : null, lat: c.lat, lng: c.lng, level: c.level || 'info',
         detail: 'Tropical cyclone' + (c.wind != null ? ' · ' + c.wind + ' km/h winds' : ''), source: 'GDACS', url: c.url,
       });
     }
@@ -63,20 +66,19 @@ export async function trackerData() {
   const agg = {};
   for (const r of reports) {
     const fam = familyOf(r.disaster_type || 'flood');
-    const st = stateOf(r.lat, r.lng) || 'India';
-    const k = st + '|' + fam;
-    const a = agg[k] || (agg[k] = { family: fam, state: st, count: 0, needs: {}, lat: r.lat, lng: r.lng, places: {} });
+    const dd = districtOf(r.lat, r.lng);
+    const st = (dd && dd.s) || 'India', di = (dd && dd.d) || null;
+    const k = st + '|' + di + '|' + fam;
+    const a = agg[k] || (agg[k] = { family: fam, state: st, district: di, count: 0, needs: {}, lat: r.lat, lng: r.lng });
     a.count++;
-    if (r.place) a.places[r.place] = (a.places[r.place] || 0) + 1;
     for (const it of (r.items || [])) a.needs[it] = (a.needs[it] || 0) + 1;
   }
   for (const k in agg) {
     const a = agg[k];
     const top = Object.entries(a.needs).sort((x, y) => y[1] - x[1]).slice(0, 3).map(e => e[0]).join(', ');
-    const where = Object.keys(a.places).slice(0, 3).join(', ');
     signals.push({
       family: a.family, kind: 'community', title: `${a.count} open need${a.count > 1 ? 's' : ''}`, state: a.state,
-      district: where || null, lat: a.lat, lng: a.lng, level: 'need', detail: top || 'Community-reported', source: 'community',
+      district: a.district, lat: a.lat, lng: a.lng, level: 'need', detail: top || 'Community-reported', source: 'community',
     });
   }
 
