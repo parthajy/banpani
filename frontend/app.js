@@ -1364,7 +1364,7 @@ function applyEventLabels() {
         fKind = HKINDS[0].k;
         box.querySelectorAll('button').forEach(b => b.onclick = () => { box.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); fKind = b.dataset.k; });
       }
-      const hazWord = spanish ? 'Peligros' : 'Storm hazards';
+      const hazWord = EVENT.hazardTab ? vt(EVENT.hazardTab) : hz;   // neutral group label (e.g. "Fire & smoke")
       set('.tab[data-tab="flood"]', EVENT.emoji + ' ' + hazWord);
       set('[data-i18n="floodExtent"]', hazWord);
       set('[data-i18n="floodNow"]', EVENT.emoji + ' ' + hazWord);

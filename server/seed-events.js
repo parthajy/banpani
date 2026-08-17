@@ -26,17 +26,17 @@ const DEMOS = [
     blocked: [['Bridge washed out on NH-66', 9.99, 76.29, 'blocked']],
     facilities: [['shelter', 9.94, 76.28, 'Town Hall relief camp', 'open'], ['water', 9.92, 76.26, 'Water point', 'open'], ['pharmacy', 10.10, 76.34, 'Aluva Pharmacy', 'limited']],
     hazard: [['Kochi - submerged', 9.93, 76.27, 'high'], ['Aluva - rising', 10.11, 76.35, 'medium']] },
-  { fam: 'fire', type: 'wildfire', title: 'California Wildfire (demo)', lat: 39.77, lng: -121.6,
-    needs: [['Paradise', 39.75, -121.6, ['Evacuation help', 'Shelter'], 200], ['Magalia', 39.81, -121.58, ['Masks / clean air'], 80]],
-    offers: [['shelter', 39.76, -121.61, 'Community hall - 50 spaces'], ['transport', 39.78, -121.59, 'Van for evacuation'], ['masks', 39.80, -121.57, 'N95 masks available']],
-    hazard: [['Fire front', 39.78, -121.60, 'high'], ['Spot fire', 39.73, -121.55, 'medium'], ['Contained edge', 39.82, -121.64, 'receding']],
-    evac: [[39.78, -121.60, 39.74, -121.63, 'Toward High School shelter - avoid the bridge'], [39.73, -121.55, 39.74, -121.62, 'To Feather River Clinic']],
-    facilities: [['shelter', 39.74, -121.63, 'High School shelter', 'open'], ['clinic', 39.74, -121.62, 'Feather River Clinic', 'limited']] },
+  { fam: 'fire', type: 'wildfire', title: 'Uttarakhand Forest Fire (demo)', lat: 29.38, lng: 79.45,
+    needs: [['Nainital', 29.38, 79.45, ['Evacuation help', 'Masks / clean air'], 150], ['Bhowali', 29.39, 79.50, ['Shelter', 'Medical / burns'], 60]],
+    offers: [['shelter', 29.37, 79.46, 'Community hall - 60 spaces'], ['transport', 29.39, 79.44, 'Jeeps for evacuation'], ['masks', 29.38, 79.47, 'N95 masks available']],
+    hazard: [['Fire front above Nainital', 29.40, 79.45, 'high', 'fire'], ['Spot fire near Bhowali', 29.39, 79.50, 'medium', 'fire'], ['Heavy smoke over the lake', 29.38, 79.46, 'high', 'smoke']],
+    evac: [[29.40, 79.45, 29.36, 79.47, 'Down to the lakeside shelter - avoid the ridge road']],
+    facilities: [['shelter', 29.36, 79.47, 'Lakeside relief shelter', 'open'], ['clinic', 29.37, 79.45, 'BD Pandey Clinic', 'limited']] },
   { fam: 'storm', type: 'cyclone', title: 'Odisha Cyclone (demo)', lat: 19.30, lng: 84.80,
     needs: [['Gopalpur', 19.26, 84.90, ['Shelter', 'Drinking water'], 150], ['Berhampur', 19.31, 84.79, ['Tarpaulin / roofing', 'Food'], 90]],
     offers: [['shelter', 19.28, 84.85, 'Cyclone shelter - 200 spaces'], ['water', 19.30, 84.80, 'Water tanker'], ['power', 19.29, 84.82, 'Generator + fuel']],
     facilities: [['shelter', 19.27, 84.88, 'Govt cyclone shelter', 'open'], ['pharmacy', 19.31, 84.79, 'Berhampur Medical', 'open'], ['fuel', 19.30, 84.81, 'HP pump', 'limited']],
-    hazard: [['Gopalpur coast - surge', 19.26, 84.90, 'high'], ['Berhampur - high winds', 19.31, 84.79, 'medium']] },
+    hazard: [['Gopalpur coast - surge', 19.26, 84.90, 'high', 'surge'], ['Berhampur - high winds', 19.31, 84.79, 'medium', 'wind']] },
   { fam: 'geo', type: 'earthquake', title: 'Nepal Earthquake (demo)', lat: 28.05, lng: 84.63,
     needs: [['Gorkha', 28.00, 84.63, ['Search & rescue', 'Medical / trauma'], 300], ['Barpak', 28.16, 84.77, ['Tents / shelter', 'Blankets'], 120]],
     offers: [['medical', 28.01, 84.62, 'Trauma team on site'], ['blood', 28.02, 84.64, 'Blood donors available'], ['shelter', 28.03, 84.61, 'Tents - 100 families']],
@@ -80,8 +80,8 @@ for (const d of DEMOS) {
     run('INSERT INTO blocked_roads(created_at,updated_at,event_id,lat,lng,label,kind,device) VALUES(?,?,?,?,?,?,?,?)', now(), now(), eid, lat, lng, label, kind, 'demo');
   for (const [kind, lat, lng, name, status] of (d.facilities || []))
     run('INSERT INTO facilities(created_at,updated_at,event_id,lat,lng,kind,name,status,device) VALUES(?,?,?,?,?,?,?,?,?)', now(), now(), eid, lat, lng, kind, name, status, 'demo');
-  for (const [place, lat, lng, severity] of (d.hazard || []))
-    run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,event_id,device) VALUES(?,?,?,?,?,?,?,?)', now(), now(), place, lat, lng, severity, eid, 'demo');
+  for (const [place, lat, lng, severity, kind] of (d.hazard || []))
+    run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,kind,event_id,device) VALUES(?,?,?,?,?,?,?,?,?)', now(), now(), place, lat, lng, severity, kind || 'flood', eid, 'demo');
   for (const [fl, fg, tl, tg, label] of (d.evac || []))
     run('INSERT INTO evac_routes(created_at,updated_at,event_id,from_lat,from_lng,to_lat,to_lng,label,device) VALUES(?,?,?,?,?,?,?,?,?)', now(), now(), eid, fl, fg, tl, tg, label, 'demo');
   console.log('seeded', d.title.padEnd(34), '-> /e/demo-' + d.fam);

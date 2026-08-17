@@ -87,7 +87,13 @@ export const HAZARD_KINDS = {
     { k: 'wind', label: 'Wind / structural damage', emoji: '🌪️', color: '#8B5CF6' },
     { k: 'surge', label: 'Storm surge / flooding', emoji: '🌊', color: '#2E77FF' },
   ],
+  fire: [
+    { k: 'fire', label: 'Active fire / burn zone', emoji: '🔥', color: '#F5551D' },
+    { k: 'smoke', label: 'Smoke / hazardous air', emoji: '💨', color: '#9CA3AF' },
+  ],
 };
+// Neutral group label for a multi-kind hazard tab (the kinds themselves are the sub-choices).
+export const HAZARD_TAB = { storm: 'Storm hazards', fire: 'Fire & smoke' };
 
 // Family-level default search keywords, so EVERY event of a family indexes for its real terms even
 // without a hand-written per-event SEO block. Appended to the event title in the generic SEO path.
@@ -95,7 +101,7 @@ export const FAMILY_KEYWORDS = {
   water: 'flood, flooding, flood relief, rescue, boat, drinking water, relief camp, evacuation',
   storm: 'cyclone, storm, wind damage, storm surge, landfall, IMD cyclone warning, super cyclone, gale, evacuation, cyclone shelter, roofing, power outage, tree fall, coastal flooding, relief',
   geo: 'earthquake, landslide, tremor, aftershock, search and rescue, collapsed building, trapped, relief',
-  fire: 'wildfire, fire, evacuation, smoke, burns, shelter, relief',
+  fire: 'wildfire, forest fire, bushfire, fire, evacuation, smoke, air quality, burns, firefighting, fire line, shelter, Uttarakhand forest fire, relief',
   climate: 'heatwave, drought, water scarcity, cooling shelter, ORS, relief',
   health: 'outbreak, epidemic, oxygen, hospital bed, medicine, relief',
 };

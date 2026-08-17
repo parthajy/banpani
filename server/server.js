@@ -19,7 +19,7 @@ import { updateWeather } from './weather.js';
 import { refreshFloodAuto, getFloodAuto } from './flood-auto.js';
 import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLifecycle, voteOver, voteReopen, archiveList, LIFECYCLE } from './events.js';
-import { DISASTERS, familyOf, HAZARD, HAZARD_KINDS, FAMILY_KEYWORDS } from './disasters.js';
+import { DISASTERS, familyOf, HAZARD, HAZARD_KINDS, HAZARD_TAB, FAMILY_KEYWORDS } from './disasters.js';
 import { officialEvents, tropicalCyclones } from './official.js';
 import { situationFor, trackerData } from './situation.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
@@ -326,7 +326,7 @@ on('POST', '/api/flood-reports', async (req, res) => {
   const b = await readBody(req);
   if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
   const sev = ['high', 'medium', 'receding', 'receded'].includes(b.severity) ? b.severity : 'high';
-  const kind = ['flood', 'wind', 'surge'].includes(b.kind) ? b.kind : 'flood';
+  const kind = ['flood', 'wind', 'surge', 'fire', 'smoke'].includes(b.kind) ? b.kind : 'flood';
   const r = run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,kind,event_id,device) VALUES(?,?,?,?,?,?,?,?,?)',
     now(), now(), str(b.place, 120), num(b.lat), num(b.lng), sev, kind, (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
   log(req, 'flood_marked', 'flood:' + Number(r.lastInsertRowid), { device: dev(b), detail: kind + '/' + sev, area: str(b.place, 120) || coarse(b.lat, b.lng) });
@@ -684,7 +684,8 @@ async function serveEventApp(req, res, ev) {
     official: !!officialData, officialData, items: (ev.needs && ev.needs.length) ? ev.needs : (f.needs || []), modules: ev.modules || [],
     offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: isAssam ? null : helplinesForCountry(ev.family, cc),
     hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
-    hazardKinds: HAZARD_KINDS[ev.family] || null,   // storm marks wind + surge separately; most families single
+    hazardKinds: HAZARD_KINDS[ev.family] || null,   // storm=wind+surge, fire=fire+smoke; most families single
+    hazardTab: HAZARD_TAB[ev.family] || null,       // neutral label for a multi-kind hazard tab
     familyLabel: (DISASTERS[ev.family] || {}).label || null,
     status: ev.status || 'active', dormantAt: ev.dormant_at || null, archivedAt: ev.archived_at || null,
     reopenVotes: ev.reopenVotes || 0, reopenNeed: LIFECYCLE.REOPEN_VOTES, overNeed: LIFECYCLE.OVER_VOTES,
