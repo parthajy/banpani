@@ -20,7 +20,7 @@ import { refreshFloodAuto, getFloodAuto } from './flood-auto.js';
 import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLifecycle, voteOver, voteReopen, archiveList, LIFECYCLE } from './events.js';
 import { DISASTERS, familyOf, HAZARD } from './disasters.js';
-import { officialEvents } from './official.js';
+import { officialEvents, tropicalCyclones } from './official.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
 import { volunteersEnabled, validEmail, addVolunteer, volunteerSummary, listVolunteers } from './volunteers.js';
 
@@ -201,6 +201,8 @@ on('POST', '/api/volunteer', async (req, res) => {
 });
 // Official multi-hazard signals (GDACS) so the world map is never empty when disaster hits.
 on('GET', '/api/official', async (req, res) => { try { json(res, 200, { official: await officialEvents() }); } catch { json(res, 200, { official: [] }); } });
+// Live tropical-cyclone positions + category (GDACS), for the gateway map's cyclone layer.
+on('GET', '/api/cyclones', async (req, res) => { try { json(res, 200, { cyclones: await tropicalCyclones() }); } catch { json(res, 200, { cyclones: [] }); } });
 
 // Place search - proxied to OpenStreetMap Nominatim (bounded to Assam), cached, proper UA
 // (so it respects the usage policy and the key/UA stays server-side).

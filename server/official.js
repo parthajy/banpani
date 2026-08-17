@@ -33,3 +33,32 @@ export async function officialEvents() {
   } catch { /* network hiccup: serve the last good cache */ }
   return cache.items;
 }
+
+// Dedicated tropical-cyclone feed (for the gateway map's cyclone layer): every current TC episode from
+// GDACS, with its position and max sustained wind, so we can show category and track. Cached 1h.
+let tcCache = { at: 0, items: [] };
+export async function tropicalCyclones() {
+  if (tcCache.items.length && Date.now() - tcCache.at < 3600e3) return tcCache.items;
+  try {
+    const r = await fetch(GDACS, { headers: { 'user-agent': 'Banpani/1.0 (https://banpani.org)' }, signal: AbortSignal.timeout(8000) });
+    const gj = await r.json();
+    const byId = new Map();
+    for (const f of gj.features || []) {
+      const p = f.properties || {}, c = (f.geometry || {}).coordinates || [];
+      if (p.eventtype !== 'TC' || c.length < 2) continue;
+      const id = String(p.eventid || (c[0] + ',' + c[1]));
+      const wind = p.severitydata && p.severitydata.severity != null ? Math.round(Number(p.severitydata.severity)) : null;
+      const isCur = String(p.iscurrent) === 'true';
+      const item = {
+        name: String(p.name || p.eventname || 'Tropical cyclone').replace(/[,\s]+$/, '').slice(0, 64),
+        level: String(p.alertlevel || '').toLowerCase(), lat: c[1], lng: c[0], wind, current: isCur,
+        country: p.country || '', date: p.todate || p.fromdate || '',
+        url: 'https://www.gdacs.org/report.aspx?eventid=' + (p.eventid || '') + '&eventtype=TC',
+      };
+      const prev = byId.get(id);
+      if (!prev || isCur || (wind || 0) > (prev.wind || 0)) byId.set(id, item);   // prefer the current / strongest episode
+    }
+    tcCache = { at: Date.now(), items: [...byId.values()] };
+  } catch { /* keep last good */ }
+  return tcCache.items;
+}

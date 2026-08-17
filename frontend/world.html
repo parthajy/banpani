@@ -65,16 +65,20 @@
       background:var(--panel);border:1px solid var(--line);color:#fff;font-size:17px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
     .wexpand:active{transform:scale(.94)}
     /* live data-layer toggles, grouped so it's clear they're live feeds (rain / heat / flood / drought) */
-    .wlayers{position:absolute;right:12px;top:150px;z-index:640;display:flex;flex-direction:column;align-items:center;gap:6px;
-      background:rgba(15,20,25,.55);border:1px solid var(--line);border-radius:13px;padding:7px 6px;box-shadow:var(--shadow)}
-    .wlayers-h{font-size:8.5px;letter-spacing:1.5px;color:var(--muted);font-weight:800}
+    .wlayers{position:absolute;right:12px;top:150px;z-index:640;display:grid;grid-template-columns:repeat(2,38px);gap:6px;justify-items:center;
+      background:rgba(15,20,25,.6);border:1px solid var(--line);border-radius:13px;padding:7px 6px;box-shadow:var(--shadow)}
+    .wlayers-h{grid-column:1/-1;text-align:center;font-size:8.5px;letter-spacing:1.5px;color:var(--muted);font-weight:800}
     .wlbtn{width:38px;height:38px;border-radius:9px;background:var(--panel);border:1px solid var(--line);font-size:16px;cursor:pointer;line-height:1}
     .wlbtn:active{transform:scale(.94)}
     #wrainBtn.on{border-color:#4fa3ff;background:#183050}
+    #wstormBtn.on{border-color:#a78bfa;background:#2a2140}
     #wheatBtn.on{border-color:#ff8a3d;background:#3a2413}
-    #wriskBtn.on{border-color:#ff5a5a;background:#3a1616}
     #wdroughtBtn.on{border-color:#c98a3a;background:#332413}
+    #wriskBtn.on{border-color:#ff5a5a;background:#3a1616}
+    #wslideBtn.on{border-color:#d97706;background:#33230e}
     #wquakeBtn.on{border-color:#eab308;background:#332b0e}
+    #wcycloneBtn.on{border-color:#8B5CF6;background:#241a3a}
+    #waqiBtn.on{border-color:#22c55e;background:#12331f}
     .wlbtn-info{font-size:15px;color:var(--muted)}
     /* collapsible legend */
     .wlegend{position:absolute;left:10px;bottom:70px;z-index:670;width:min(320px,90vw);max-height:62vh;overflow-y:auto;
@@ -191,10 +195,14 @@
       <div class="wl-row">Dot colour = disaster family (the filter chips up top: 💧 water, 🔥 fire, 🌪️ storm, ⛰️ geological, and more)</div>
       <div class="wl-grp">LIVE layers (right-side panel)</div>
       <div class="wl-row">🌧 Rain radar - where it's raining hard now (RainViewer)</div>
+      <div class="wl-row">⛈️ Thunderstorm - heavy rain, gusts and instability today (Open-Meteo)</div>
       <div class="wl-row">🌡 Heatwave - forecast max temperature; 40°C+ = heatwave (Open-Meteo)</div>
-      <div class="wl-row">🌊 River flood-risk - modelled discharge on India's major rivers (GloFAS)</div>
       <div class="wl-row">🏜️ Drought stress - soil moisture + recent rainfall (Open-Meteo)</div>
+      <div class="wl-row">🌊 River flood-risk - modelled discharge on India's major rivers (GloFAS)</div>
+      <div class="wl-row">🏔️ Landslide - rainfall on landslide-prone hills (Open-Meteo)</div>
       <div class="wl-row">🫨 Earthquakes - M2.5+ in the last 7 days (USGS)</div>
+      <div class="wl-row">🌀 Cyclones - active systems in the Arabian Sea / Bay of Bengal (GDACS)</div>
+      <div class="wl-row">🌫️ Air quality - US AQI and PM2.5 by city (Open-Meteo)</div>
       <div class="wl-note">Every layer is <b>automated</b> - pulled live from open data, no human editing. These are risk estimates, not official counts. Always call <b>112</b> in an emergency.</div>
     </div>
   </div>
@@ -203,10 +211,14 @@
   <div class="wlayers" id="wlayers">
     <div class="wlayers-h">LIVE</div>
     <button class="wlbtn" id="wrainBtn" title="Rain radar (live)" onclick="return toggleRain()">🌧</button>
+    <button class="wlbtn" id="wstormBtn" title="Severe thunderstorm risk (live)" onclick="return toggleStorm()">⛈️</button>
     <button class="wlbtn" id="wheatBtn" title="Heatwave alerts (live)" onclick="return toggleHeat()">🌡</button>
-    <button class="wlbtn" id="wriskBtn" title="Flood risk on rivers (live)" onclick="return toggleFloodRisk()">🌊</button>
     <button class="wlbtn" id="wdroughtBtn" title="Drought stress (live)" onclick="return toggleDrought()">🏜️</button>
+    <button class="wlbtn" id="wriskBtn" title="Flood risk on rivers (live)" onclick="return toggleFloodRisk()">🌊</button>
+    <button class="wlbtn" id="wslideBtn" title="Landslide risk (live)" onclick="return toggleLandslide()">🏔️</button>
     <button class="wlbtn" id="wquakeBtn" title="Earthquakes, last 7 days (live)" onclick="return toggleQuakes()">🫨</button>
+    <button class="wlbtn" id="wcycloneBtn" title="Tropical cyclones (live)" onclick="return toggleCyclones()">🌀</button>
+    <button class="wlbtn" id="waqiBtn" title="Air quality / AQI (live)" onclick="return toggleAQI()">🌫️</button>
     <button class="wlbtn wlbtn-info" id="wlegendBtn" title="What's on this map?">ⓘ</button>
   </div>
   <button class="wfab" id="wreportBtn">＋ Report</button>

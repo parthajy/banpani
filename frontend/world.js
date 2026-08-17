@@ -222,6 +222,141 @@ window.toggleQuakes = async function () {
   return false;
 };
 
+// Live air quality: US AQI + PM2.5 for major cities (Open-Meteo air quality). India's winter smog is a
+// genuine public-health disaster, so this is useful year-round (and washes clean in the monsoon).
+let aqiLayer = null;
+const aqiInfo = a => a <= 50 ? ['Good', '#22c55e'] : a <= 100 ? ['Moderate', '#eab308'] : a <= 150 ? ['Unhealthy (sensitive)', '#f59e0b'] : a <= 200 ? ['Unhealthy', '#ef4444'] : a <= 300 ? ['Very unhealthy', '#a21caf'] : ['Hazardous', '#7f1d1d'];
+window.toggleAQI = async function () {
+  const btn = $('waqiBtn');
+  if (aqiLayer) { map.removeLayer(aqiLayer); aqiLayer = null; if (btn) btn.classList.remove('on'); return false; }
+  try {
+    const lats = HEAT_CITIES.map(c => c.lat).join(','), lngs = HEAT_CITIES.map(c => c.lng).join(',');
+    const data = await (await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + lats + '&longitude=' + lngs + '&current=us_aqi,pm2_5&timezone=auto')).json();
+    const arr = Array.isArray(data) ? data : [data];
+    aqiLayer = L.layerGroup();
+    let bad = 0, worst = null;
+    arr.forEach((d, i) => {
+      const c = HEAT_CITIES[i]; if (!c || !d || !d.current) return;
+      const a = d.current.us_aqi, pm = d.current.pm2_5;
+      if (a == null) return;
+      if (!worst || a > worst.a) worst = { n: c.n, a };
+      if (a < 101) return;   // below "unhealthy for sensitive groups" - skip to keep the map readable
+      bad++;
+      const [label, color] = aqiInfo(a);
+      L.circleMarker([c.lat, c.lng], { radius: 7 + Math.min(11, (a - 100) / 20), weight: 1, color: '#0b0f14', fillColor: color, fillOpacity: .55 })
+        .bindPopup(`<b>🌫️ ${esc(c.n)}</b><br>US AQI <b style="color:${color};font-size:15px">${Math.round(a)}</b> · <span style="color:${color};font-weight:700">${label}</span><br>PM2.5 ${pm != null ? Math.round(pm) + ' µg/m³' : 'n/a'}<br><small>Source: Open-Meteo air quality · official: CPCB (SAFAR)</small>`)
+        .addTo(aqiLayer);
+    });
+    aqiLayer.addTo(map);
+    if (btn) btn.classList.add('on');
+    toast(bad ? `Air-quality layer on - ${bad} city(s) at unhealthy AQI (101+)`
+      : worst ? `Air quality on - worst now: ${worst.n} AQI ${Math.round(worst.a)}. Mostly clean (monsoon washout).` : 'Could not read air quality');
+  } catch { toast('Could not load air-quality data'); }
+  return false;
+};
+
+// Live severe-weather risk: today's heavy rain, wind gusts and atmospheric instability (CAPE) from
+// Open-Meteo. Flags where thunderstorms / squalls are likely - the killers in the pre-monsoon and monsoon.
+let stormLayer = null;
+window.toggleStorm = async function () {
+  const btn = $('wstormBtn');
+  if (stormLayer) { map.removeLayer(stormLayer); stormLayer = null; if (btn) btn.classList.remove('on'); return false; }
+  try {
+    const lats = HEAT_CITIES.map(c => c.lat).join(','), lngs = HEAT_CITIES.map(c => c.lng).join(',');
+    const data = await (await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lats + '&longitude=' + lngs + '&daily=precipitation_sum,wind_gusts_10m_max&hourly=cape&forecast_days=1&timezone=auto')).json();
+    const arr = Array.isArray(data) ? data : [data];
+    stormLayer = L.layerGroup();
+    let n = 0;
+    arr.forEach((d, i) => {
+      const c = HEAT_CITIES[i]; if (!c || !d) return;
+      const rain = d.daily && d.daily.precipitation_sum ? (d.daily.precipitation_sum[0] || 0) : 0;
+      const gust = d.daily && d.daily.wind_gusts_10m_max ? (d.daily.wind_gusts_10m_max[0] || 0) : 0;
+      const cape = d.hourly && d.hourly.cape ? Math.max(0, ...d.hourly.cape.filter(x => x != null)) : 0;
+      const severe = (cape >= 2000 && rain >= 20) || gust >= 60 || rain >= 60;
+      if (!severe) return;
+      n++;
+      const high = cape >= 3000 || gust >= 85 || rain >= 100;
+      const color = high ? '#7c3aed' : '#a78bfa';
+      L.circleMarker([c.lat, c.lng], { radius: high ? 10 : 8, weight: 1, color: '#0b0f14', fillColor: color, fillOpacity: .5 })
+        .bindPopup(`<b>⛈️ ${esc(c.n)}</b><br><span style="color:${color};font-weight:700">${high ? 'Severe thunderstorm risk' : 'Thunderstorm risk'}</span><br>Rain today ${Math.round(rain)}mm · gusts ${Math.round(gust)} km/h<br>Instability (CAPE) ${Math.round(cape)} J/kg<br><small>Source: Open-Meteo · official: IMD nowcast</small>`)
+        .addTo(stormLayer);
+    });
+    stormLayer.addTo(map);
+    if (btn) btn.classList.add('on');
+    toast(n ? `Storm layer on - ${n} area(s) with thunderstorm risk today` : 'No notable thunderstorm risk in the forecast right now');
+  } catch { toast('Could not load storm data'); }
+  return false;
+};
+
+// Live landslide risk: cumulative rainfall (last 3 days + next 2) over India's landslide-prone hill
+// districts. Saturated slopes plus more rain is what triggers slides in the Himalaya and Western Ghats.
+let landslideLayer = null;
+const LANDSLIDE_POINTS = [
+  { n: 'Chamoli', lat: 30.40, lng: 79.32 }, { n: 'Rudraprayag', lat: 30.28, lng: 78.98 }, { n: 'Uttarkashi', lat: 30.73, lng: 78.45 },
+  { n: 'Tehri', lat: 30.38, lng: 78.48 }, { n: 'Pithoragarh', lat: 29.58, lng: 80.22 }, { n: 'Nainital', lat: 29.38, lng: 79.45 },
+  { n: 'Shimla', lat: 31.10, lng: 77.17 }, { n: 'Kullu', lat: 31.96, lng: 77.11 }, { n: 'Mandi', lat: 31.71, lng: 76.93 },
+  { n: 'Chamba', lat: 32.56, lng: 76.13 }, { n: 'Kinnaur', lat: 31.58, lng: 78.27 }, { n: 'Ramban', lat: 33.24, lng: 75.24 },
+  { n: 'Doda', lat: 33.15, lng: 75.55 }, { n: 'Poonch', lat: 33.77, lng: 74.09 }, { n: 'Gangtok', lat: 27.33, lng: 88.61 },
+  { n: 'Darjeeling', lat: 27.04, lng: 88.26 }, { n: 'Kalimpong', lat: 27.06, lng: 88.47 }, { n: 'Aizawl', lat: 23.73, lng: 92.72 },
+  { n: 'Kohima', lat: 25.67, lng: 94.11 }, { n: 'Imphal', lat: 24.82, lng: 93.94 }, { n: 'Shillong', lat: 25.57, lng: 91.88 },
+  { n: 'Dima Hasao', lat: 25.18, lng: 93.02 }, { n: 'Wayanad', lat: 11.61, lng: 76.08 }, { n: 'Idukki', lat: 9.85, lng: 76.97 },
+  { n: 'Kodagu (Madikeri)', lat: 12.42, lng: 75.74 }, { n: 'Nilgiris (Ooty)', lat: 11.41, lng: 76.70 }, { n: 'Mahabaleshwar', lat: 17.92, lng: 73.66 },
+  { n: 'Ratnagiri', lat: 16.99, lng: 73.31 }, { n: 'Raigad', lat: 18.23, lng: 73.19 },
+];
+window.toggleLandslide = async function () {
+  const btn = $('wslideBtn');
+  if (landslideLayer) { map.removeLayer(landslideLayer); landslideLayer = null; if (btn) btn.classList.remove('on'); return false; }
+  try {
+    const lats = LANDSLIDE_POINTS.map(c => c.lat).join(','), lngs = LANDSLIDE_POINTS.map(c => c.lng).join(',');
+    const data = await (await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lats + '&longitude=' + lngs + '&daily=precipitation_sum&past_days=3&forecast_days=2&timezone=auto')).json();
+    const arr = Array.isArray(data) ? data : [data];
+    landslideLayer = L.layerGroup();
+    let n = 0;
+    arr.forEach((d, i) => {
+      const c = LANDSLIDE_POINTS[i]; if (!c || !d || !d.daily) return;
+      const rain = (d.daily.precipitation_sum || []).reduce((a, b) => a + (b || 0), 0);   // 3 past + 2 forecast days
+      if (rain < 100) return;
+      n++;
+      const high = rain >= 200;
+      const color = high ? '#7f1d1d' : '#b45309';
+      L.circleMarker([c.lat, c.lng], { radius: high ? 10 : 8, weight: 1, color: '#0b0f14', fillColor: color, fillOpacity: .5 })
+        .bindPopup(`<b>🏔️ ${esc(c.n)}</b><br><span style="color:${color};font-weight:700">${high ? 'High landslide risk' : 'Elevated landslide risk'}</span><br>Rain (last 3d + next 2d): <b>${Math.round(rain)}mm</b><br>Saturated slopes plus more rain raise the odds of a slide.<br><small>Approximate (rainfall on landslide-prone hills, Open-Meteo) · official: GSI / NDMA</small>`)
+        .addTo(landslideLayer);
+    });
+    landslideLayer.addTo(map);
+    if (btn) btn.classList.add('on');
+    toast(n ? `Landslide layer on - ${n} hill area(s) at elevated risk` : 'No hill area at elevated rain-driven landslide risk right now');
+  } catch { toast('Could not load landslide data'); }
+  return false;
+};
+
+// Live tropical cyclones near India (Arabian Sea + Bay of Bengal), from the server's GDACS feed.
+let cycloneLayer = null;
+const cycloneCat = w => w == null ? ['Tropical cyclone', '#8B5CF6'] : w < 63 ? ['Depression', '#a78bfa'] : w < 89 ? ['Cyclonic storm', '#8B5CF6'] : w < 118 ? ['Severe cyclonic storm', '#f59e0b'] : w < 166 ? ['Very severe cyclone', '#f5551d'] : w < 221 ? ['Extremely severe cyclone', '#e11d1d'] : ['Super cyclone', '#7f1d1d'];
+window.toggleCyclones = async function () {
+  const btn = $('wcycloneBtn');
+  if (cycloneLayer) { map.removeLayer(cycloneLayer); cycloneLayer = null; if (btn) btn.classList.remove('on'); return false; }
+  try {
+    const j = await (await fetch((C.API || '') + '/api/cyclones')).json();
+    const list = (j && j.cyclones) || [];
+    cycloneLayer = L.layerGroup();
+    let n = 0;
+    list.forEach(c => {
+      if (c.lat == null || c.lng == null) return;
+      if (c.lat < 0 || c.lat > 40 || c.lng < 55 || c.lng > 100) return;   // North Indian Ocean basin
+      n++;
+      const [cat, color] = cycloneCat(c.wind);
+      L.circleMarker([c.lat, c.lng], { radius: 12, weight: 2, color, fillColor: color, fillOpacity: .3 })
+        .bindPopup(`<b>🌀 ${esc(c.name)}</b><br><span style="color:${color};font-weight:700">${cat}</span>${c.wind != null ? ` · ${c.wind} km/h winds` : ''}<br>${c.level ? esc(c.level.toUpperCase()) + ' alert · ' : ''}GDACS${c.current ? ' · current position' : ''}<br><a href="${esc(c.url)}" target="_blank" rel="noopener" style="color:${color};font-weight:700">GDACS report →</a>`)
+        .addTo(cycloneLayer);
+    });
+    cycloneLayer.addTo(map);
+    if (btn) btn.classList.add('on');
+    toast(n ? `Cyclone layer on - ${n} active system(s) near India` : 'No active cyclone near India now (season is Apr-Jun and Oct-Dec)');
+  } catch { toast('Could not load cyclone data'); }
+  return false;
+};
+
 const dot = (lat, lng, color, popup, radius = 7, unconfirmed = false) => L.circleMarker([lat, lng], {
   radius, weight: unconfirmed ? 2 : 1.5, color: unconfirmed ? color : '#0b0f14',
   fillColor: color, fillOpacity: unconfirmed ? .3 : .9, dashArray: unconfirmed ? '2 3' : null,
