@@ -91,16 +91,20 @@ export const HAZARD_KINDS = {
     { k: 'fire', label: 'Active fire / burn zone', emoji: '🔥', color: '#F5551D' },
     { k: 'smoke', label: 'Smoke / hazardous air', emoji: '💨', color: '#9CA3AF' },
   ],
+  geo: [
+    { k: 'collapse', label: 'Collapsed / damaged building', emoji: '🏚️', color: '#EF4444' },
+    { k: 'landslide', label: 'Landslide / ground failure', emoji: '⛰️', color: '#B4652A' },
+  ],
 };
 // Neutral group label for a multi-kind hazard tab (the kinds themselves are the sub-choices).
-export const HAZARD_TAB = { storm: 'Storm hazards', fire: 'Fire & smoke' };
+export const HAZARD_TAB = { storm: 'Storm hazards', fire: 'Fire & smoke', geo: 'Damage & landslides' };
 
 // Family-level default search keywords, so EVERY event of a family indexes for its real terms even
 // without a hand-written per-event SEO block. Appended to the event title in the generic SEO path.
 export const FAMILY_KEYWORDS = {
   water: 'flood, flooding, flood relief, rescue, boat, drinking water, relief camp, evacuation',
   storm: 'cyclone, storm, wind damage, storm surge, landfall, IMD cyclone warning, super cyclone, gale, evacuation, cyclone shelter, roofing, power outage, tree fall, coastal flooding, relief',
-  geo: 'earthquake, landslide, tremor, aftershock, search and rescue, collapsed building, trapped, relief',
+  geo: 'earthquake, quake, tremor, aftershock, magnitude, epicentre, landslide, collapsed building, trapped, search and rescue, NDRF, Himalayan earthquake, seismic, relief',
   fire: 'wildfire, forest fire, bushfire, fire, evacuation, smoke, air quality, burns, firefighting, fire line, shelter, Uttarakhand forest fire, relief',
   climate: 'heatwave, drought, water scarcity, cooling shelter, ORS, relief',
   health: 'outbreak, epidemic, oxygen, hospital bed, medicine, relief',
