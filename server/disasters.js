@@ -99,6 +99,15 @@ export const HAZARD_KINDS = {
 // Neutral group label for a multi-kind hazard tab (the kinds themselves are the sub-choices).
 export const HAZARD_TAB = { storm: 'Storm hazards', fire: 'Fire & smoke', geo: 'Damage & landslides' };
 
+// Per-subtype need lists, where one family's subtypes need OPPOSITE things (a heatwave vs a coldwave).
+// Used when an event has no custom needs; falls back to the family's generic list otherwise.
+export const TYPE_NEEDS = {
+  drought:          ['Drinking water', 'Water tanker', 'Fodder for livestock', 'Cattle camp / care', 'Crop / farm support', 'Food ration', 'Work / MGNREGA'],
+  'water-scarcity': ['Drinking water', 'Water tanker', 'Borewell / source repair', 'Fodder for livestock', 'Food ration'],
+  heatwave:         ['Drinking water', 'ORS / electrolytes', 'Cooling / shade', 'Cool shelter (fan/AC)', 'Heat-stroke medical', 'Shade & water for cattle'],
+  coldwave:         ['Blankets', 'Warm clothes', 'Night shelter', 'Firewood / heating', 'Hot food', 'Medical'],
+};
+
 // Family-level default search keywords, so EVERY event of a family indexes for its real terms even
 // without a hand-written per-event SEO block. Appended to the event title in the generic SEO path.
 export const FAMILY_KEYWORDS = {
@@ -106,7 +115,7 @@ export const FAMILY_KEYWORDS = {
   storm: 'cyclone, storm, wind damage, storm surge, landfall, IMD cyclone warning, super cyclone, gale, evacuation, cyclone shelter, roofing, power outage, tree fall, coastal flooding, relief',
   geo: 'earthquake, quake, tremor, aftershock, magnitude, epicentre, landslide, collapsed building, trapped, search and rescue, NDRF, Himalayan earthquake, seismic, relief',
   fire: 'wildfire, forest fire, bushfire, fire, evacuation, smoke, air quality, burns, firefighting, fire line, shelter, Uttarakhand forest fire, relief',
-  climate: 'heatwave, drought, water scarcity, cooling shelter, ORS, relief',
+  climate: 'drought, heatwave, coldwave, water scarcity, water tanker, fodder, crop failure, cattle camp, cooling shelter, ORS, heat stroke, blankets, relief',
   health: 'outbreak, epidemic, oxygen, hospital bed, medicine, relief',
 };
 

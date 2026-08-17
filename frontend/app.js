@@ -1338,6 +1338,15 @@ function applyEventLabels() {
     // the Status tab's 🌊 -> this disaster's emoji
     const st = document.querySelector('.ovl-tab[data-pane="status"]');
     if (st && st.firstChild && st.firstChild.nodeType === 3) st.firstChild.textContent = EVENT.emoji + ' ';
+    // De-flood the onboarding for ANY non-water disaster - including ones with no hazard tab (drought,
+    // heatwave, outbreak), where "See flooding? Use the Flood tab" made no sense.
+    const spa = getLang() === 'es';
+    const wt = document.querySelector('[data-i18n="welcomeTitle"]'); if (wt && wt.textContent.indexOf('🌊') >= 0) wt.textContent = wt.textContent.replace('🌊', EVENT.emoji);
+    const q3 = document.querySelector('[data-i18n="qs3"]');
+    if (q3) {
+      if (EVENT.hazardLabel) { const hz = vt(EVENT.hazardLabel); q3.textContent = EVENT.emoji + ' ' + (spa ? `¿Ves señales de ${hz.toLowerCase()}? Márcalo en el mapa.` : `See ${hz.toLowerCase()}? Mark it on the map so responders can see it.`); }
+      else q3.textContent = EVENT.emoji + ' ' + (spa ? 'Reporta lo que necesitas y los voluntarios cercanos podrán ayudar.' : 'Need help in your area? Report it so volunteers nearby can act.');
+    }
   }
   if (EVENT.hazardLabel && EVENT.family !== 'water') {
     const hz = vt(EVENT.hazardLabel), spanish = getLang() === 'es';
@@ -1370,9 +1379,6 @@ function applyEventLabels() {
       set('[data-i18n="floodNow"]', EVENT.emoji + ' ' + hazWord);
       set('#f_submit', '⚠️ ' + (spanish ? 'Marcar aquí' : 'Mark this here'));
     }
-    // De-flood the onboarding (welcome emoji + quick-start line) for a non-water hazard.
-    const wt = document.querySelector('[data-i18n="welcomeTitle"]'); if (wt && wt.textContent.indexOf('🌊') >= 0) wt.textContent = wt.textContent.replace('🌊', EVENT.emoji);
-    const q3 = document.querySelector('[data-i18n="qs3"]'); if (q3) q3.textContent = EVENT.emoji + ' ' + (spanish ? `¿Ves señales de ${hz.toLowerCase()}? Márcalo en el mapa.` : `See ${hz.toLowerCase()}? Mark it on the map so responders can see it.`);
   }
 }
 
