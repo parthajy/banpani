@@ -106,6 +106,10 @@ export const TYPE_NEEDS = {
   'water-scarcity': ['Drinking water', 'Water tanker', 'Borewell / source repair', 'Fodder for livestock', 'Food ration'],
   heatwave:         ['Drinking water', 'ORS / electrolytes', 'Cooling / shade', 'Cool shelter (fan/AC)', 'Heat-stroke medical', 'Shade & water for cattle'],
   coldwave:         ['Blankets', 'Warm clothes', 'Night shelter', 'Firewood / heating', 'Hot food', 'Medical'],
+  // Health: a respiratory PANDEMIC (COVID-style) vs a water/vector-borne OUTBREAK need different things.
+  pandemic:         ['Oxygen', 'ICU / hospital bed', 'Ventilator', 'Medicines', 'PPE / masks', 'Testing', 'Ambulance', 'Plasma / blood', 'Home care', 'Meals (isolation)', 'Vaccination help'],
+  outbreak:         ['ORS / IV fluids', 'Clean drinking water', 'Testing', 'Medicines', 'Hospital bed', 'Ambulance', 'Blood / platelets', 'Vector control / fogging', 'Sanitation', 'Home care'],
+  epidemic:         ['ORS / IV fluids', 'Clean drinking water', 'Testing', 'Medicines', 'Hospital bed', 'Ambulance', 'Blood / platelets', 'Vector control / fogging', 'Sanitation', 'Home care'],
 };
 
 // Family-level default search keywords, so EVERY event of a family indexes for its real terms even
@@ -116,7 +120,7 @@ export const FAMILY_KEYWORDS = {
   geo: 'earthquake, quake, tremor, aftershock, magnitude, epicentre, landslide, collapsed building, trapped, search and rescue, NDRF, Himalayan earthquake, seismic, relief',
   fire: 'wildfire, forest fire, bushfire, fire, evacuation, smoke, air quality, burns, firefighting, fire line, shelter, Uttarakhand forest fire, relief',
   climate: 'drought, heatwave, coldwave, water scarcity, water tanker, fodder, crop failure, cattle camp, cooling shelter, ORS, heat stroke, blankets, relief',
-  health: 'outbreak, epidemic, oxygen, hospital bed, medicine, relief',
+  health: 'pandemic, epidemic, outbreak, COVID, oxygen, oxygen SOS, ICU bed, hospital bed, ventilator, plasma, platelets, medicine, testing, RT-PCR, ambulance, vaccination, dengue, cholera, ORS, relief',
 };
 
 export function familyOf(type) {
