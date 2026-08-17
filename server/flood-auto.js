@@ -183,3 +183,4 @@ export async function refreshFloodAuto() {
   return cache.assam;
 }
 export function getFloodAuto(region = 'assam') { return cache[region] || null; }
+export const ASSAM_DISTRICTS = ASSAM_POINTS;   // district centroids, reused by the situation dashboard

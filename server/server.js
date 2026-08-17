@@ -21,6 +21,7 @@ import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLifecycle, voteOver, voteReopen, archiveList, LIFECYCLE } from './events.js';
 import { DISASTERS, familyOf, HAZARD } from './disasters.js';
 import { officialEvents, tropicalCyclones } from './official.js';
+import { situationFor } from './situation.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
 import { volunteersEnabled, validEmail, addVolunteer, volunteerSummary, listVolunteers } from './volunteers.js';
 
@@ -203,6 +204,14 @@ on('POST', '/api/volunteer', async (req, res) => {
 on('GET', '/api/official', async (req, res) => { try { json(res, 200, { official: await officialEvents() }); } catch { json(res, 200, { official: [] }); } });
 // Live tropical-cyclone positions + category (GDACS), for the gateway map's cyclone layer.
 on('GET', '/api/cyclones', async (req, res) => { try { json(res, 200, { cyclones: await tropicalCyclones() }); } catch { json(res, 200, { cyclones: [] }); } });
+// District situation rollup for a flood event (needs, gaps, camps, flood-risk per district).
+on('GET', '/api/situation', (req, res, params, url) => {
+  const slug = (url && url.searchParams.get('event')) || 'assam-floods-2026';
+  const e = one('SELECT id,title FROM events WHERE slug=? AND hidden=0', slug);
+  if (!e) return json(res, 404, { error: 'no such event' });
+  try { json(res, 200, { slug, title: e.title, ...situationFor(e.id) }); }
+  catch (err) { json(res, 500, { error: 'situation failed' }); }
+});
 
 // Place search - proxied to OpenStreetMap Nominatim (bounded to Assam), cached, proper UA
 // (so it respects the usage policy and the key/UA stays server-side).
@@ -736,7 +745,8 @@ function sitemapXml() {
 // /e/assam-floods-2026 too. One flag, reversible - the user's timing call.
 const PRETTY = { '/': '/world.html', '/volunteers': '/volunteers.html',
   '/press': '/press.html', '/how-it-works': '/how-it-works.html', '/manifesto': '/manifesto.html', '/contributors': '/contributors.html',
-  '/archive': '/archive.html', '/admin': '/admin.html', '/parthajy/admin': '/admin.html' };   // one admin, reachable at either path
+  '/archive': '/archive.html', '/status': '/situation.html', '/situation': '/situation.html',
+  '/admin': '/admin.html', '/parthajy/admin': '/admin.html' };   // one admin, reachable at either path
 async function serveStatic(req, res, pathname) {
   countView(req, pathname);
   const full = normalize(join(FRONTEND, PRETTY[pathname] || pathname));

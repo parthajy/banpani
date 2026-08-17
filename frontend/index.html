@@ -80,6 +80,7 @@
       <button class="link ic-btn" id="activityBtn"><span class="e">🧾</span><span class="t" data-i18n="activity">Activity</span></button>
       <button class="link ic-btn" id="contactBtn"><span class="e">✉</span><span class="t" data-i18n="contact">Contact</span></button>
       <button class="link ic-btn" id="guideBtn"><span class="e">▶</span><span class="t" data-i18n="guide">Guide</span></button>
+      <a class="link ic-btn" id="mStatus" href="/status"><span class="e">📊</span><span class="t" data-i18n="districtStatus">District status</span></a>
       <a class="link ic-btn" id="mVerify" href="verify.html"><span class="e">🛡️</span><span class="t" data-i18n="volunteers">Verify</span></a>
       <a class="link ic-btn" id="mReport" href="report.html" target="_blank"><span class="e">📄</span><span class="t" data-i18n="report6h">Report</span></a>
       <a class="link ic-btn" href="/volunteers.html"><span class="e">🙋</span><span class="t">Volunteer</span></a>
@@ -455,5 +456,8 @@
   <script src="i18n.js"></script>
   <script src="fullscreen.js"></script>
   <script src="app.js"></script>
+  <script>/* District-status dashboard is Assam-specific for now: link it there, hide it elsewhere. */
+    (function () { var m = document.getElementById('mStatus'); if (!m) return; var e = window.EVENT;
+      if (e && e.slug === 'assam-floods-2026') { m.href = '/status?event=' + e.slug; } else { m.style.display = 'none'; } })();</script>
 </body>
 </html>
