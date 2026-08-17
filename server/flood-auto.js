@@ -152,7 +152,7 @@ async function refreshRegion(key) {
     const sev = classify(pctPeak, rain3, current);
     const trend = trendOf(current, near);
     const gauge = { lat: p.lat, lng: p.lng, trend, discharge: current != null ? Math.round(current) : null,
-      pct: Math.round(pctPeak * 100), rain3: Math.round(rain3), source: 'GloFAS + rainfall (auto)' };
+      peak: peak != null ? Math.round(peak) : null, pct: Math.round(pctPeak * 100), rain3: Math.round(rain3), source: 'GloFAS + rainfall (auto)' };
 
     if (cfg.mode === 'districts') {
       if (!sev) return;

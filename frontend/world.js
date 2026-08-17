@@ -84,21 +84,25 @@ window.toggleHeat = async function () {
     const data = await (await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lats + '&longitude=' + lngs + '&daily=temperature_2m_max&forecast_days=1&timezone=auto')).json();
     const arr = Array.isArray(data) ? data : [data];
     heatLayer = L.layerGroup();
-    let hot = 0;
+    let hot = 0, hottest = null;
     arr.forEach((d, i) => {
       const c = HEAT_CITIES[i]; if (!c) return;
       const t = d && d.daily && d.daily.temperature_2m_max && d.daily.temperature_2m_max[0];
-      if (t == null || t < 40) return;
-      hot++;
-      const color = t >= 45 ? '#c81e1e' : t >= 42 ? '#f5551d' : '#f59e0b';
-      const level = t >= 45 ? 'Severe heatwave' : t >= 42 ? 'Heatwave' : 'Very hot';
-      L.circleMarker([c.lat, c.lng], { radius: 8 + Math.min(9, t - 40), weight: 1, color: '#0b0f14', fillColor: color, fillOpacity: .5 })
-        .bindPopup(`<b>🌡️ ${esc(c.n)}</b><br><b style="color:${color};font-size:15px">${Math.round(t)}°C</b> forecast today<br><span style="color:${color};font-weight:700">${level}</span><br><small>Source: Open-Meteo · official: IMD</small>`)
+      if (t == null) return;
+      if (!hottest || t > hottest.t) hottest = { n: c.n, t };
+      if (t < 37) return;   // below "hot" - don't clutter the map (most of India in the monsoon)
+      if (t >= 40) hot++;
+      const color = t >= 45 ? '#c81e1e' : t >= 42 ? '#f5551d' : t >= 40 ? '#f59e0b' : '#eab308';
+      const level = t >= 45 ? 'Severe heatwave' : t >= 42 ? 'Heatwave' : t >= 40 ? 'Heatwave level' : 'Hot';
+      L.circleMarker([c.lat, c.lng], { radius: 7 + Math.min(10, t - 37), weight: 1, color: '#0b0f14', fillColor: color, fillOpacity: .5 })
+        .bindPopup(`<b>🌡️ ${esc(c.n)}</b><br><b style="color:${color};font-size:15px">${Math.round(t)}°C</b> forecast today<br><span style="color:${color};font-weight:700">${level}</span><br><small>Source: Open-Meteo · official: IMD. Heatwave = 40°C+ in the plains.</small>`)
         .addTo(heatLayer);
     });
     heatLayer.addTo(map);
     if (btn) btn.classList.add('on');
-    toast(hot ? `Heat alerts on - ${hot} city(s) at 40°C+ today` : 'No 40°C+ heat in the forecast right now');
+    toast(hot ? `Heat layer on - ${hot} city(s) at heatwave level (40°C+) today`
+      : hottest ? `Heat layer on - hottest now: ${hottest.n} ${Math.round(hottest.t)}°C. No heatwave-level heat, normal during the monsoon.`
+        : 'Could not read temperatures right now');
   } catch { toast('Could not load heat data'); }
   return false;
 };
@@ -115,14 +119,23 @@ window.toggleFloodRisk = async function () {
     const gauges = (j && j.gauges) || [];
     riskLayer = L.layerGroup();
     let n = 0;
+    const num = x => (x != null ? Number(x).toLocaleString('en-IN') : 'n/a');
     gauges.forEach(g => {
       if (g.risk !== 'high' && g.risk !== 'medium') return;
       n++;
       const color = g.risk === 'high' ? '#e11d1d' : '#f59e0b';
       const arrow = g.trend === 'rising' ? '↑ rising' : g.trend === 'falling' ? '↓ falling' : '→ steady';
+      const risingWarn = g.trend === 'rising' && g.peak != null && g.discharge != null && g.peak > g.discharge * 1.1
+        ? `<br>⚠️ Still rising - modelled to peak near <b>${num(g.peak)} m³/s</b> within 7 days` : '';
+      const popup = `<b>🌊 ${esc(g.station || g.river || 'River')}</b>`
+        + `<br><b style="color:${color};text-transform:capitalize">${esc(g.risk)} flood risk</b> · ${esc(arrow)}`
+        + `<br>Flow now: <b>${num(g.discharge)} m³/s</b> <small>(${g.pct}th percentile of the last 90 days)</small>`
+        + risingWarn
+        + `<br>Rain next 3 days: <b>${g.rain3} mm</b>`
+        + `<br><a href="tel:112" style="color:${color};font-weight:700">Emergency 112</a> · <a href="tel:1078">Disaster 1078</a>`
+        + `<br><small>Auto-updated ${esc(j.updated || '')} · GloFAS river model. A flood-RISK estimate, not an official count.</small>`;
       L.circleMarker([g.lat, g.lng], { radius: g.risk === 'high' ? 10 : 8, weight: 2, color, fillColor: color, fillOpacity: .3 })
-        .bindPopup(`<b>🌊 ${esc(g.station || g.river || 'River')}</b><br><b style="color:${color};text-transform:capitalize">${esc(g.risk)} flood risk</b> · ${esc(arrow)}<br>Discharge at ${g.pct}th percentile · ${g.rain3}mm rain (3d)<br><small>${esc(j.source || 'GloFAS river model (auto)')}</small>`)
-        .addTo(riskLayer);
+        .bindPopup(popup).addTo(riskLayer);
     });
     riskLayer.addTo(map);
     if (btn) btn.classList.add('on');
@@ -176,6 +189,36 @@ window.toggleDrought = async function () {
     if (btn) btn.classList.add('on');
     toast(dry ? `Drought-stress layer on - ${dry} area(s) dry` : 'No notable dry-stress areas right now');
   } catch { toast('Could not load drought data'); }
+  return false;
+};
+
+// Live earthquakes: USGS feed of M2.5+ quakes in the last 7 days, filtered to India and its neighbouring
+// seismic zones (Himalaya, Hindu Kush, Andaman). Shows where the ground has actually moved, in near-real-time.
+let quakeLayer = null;
+window.toggleQuakes = async function () {
+  const btn = $('wquakeBtn');
+  if (quakeLayer) { map.removeLayer(quakeLayer); quakeLayer = null; if (btn) btn.classList.remove('on'); return false; }
+  try {
+    const j = await (await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson')).json();
+    const feats = (j && j.features) || [];
+    quakeLayer = L.layerGroup();
+    let n = 0, biggest = 0;
+    feats.forEach(f => {
+      const c = f.geometry && f.geometry.coordinates; if (!c) return;
+      const lng = c[0], lat = c[1], depth = c[2], m = f.properties && f.properties.mag;
+      if (m == null || lat < 5 || lat > 40 || lng < 65 || lng > 100) return;   // India + neighbouring zones
+      n++; if (m > biggest) biggest = m;
+      const color = m >= 6 ? '#c81e1e' : m >= 5 ? '#f5551d' : m >= 4 ? '#f59e0b' : '#eab308';
+      const ageH = Math.round((Date.now() - f.properties.time) / 3.6e6);
+      const ageStr = ageH < 1 ? 'just now' : ageH < 24 ? ageH + 'h ago' : Math.round(ageH / 24) + 'd ago';
+      L.circleMarker([lat, lng], { radius: 4 + m * 2, weight: 1.5, color, fillColor: color, fillOpacity: .25 })
+        .bindPopup(`<b>🫨 M${m.toFixed(1)} earthquake</b><br>${esc(f.properties.place || 'Location unknown')}<br>Depth ${Math.round(depth)} km · ${ageStr}<br><small>Source: USGS (live)</small><br><a href="${esc(f.properties.url || '#')}" target="_blank" rel="noopener" style="color:${color};font-weight:700">USGS details →</a>`)
+        .addTo(quakeLayer);
+    });
+    quakeLayer.addTo(map);
+    if (btn) btn.classList.add('on');
+    toast(n ? `Earthquakes on - ${n} quake(s) M2.5+ near India in 7 days (biggest M${biggest.toFixed(1)})` : 'No M2.5+ quakes near India in the last 7 days');
+  } catch { toast('Could not load earthquake data'); }
   return false;
 };
 
@@ -365,6 +408,14 @@ window.reopenEvent = async function (slug) {
   document.addEventListener('click', e => { if (!m.contains(e.target) && !b.contains(e.target)) m.classList.remove('show'); });
   m.addEventListener('click', () => m.classList.remove('show'));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') m.classList.remove('show'); });
+})();
+
+// Collapsible legend - what every marker and live layer means.
+(function () {
+  const b = $('wlegendBtn'), p = $('wlegend'), x = $('wlegendX');
+  if (!b || !p) return;
+  b.onclick = () => p.hidden = !p.hidden;
+  if (x) x.onclick = () => p.hidden = true;
 })();
 
 // Share the India map (native share sheet, or copy the link as a fallback).

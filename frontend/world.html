@@ -74,6 +74,23 @@
     #wheatBtn.on{border-color:#ff8a3d;background:#3a2413}
     #wriskBtn.on{border-color:#ff5a5a;background:#3a1616}
     #wdroughtBtn.on{border-color:#c98a3a;background:#332413}
+    #wquakeBtn.on{border-color:#eab308;background:#332b0e}
+    .wlbtn-info{font-size:15px;color:var(--muted)}
+    /* collapsible legend */
+    .wlegend{position:absolute;left:10px;bottom:70px;z-index:670;width:min(320px,90vw);max-height:62vh;overflow-y:auto;
+      background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);animation:wobin .25s}
+    .wl-head{display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:14px;
+      padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);border-radius:14px 14px 0 0}
+    .wl-head button{background:var(--panel2);border:none;color:var(--muted);border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;line-height:1}
+    .wl-body{padding:10px 14px 14px}
+    .wl-grp{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-weight:800;margin:10px 0 6px}
+    .wl-grp:first-child{margin-top:0}
+    .wl-row{font-size:12.5px;color:var(--muted);line-height:1.5;display:flex;align-items:flex-start;gap:7px;margin-bottom:5px}
+    .wl-ic{flex:0 0 auto;width:14px;height:14px;border-radius:50%;margin-top:2px}
+    .wl-solid{background:#2E77FF}
+    .wl-pulse{background:#2E77FF;box-shadow:0 0 0 4px rgba(46,119,255,.28)}
+    .wl-ring{background:transparent;border:2px dashed #12B5A5}
+    .wl-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
     .whint{position:absolute;top:104px;left:50%;transform:translateX(-50%);z-index:640;background:var(--accent);color:#fff;
       padding:8px 15px;border-radius:20px;font-size:13px;font-weight:600;display:none;box-shadow:var(--shadow)}
     .whint.show{display:block}
@@ -163,6 +180,25 @@
 
   <div class="wonboard" id="wonboard" hidden>👉 New here? Tap <b>＋ Report</b> below, then drop a pin where a disaster is happening.<button id="wobX" aria-label="Dismiss">✕</button></div>
 
+  <!-- Collapsible legend: what every marker and live layer means, and where the data comes from. -->
+  <div class="wlegend" id="wlegend" hidden>
+    <div class="wl-head">What's on this map <button id="wlegendX" aria-label="Close">✕</button></div>
+    <div class="wl-body">
+      <div class="wl-grp">Markers</div>
+      <div class="wl-row"><span class="wl-ic wl-pulse"></span> Pulsing dot = active relief response (tap to open its map)</div>
+      <div class="wl-row"><span class="wl-ic wl-solid"></span> Solid dot = community-reported disaster (bigger = more reports)</div>
+      <div class="wl-row"><span class="wl-ic wl-ring"></span> Dashed ring = official alert (GDACS)</div>
+      <div class="wl-row">Dot colour = disaster family (the filter chips up top: 💧 water, 🔥 fire, 🌪️ storm, ⛰️ geological, and more)</div>
+      <div class="wl-grp">LIVE layers (right-side panel)</div>
+      <div class="wl-row">🌧 Rain radar - where it's raining hard now (RainViewer)</div>
+      <div class="wl-row">🌡 Heatwave - forecast max temperature; 40°C+ = heatwave (Open-Meteo)</div>
+      <div class="wl-row">🌊 River flood-risk - modelled discharge on India's major rivers (GloFAS)</div>
+      <div class="wl-row">🏜️ Drought stress - soil moisture + recent rainfall (Open-Meteo)</div>
+      <div class="wl-row">🫨 Earthquakes - M2.5+ in the last 7 days (USGS)</div>
+      <div class="wl-note">Every layer is <b>automated</b> - pulled live from open data, no human editing. These are risk estimates, not official counts. Always call <b>112</b> in an emergency.</div>
+    </div>
+  </div>
+
   <button class="wexpand" id="wexpandBtn" title="Full screen">⛶</button>
   <div class="wlayers" id="wlayers">
     <div class="wlayers-h">LIVE</div>
@@ -170,6 +206,8 @@
     <button class="wlbtn" id="wheatBtn" title="Heatwave alerts (live)" onclick="return toggleHeat()">🌡</button>
     <button class="wlbtn" id="wriskBtn" title="Flood risk on rivers (live)" onclick="return toggleFloodRisk()">🌊</button>
     <button class="wlbtn" id="wdroughtBtn" title="Drought stress (live)" onclick="return toggleDrought()">🏜️</button>
+    <button class="wlbtn" id="wquakeBtn" title="Earthquakes, last 7 days (live)" onclick="return toggleQuakes()">🫨</button>
+    <button class="wlbtn wlbtn-info" id="wlegendBtn" title="What's on this map?">ⓘ</button>
   </div>
   <button class="wfab" id="wreportBtn">＋ Report</button>
   <div class="whint" id="whint">Tap the map where it’s happening 📍</div>
