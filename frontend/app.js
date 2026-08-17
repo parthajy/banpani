@@ -150,6 +150,13 @@ const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addT
 const freshIcon = (emoji, stale) => L.divIcon({ html: `<div class="fresh-pin ${stale ? 'stale' : ''}">${emoji}</div>`, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
 const freshTxt = m => (m < 60 ? Math.max(1, m) + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd') + ' ago';
 const floodColor = s => ({ high: '#f0453a', medium: '#f5a623', receding: '#8fbaff' }[s] || '#f0453a');
+// Hazard "kinds" (e.g. a storm marks WIND and SURGE separately). Colour a marker by its kind when the
+// event defines kinds; otherwise fall back to the flood severity colour. Severity is shown via opacity.
+const HKINDS = (EVENT && EVENT.hazardKinds) || null;
+const hkind = k => HKINDS && HKINDS.find(x => x.k === k);
+const hazColor = f => { const hk = hkind(f.kind); return hk ? hk.color : floodColor(f.severity); };
+// Severity label that respects a non-water event's own scale (Easing/Passed for storm, etc.).
+const sevLbl = s => { const m = (EVENT && EVENT.hazardSev || []).find(x => x[0] === s); if (m) return vt(m[1]); return t(s === 'high' ? 'sevSevere' : s === 'medium' ? 'sevModerate' : s === 'receding' ? 'sevReceding' : 'sevGone'); };
 
 function pinIcon(status, verify, emoji, gap) {
   const cls = `pin ${status} ${verify === 'unverified' ? 'unverified' : ''} ${gap ? 'gap' : ''}`;
@@ -256,15 +263,17 @@ function renderFlood() {
     shown.push(f);
     const when = f.updated_at || f.created_at, age = ageH(when);
     const op = Math.max(0.15, 0.5 - age / 96);
-    L.circle([f.lat, f.lng], { radius: 2500, color: floodColor(f.severity), weight: 1, fillColor: floodColor(f.severity), fillOpacity: op })
-      .bindPopup(`<b>${NONWATER ? EVENT.emoji + ' ' + esc(vt(EVENT.hazardLabel)) : '🌊 ' + t('floodedHere')}</b><br>${f.place ? esc(f.place) + '<br>' : ''}${t('status')}: <b>${esc(NONWATER ? hazSevLabel(f.severity) : f.severity)}</b><br><small>${agoText(when)}</small>
+    const hk = hkind(f.kind), col = hazColor(f);
+    const title = hk ? hk.emoji + ' ' + esc(vt(hk.label)) : (NONWATER ? EVENT.emoji + ' ' + esc(vt(EVENT.hazardLabel)) : '🌊 ' + t('floodedHere'));
+    L.circle([f.lat, f.lng], { radius: 2500, color: col, weight: 1, fillColor: col, fillOpacity: op })
+      .bindPopup(`<b>${title}</b><br>${f.place ? esc(f.place) + '<br>' : ''}${t('status')}: <b>${esc(NONWATER ? sevLbl(f.severity) : f.severity)}</b><br><small>${agoText(when)}</small>
         <div class="pmeta" style="margin-top:6px">${t('updateStatus')}:</div>
         <div class="vbtns">
-          <button onclick="bp.floodStatus(${f.id},'high')">${t('sevSevere')}</button>
-          <button onclick="bp.floodStatus(${f.id},'medium')">${t('sevModerate')}</button>
-          <button onclick="bp.floodStatus(${f.id},'receding')">${t('sevReceding')}</button>
+          <button onclick="bp.floodStatus(${f.id},'high')">${esc(sevLbl('high'))}</button>
+          <button onclick="bp.floodStatus(${f.id},'medium')">${esc(sevLbl('medium'))}</button>
+          <button onclick="bp.floodStatus(${f.id},'receding')">${esc(sevLbl('receding'))}</button>
         </div>
-        <div class="vbtns"><button onclick="bp.floodStatus(${f.id},'receded')">💧 ${t('sevGone')} (${f.clears || 0}/2)</button></div>`).addTo(layers.flood);
+        <div class="vbtns"><button onclick="bp.floodStatus(${f.id},'receded')">✓ ${esc(sevLbl('receded'))} (${f.clears || 0}/2)</button></div>`).addTo(layers.flood);
   }
 }
 function agoText(iso) {
@@ -897,12 +906,13 @@ $('evacTarget').querySelectorAll('button').forEach(b => b.onclick = () => { $('e
 
 // flood severity selector
 let fSev = 'high';
+let fKind = (EVENT && EVENT.hazardKinds && EVENT.hazardKinds[0] && EVENT.hazardKinds[0].k) || 'flood';
 $('f_sev').querySelectorAll('button').forEach(b => b.onclick = () => { $('f_sev').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); fSev = b.dataset.s; });
 $('f_submit').onclick = async () => {
   if (pending.f.lat == null) return toast('Set location (tap map or GPS)');
   try {
     const fPlaceName = $('f_place').value.trim();
-    await api('/api/flood-reports', { method: 'POST', body: { place: $('f_place').value.trim(), lat: pending.f.lat, lng: pending.f.lng, severity: fSev, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
+    await api('/api/flood-reports', { method: 'POST', body: { place: $('f_place').value.trim(), lat: pending.f.lat, lng: pending.f.lng, severity: fSev, kind: fKind, event_id: EVENT ? EVENT.id : undefined, device: deviceId() } });
     $('f_place').value = ''; pending.f = {}; $('f_coord').textContent = t('noLoc'); $('f_coord').classList.remove('set'); removeMarker('f');
     await refresh(); await renderAdvisory(); toast(NONWATER ? (getLang() === 'es' ? '✅ Marcado, gracias' : '✅ Marked, thank you') : t('floodMarked')); maybeCert(fPlaceName);
   } catch (e) { toast('Failed: ' + e.message); }
@@ -1344,6 +1354,25 @@ function applyEventLabels() {
       fSev = EVENT.hazardSev[0][0];
       $('f_sev').querySelectorAll('button').forEach(b => b.onclick = () => { $('f_sev').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); fSev = b.dataset.s; });
     }
+    // Dual-hazard families (storm: WIND + SURGE): show a "what are you marking?" selector.
+    if (HKINDS && HKINDS.length > 1) {
+      const box = $('f_kind'), lbl = $('f_kind_lbl');
+      if (lbl) { lbl.hidden = false; lbl.textContent = spanish ? '¿Qué estás marcando?' : 'What are you marking?'; }
+      if (box) {
+        box.hidden = false;
+        box.innerHTML = HKINDS.map((x, i) => `<button data-k="${x.k}" class="${i === 0 ? 'on' : ''}">${x.emoji} ${esc(vt(x.label))}</button>`).join('');
+        fKind = HKINDS[0].k;
+        box.querySelectorAll('button').forEach(b => b.onclick = () => { box.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); fKind = b.dataset.k; });
+      }
+      const hazWord = spanish ? 'Peligros' : 'Storm hazards';
+      set('.tab[data-tab="flood"]', EVENT.emoji + ' ' + hazWord);
+      set('[data-i18n="floodExtent"]', hazWord);
+      set('[data-i18n="floodNow"]', EVENT.emoji + ' ' + hazWord);
+      set('#f_submit', '⚠️ ' + (spanish ? 'Marcar aquí' : 'Mark this here'));
+    }
+    // De-flood the onboarding (welcome emoji + quick-start line) for a non-water hazard.
+    const wt = document.querySelector('[data-i18n="welcomeTitle"]'); if (wt && wt.textContent.indexOf('🌊') >= 0) wt.textContent = wt.textContent.replace('🌊', EVENT.emoji);
+    const q3 = document.querySelector('[data-i18n="qs3"]'); if (q3) q3.textContent = EVENT.emoji + ' ' + (spanish ? `¿Ves señales de ${hz.toLowerCase()}? Márcalo en el mapa.` : `See ${hz.toLowerCase()}? Mark it on the map so responders can see it.`);
   }
 }
 

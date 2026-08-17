@@ -75,7 +75,7 @@ const STR = {
     photosLayer: 'Photos', pickPhoto: 'Choose or take a photo first', setPhotoLoc: 'Set the photo location', photoUploaded: 'Photo uploaded 📷 - thank you', noPhotos: 'No photos yet. Be the first to add one.', flag: 'Flag', photoRemoved: 'Removed by community',
     tFlood: '🌊 Flood', floodIntro: 'Is an area under water right now? Mark it so the map shows real, live flood status - never guessed. Tap the map or use GPS.',
     howBad: 'How bad is it?', sevSevere: 'Severe', sevModerate: 'Moderate', sevReceding: 'Receding', sevGone: 'Water gone',
-    markFlood: '🌊 Mark flooding here', floodMarked: 'Flood marked 🌊 - thank you', floodedArea: 'Flooded area',
+    markFlood: '🌊 Mark flooding here', floodMarked: 'Flood marked 🌊 - thank you', floodedArea: 'Flooded area', hazardKind: 'What are you marking?',
     floodedHere: 'Flooding reported', status: 'Status', updateStatus: 'Update status', floodStatusSet: 'Flood status updated 🌊',
     floodClearVote: 'Marked water gone', floodCleared: 'Cleared - water gone ✓',
     activity: 'Activity', activityTitle: '🧾 Live activity', activityIntro: 'Everything happening on Banpani, in the open. No names, no phone numbers, no IP addresses - each person shows only as an anonymous id, so the system stays honest and private at the same time.', noActivity: 'No activity yet.',

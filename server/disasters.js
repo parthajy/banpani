@@ -19,9 +19,9 @@ export const DISASTERS = {
   storm: {
     color: '#8B5CF6', emoji: '🌪️', label: 'Storm & wind',
     types: ['cyclone', 'hurricane', 'typhoon', 'tornado', 'thunderstorm', 'hailstorm', 'blizzard', 'ice-storm', 'dust-storm'],
-    needs: ['Shelter', 'Drinking water', 'Food', 'Tarpaulin / roofing', 'Medicines', 'Power / lighting', 'Rescue'],
-    offerKinds: [['shelter', '🏠 Shelter'], ['water', '💧 Water'], ['food', '🍚 Food'], ['power', '🔌 Power'], ['boat', '🚤 Boat'], ['other', '📦 Other']],
-    facilityKinds: [['shelter', '⛺ Shelter'], ['shop', '🏪 Shop'], ['pharmacy', '💊 Pharmacy'], ['fuel', '⛽ Fuel']],
+    needs: ['Evacuation help', 'Storm shelter', 'Roofing / tarpaulin', 'Drinking water', 'Food', 'Power line down', 'Tree / debris clearing', 'Boat / surge rescue', 'Medicines'],
+    offerKinds: [['shelter', '🏠 Shelter'], ['water', '💧 Water'], ['food', '🍚 Food'], ['power', '🔌 Power restore'], ['clearing', '🪚 Debris clearing'], ['boat', '🚤 Boat'], ['other', '📦 Other']],
+    facilityKinds: [['shelter', '⛺ Cyclone shelter'], ['shop', '🏪 Shop'], ['pharmacy', '💊 Pharmacy'], ['fuel', '⛽ Fuel']],
   },
   geo: {
     color: '#B4652A', emoji: '⛰️', label: 'Geological',
@@ -75,9 +75,29 @@ export const DISASTERS = {
 export const HAZARD = {
   water: { label: 'Flood', sev: [['high', 'Severe'], ['medium', 'Moderate'], ['receding', 'Receding'], ['receded', 'Water gone']] },
   fire:  { label: 'Fire zone', sev: [['high', 'Active'], ['medium', 'Spreading'], ['receding', 'Contained'], ['receded', 'Out']] },
-  storm: { label: 'Storm-hit area', sev: [['high', 'Severe'], ['medium', 'Moderate'], ['receding', 'Easing'], ['receded', 'Passed']] },
+  storm: { label: 'Storm damage', sev: [['high', 'Severe'], ['medium', 'Moderate'], ['receding', 'Easing'], ['receded', 'Passed']] },
   geo:   { label: 'Damage', sev: [['high', 'Heavy damage'], ['medium', 'Some damage'], ['receding', 'Minor'], ['receded', 'Cleared']] },
   tech:  { label: 'Contamination', sev: [['high', 'Dangerous'], ['medium', 'Moderate'], ['receding', 'Easing'], ['receded', 'Cleared']] },
+};
+
+// Hazard "kinds" a family can mark on the map. A storm marks WIND and SURGE separately (a cyclone is a
+// dual hazard); most families have a single kind. First entry is the default. Colours drive the map.
+export const HAZARD_KINDS = {
+  storm: [
+    { k: 'wind', label: 'Wind / structural damage', emoji: '🌪️', color: '#8B5CF6' },
+    { k: 'surge', label: 'Storm surge / flooding', emoji: '🌊', color: '#2E77FF' },
+  ],
+};
+
+// Family-level default search keywords, so EVERY event of a family indexes for its real terms even
+// without a hand-written per-event SEO block. Appended to the event title in the generic SEO path.
+export const FAMILY_KEYWORDS = {
+  water: 'flood, flooding, flood relief, rescue, boat, drinking water, relief camp, evacuation',
+  storm: 'cyclone, storm, wind damage, storm surge, landfall, IMD cyclone warning, super cyclone, gale, evacuation, cyclone shelter, roofing, power outage, tree fall, coastal flooding, relief',
+  geo: 'earthquake, landslide, tremor, aftershock, search and rescue, collapsed building, trapped, relief',
+  fire: 'wildfire, fire, evacuation, smoke, burns, shelter, relief',
+  climate: 'heatwave, drought, water scarcity, cooling shelter, ORS, relief',
+  health: 'outbreak, epidemic, oxygen, hospital bed, medicine, relief',
 };
 
 export function familyOf(type) {

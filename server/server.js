@@ -19,7 +19,7 @@ import { updateWeather } from './weather.js';
 import { refreshFloodAuto, getFloodAuto } from './flood-auto.js';
 import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLifecycle, voteOver, voteReopen, archiveList, LIFECYCLE } from './events.js';
-import { DISASTERS, familyOf, HAZARD } from './disasters.js';
+import { DISASTERS, familyOf, HAZARD, HAZARD_KINDS, FAMILY_KEYWORDS } from './disasters.js';
 import { officialEvents, tropicalCyclones } from './official.js';
 import { situationFor, trackerData } from './situation.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
@@ -98,7 +98,7 @@ on('GET', '/api/state', (req, res, params, url) => {
     ngos: decoratedNgos(),
     flood_polygons: all('SELECT id,geojson,severity,note,source,created_at FROM flood_polygons WHERE hidden=0').map(r => ({ ...r, geojson: JSON.parse(r.geojson) })),
     photos: all('SELECT id,report_id,lat,lng,tag,mode,caption,file,created_at FROM photos WHERE hidden=0' + A + ' ORDER BY id DESC LIMIT 300').map(p => ({ ...p, url: '/uploads/' + p.file, file: undefined })),
-    flood_reports: all(`SELECT id,place,lat,lng,severity,created_at,updated_at,
+    flood_reports: all(`SELECT id,place,lat,lng,severity,kind,created_at,updated_at,
       (SELECT COUNT(DISTINCT device) FROM votes v WHERE v.target_type='flood' AND v.target_id=f.id AND v.category='clear') AS clears
       FROM flood_reports f WHERE hidden=0 AND severity!='receded'${A} ORDER BY COALESCE(updated_at,created_at) DESC LIMIT 500`),
     // event-only modules - scoped to the event; empty on the homepage (Assam classic map) so a
@@ -326,9 +326,10 @@ on('POST', '/api/flood-reports', async (req, res) => {
   const b = await readBody(req);
   if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
   const sev = ['high', 'medium', 'receding', 'receded'].includes(b.severity) ? b.severity : 'high';
-  const r = run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,event_id,device) VALUES(?,?,?,?,?,?,?,?)',
-    now(), now(), str(b.place, 120), num(b.lat), num(b.lng), sev, (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
-  log(req, 'flood_marked', 'flood:' + Number(r.lastInsertRowid), { device: dev(b), detail: sev, area: str(b.place, 120) || coarse(b.lat, b.lng) });
+  const kind = ['flood', 'wind', 'surge'].includes(b.kind) ? b.kind : 'flood';
+  const r = run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,kind,event_id,device) VALUES(?,?,?,?,?,?,?,?,?)',
+    now(), now(), str(b.place, 120), num(b.lat), num(b.lng), sev, kind, (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
+  log(req, 'flood_marked', 'flood:' + Number(r.lastInsertRowid), { device: dev(b), detail: kind + '/' + sev, area: str(b.place, 120) || coarse(b.lat, b.lng) });
   json(res, 201, { id: Number(r.lastInsertRowid) });
 });
 
@@ -658,7 +659,7 @@ function seoFor(ev, f) {
   const c = EVENT_SEO[ev.slug];
   return {
     desc: c ? c.desc : `Report needs, offers, blocked roads and photos for ${ev.title}. A free, community-run ${f.label.toLowerCase()} relief map - no accounts, no money, owned by everyone.`,
-    keywords: c ? c.keywords : `${ev.title}, ${f.label} relief, disaster relief, community map, volunteer, coordination, banpani`,
+    keywords: c ? c.keywords : `${ev.title}, ${reliefWordOf(ev)} relief, ${FAMILY_KEYWORDS[ev.family] || 'disaster relief'}, community map, volunteer, coordination, banpani`,
     body: c ? c.body : `<h1>${htmlEsc(ev.title)} - Community Relief Map</h1><p>A free, community-run live map to coordinate ${f.label.toLowerCase()} relief for ${htmlEsc(ev.title)}. Report needs, offer help, and find the areas nobody has reached yet. No account, no money, owned by no one. Community reports on this map are not official.</p>`,
   };
 }
@@ -683,6 +684,8 @@ async function serveEventApp(req, res, ev) {
     official: !!officialData, officialData, items: (ev.needs && ev.needs.length) ? ev.needs : (f.needs || []), modules: ev.modules || [],
     offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: isAssam ? null : helplinesForCountry(ev.family, cc),
     hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
+    hazardKinds: HAZARD_KINDS[ev.family] || null,   // storm marks wind + surge separately; most families single
+    familyLabel: (DISASTERS[ev.family] || {}).label || null,
     status: ev.status || 'active', dormantAt: ev.dormant_at || null, archivedAt: ev.archived_at || null,
     reopenVotes: ev.reopenVotes || 0, reopenNeed: LIFECYCLE.REOPEN_VOTES, overNeed: LIFECYCLE.OVER_VOTES,
     langs: isColombia ? ['en', 'es'] : isBangladesh ? ['bn', 'en'] : isOdisha ? ['en', 'or', 'hi'] : ['en', 'as', 'hi'],   // language options for this response's region
