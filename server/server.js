@@ -608,7 +608,19 @@ function timeAgo(iso) {
 // Curated SEO for flagship responses: keyword-rich descriptions + crawlable text (for AI engines and
 // search crawlers that don't run JS). Bilingual where the audience is (Colombia = es/en). Others fall
 // back to a generic template built from the event + family.
+// The word before "relief" in titles/shares. A water-family event is a FLOOD, not "water"; a geo event
+// is usually an earthquake. Prefer the event's own disaster_type, fall back to a family word.
+const RELIEF_WORD = { water: 'flood', fire: 'fire', storm: 'storm', geo: 'earthquake', climate: 'relief', health: 'health', tech: 'hazard', infra: 'disaster', agri: 'relief' };
+const reliefWordOf = ev => ((ev.disaster_type || '').replace(/-/g, ' ').trim()) || RELIEF_WORD[ev.family] || 'disaster';
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
 const EVENT_SEO = {
+  'assam-floods-2026': {
+    keywords: 'Assam floods, Assam floods 2026, Assam flood relief, বানপানী, অসম বান, বন্যা ত্রাণ, Brahmaputra flood, Barak valley flood, Barpeta, Dhubri, Nagaon, Morigaon, Cachar, Sribhumi, Karimganj, Hailakandi, Lakhimpur, Dhemaji, Majuli, Golaghat, Goalpara, Bongaigaon, flood relief Assam, ASDMA, relief camps Assam, boat rescue, drinking water, ত্রাণ সমন্বয়, disaster coordination',
+    desc: 'Free, community-run live map to coordinate flood relief across Assam, India during the 2026 Brahmaputra and Barak valley floods (Barpeta, Dhubri, Nagaon, Morigaon, Cachar, Sribhumi, Lakhimpur, Dhemaji, Majuli and more). Report a stranded family or a need such as a boat, drinking water, medicine, food or shelter, and volunteers nearby can act. No account, no money. In Assamese, Bengali, Hindi and English. Official source: ASDMA. Emergency: 112.',
+    body: '<h1>Assam Floods 2026 - Community Flood Relief Map</h1>'
+      + '<p>Banpani (বানপানী) is a free, community-run live map to coordinate flood relief across Assam, India during the 2026 monsoon floods on the Brahmaputra and Barak rivers. It covers the worst-hit districts including Barpeta, Dhubri, South Salmara, Nagaon, Morigaon, Cachar, Sribhumi (Karimganj), Hailakandi, Lakhimpur, Dhemaji, Majuli, Golaghat, Goalpara and Bongaigaon. Report a stranded family or a relief need such as a boat, drinking water, ORS, medicine, dry food, baby food, tarpaulin or cattle feed, and volunteers nearby can act. No account, no money, owned by no one. Available in Assamese, Bengali, Hindi and English. Official source: ASDMA (Assam State Disaster Management Authority). Emergency: 112; ASDMA control room: 1079. Community reports on this map are not official.</p>',
+  },
   'colombia-earthquake-2026': {
     keywords: 'Colombia earthquake, terremoto Colombia, sismo Colombia 2026, San José del Palmar, Cali, Manizales, Valle del Cauca, Chocó, Caldas, Risaralda, Quindío, ayuda terremoto, coordinación de ayuda humanitaria, Cruz Roja Colombiana, Defensa Civil Colombiana, UNGRD',
     desc: 'Mapa comunitario gratuito para coordinar la ayuda tras el terremoto (sismo) de magnitud 7.4 en el occidente de Colombia (San José del Palmar; Valle del Cauca, Chocó, Caldas, Risaralda, Quindío; Cali, Manizales). Reporta necesidades, ofrece ayuda y encuentra las zonas que nadie ha atendido. Sin cuenta, sin costo, en español e inglés.',
@@ -677,14 +689,14 @@ async function serveEventApp(req, res, ev) {
   const crumb = JSON.stringify({
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'World disaster map', item: 'https://banpani.org/world' },
+      { '@type': 'ListItem', position: 1, name: 'India disaster map', item: 'https://banpani.org/' },
       { '@type': 'ListItem', position: 2, name: ev.title, item: url },
     ],
   }).replace(/</g, '\\u003c');
   const inject = '<script>window.EVENT=' + JSON.stringify(cfg).replace(/</g, '\\u003c') + '</script>\n  <script type="application/ld+json">' + ld + '</script>\n  <script type="application/ld+json">' + crumb + '</script>\n  ';
   // Per-event SEO: a shared /e/<slug> link must preview as ITSELF (its title, blurb, family image),
   // not as the generic Assam homepage. Swap title/description + every OG/Twitter tag + canonical.
-  const ogTitle = `${f.emoji} ${ev.title} - live ${f.label.toLowerCase()} relief coordination`;
+  const ogTitle = `${f.emoji} ${ev.title} - live ${reliefWordOf(ev)} relief coordination`;
   const ogDesc = `Report needs, offers, blocked roads and photos for ${ev.title}. A free, community-run relief map - no accounts, no money, owned by everyone.`;
   const ogImg = `https://banpani.org/og-${ev.family}.png`;
   const set = (h, attr, val) => h.replace(new RegExp('(<meta ' + attr + ' content=")[^"]*(")'), '$1' + htmlEsc(val).replace(/\$/g, '$$$$') + '$2');
@@ -692,7 +704,7 @@ async function serveEventApp(req, res, ev) {
     // served under /e/<slug>, so relative asset URLs (styles.css, app.js…) must resolve from root
     .replace('<head>', '<head>\n  <base href="/">')
     .replace('<script src="config.js"></script>', inject + '<script src="config.js"></script>')
-    .replace(/<title>[\s\S]*?<\/title>/, '<title>' + htmlEsc(ev.title + ' - ' + f.label + ' relief coordination · Banpani') + '</title>')
+    .replace(/<title>[\s\S]*?<\/title>/, '<title>' + htmlEsc(ev.title + ' - ' + cap(reliefWordOf(ev)) + ' relief coordination · Banpani') + '</title>')
     .replace(/(<link rel="canonical" href=")[^"]*(")/, '$1' + url + '$2');
   html = set(html, 'name="description"', seo.desc);
   html = set(html, 'name="keywords"', seo.keywords);
@@ -708,7 +720,7 @@ async function serveEventApp(req, res, ev) {
   writeBody(req, res, 200, Buffer.from(html), 'text/html; charset=utf-8', 'no-cache');
 }
 
-const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not found · Banpani</title><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;background:#0f1419;color:#e7edf2;text-align:center;padding:14vh 20px"><h1>🌊 Nothing here (yet)</h1><p style="color:#9fb0bd">This response may have receded, or the link is old.</p><p><a href="/world" style="color:#4fc3f7">Open the world map →</a></p></body>`;
+const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not found · Banpani</title><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;background:#0f1419;color:#e7edf2;text-align:center;padding:14vh 20px"><h1>🌊 Nothing here (yet)</h1><p style="color:#9fb0bd">This response may have receded, or the link is old.</p><p><a href="/" style="color:#4fc3f7">Open the India map →</a></p></body>`;
 function sitemapXml() {
   const evs = listEvents().filter(e => e.promoted);
   const today = new Date().toISOString().slice(0, 10);
