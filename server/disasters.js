@@ -95,9 +95,13 @@ export const HAZARD_KINDS = {
     { k: 'collapse', label: 'Collapsed / damaged building', emoji: '🏚️', color: '#EF4444' },
     { k: 'landslide', label: 'Landslide / ground failure', emoji: '⛰️', color: '#B4652A' },
   ],
+  tech: [
+    { k: 'leak', label: 'Leak / spill source', emoji: '☣️', color: '#D6409F' },
+    { k: 'plume', label: 'Toxic plume / hazardous air', emoji: '💨', color: '#9333EA' },
+  ],
 };
 // Neutral group label for a multi-kind hazard tab (the kinds themselves are the sub-choices).
-export const HAZARD_TAB = { storm: 'Storm hazards', fire: 'Fire & smoke', geo: 'Damage & landslides' };
+export const HAZARD_TAB = { storm: 'Storm hazards', fire: 'Fire & smoke', geo: 'Damage & landslides', tech: 'Leak & plume' };
 
 // Per-subtype need lists, where one family's subtypes need OPPOSITE things (a heatwave vs a coldwave).
 // Used when an event has no custom needs; falls back to the family's generic list otherwise.
@@ -116,6 +120,12 @@ export const TYPE_NEEDS = {
   'animal-disease':   ['Veterinary teams', 'Animal vaccination', 'Safe culling & disposal', 'Quarantine / movement ban', 'Disinfection', 'Fodder (quarantined)', 'Compensation help', 'Vaccine cold storage', 'Milk / meat safety info'],
   'livestock-disease':['Veterinary teams', 'Animal vaccination', 'Safe culling & disposal', 'Quarantine / movement ban', 'Disinfection', 'Fodder (quarantined)', 'Compensation help', 'Vaccine cold storage', 'Milk / meat safety info'],
   'avian-flu':        ['Veterinary teams', 'Poultry culling & disposal', 'Disinfection', 'Quarantine / movement ban', 'PPE for cullers', 'Compensation help', 'Testing (birds)', 'Public advisory'],
+  // Industrial: a chemical/gas release vs a nuclear event vs contaminated water vs a grid blackout.
+  'chemical-leak':      ['Evacuation', 'Masks / respirators', 'Medical / decontamination', 'Antidote / oxygen', 'Move indoors advisory', 'Clean water', 'Shelter (upwind)'],
+  'gas-leak':           ['Evacuation', 'Masks / respirators', 'Medical / decontamination', 'Antidote / oxygen', 'Move indoors advisory', 'Clean water', 'Shelter (upwind)'],
+  nuclear:              ['Evacuation', 'Radiation screening', 'Potassium iodide (KI)', 'Decontamination', 'Sealed shelter', 'Medical', 'Clean water / food'],
+  'water-contamination':['Safe drinking water', 'Water testing', 'Boil-water advisory', 'ORS', 'Medical', 'Water tanker'],
+  'grid-failure':       ['Power / generator', 'Fuel', 'Water pumping', 'Oxygen-dependent care', 'Vaccine / insulin cold storage', 'Charging / communication'],
 };
 
 // Subtype-aware Offers + Facilities (parallel to TYPE_NEEDS), so an animal-disease response shows vets
@@ -125,10 +135,16 @@ const VET_FACILITIES = [['veterinary', '🐄 Vet centre'], ['vaccination', '💉
 export const TYPE_OFFERS = {
   'animal-disease': VET_OFFERS, 'livestock-disease': VET_OFFERS, 'avian-flu': VET_OFFERS,
   zoonotic: [['medical', '🩹 Medical'], ['veterinary', '🐄 Vet team'], ['ppe', '😷 PPE'], ['ambulance', '🚑 Ambulance'], ['other', '📦 Other']],
+  'grid-failure': [['power', '🔌 Power / generator'], ['fuel', '⛽ Fuel'], ['water', '💧 Water'], ['medical', '🩹 Medical'], ['other', '📦 Other']],
+  'water-contamination': [['water', '💧 Safe water'], ['testing', '🧪 Water testing'], ['medical', '🩹 Medical'], ['transport', '🚗 Transport'], ['other', '📦 Other']],
+  nuclear: [['medical', '🩹 Medical / screening'], ['transport', '🚗 Evacuation'], ['shelter', '🏠 Sealed shelter'], ['water', '💧 Clean water'], ['other', '📦 Other']],
 };
 export const TYPE_FACILITIES = {
   'animal-disease': VET_FACILITIES, 'livestock-disease': VET_FACILITIES, 'avian-flu': VET_FACILITIES,
   zoonotic: [['hospital', '🏥 Hospital'], ['veterinary', '🐄 Vet centre'], ['testing', '🧪 Test centre'], ['quarantine', '🚧 Quarantine']],
+  'water-contamination': [['water', '🚰 Safe water point'], ['testing', '🧪 Water testing'], ['hospital', '🏥 Hospital'], ['clinic', '🩺 Clinic']],
+  'grid-failure': [['power', '🔌 Charging / power point'], ['fuel', '⛽ Fuel'], ['hospital', '🏥 Hospital'], ['shelter', '⛺ Shelter']],
+  nuclear: [['hospital', '🏥 Hospital'], ['clinic', '🩺 Screening'], ['shelter', '⛺ Sealed shelter']],
 };
 
 // Family-level default search keywords, so EVERY event of a family indexes for its real terms even
@@ -140,6 +156,7 @@ export const FAMILY_KEYWORDS = {
   fire: 'wildfire, forest fire, bushfire, fire, evacuation, smoke, air quality, burns, firefighting, fire line, shelter, Uttarakhand forest fire, relief',
   climate: 'drought, heatwave, coldwave, water scarcity, water tanker, fodder, crop failure, cattle camp, cooling shelter, ORS, heat stroke, blankets, relief',
   health: 'pandemic, epidemic, outbreak, COVID, oxygen, oxygen SOS, ICU bed, ventilator, plasma, platelets, testing, RT-PCR, ambulance, vaccination, dengue, cholera, ORS, zoonotic, Nipah, bird flu, avian influenza, H5N1, African swine fever, foot and mouth, lumpy skin disease, culling, quarantine, veterinary, animal vaccination, one health, relief',
+  tech: 'industrial accident, chemical leak, gas leak, toxic gas, ammonia, chlorine, styrene, Bhopal, Vizag, evacuation, decontamination, HAZMAT, respirator, radiation, nuclear, water contamination, boil water, power outage, grid failure, blackout, plume, downwind, relief',
 };
 
 export function familyOf(type) {

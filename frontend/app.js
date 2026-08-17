@@ -146,7 +146,7 @@ map.on('drag', () => map.panInsideBounds(B, { animate: false }));  // hard clamp
 const h = location.hash.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
 if (h) map.setView([+h[1], +h[2]], 11);
 
-const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), photos: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map), offers: L.layerGroup().addTo(map), blocked: L.layerGroup().addTo(map), facilities: L.layerGroup().addTo(map), evac: L.layerGroup().addTo(map), places: L.layerGroup().addTo(map) };
+const layers = { official: L.layerGroup().addTo(map), flood: L.layerGroup().addTo(map), needs: L.layerGroup().addTo(map), photos: L.layerGroup().addTo(map), cover: L.layerGroup().addTo(map), ngo: L.layerGroup().addTo(map), offers: L.layerGroup().addTo(map), blocked: L.layerGroup().addTo(map), facilities: L.layerGroup().addTo(map), evac: L.layerGroup().addTo(map), places: L.layerGroup().addTo(map), plume: L.layerGroup().addTo(map) };
 const freshIcon = (emoji, stale) => L.divIcon({ html: `<div class="fresh-pin ${stale ? 'stale' : ''}">${emoji}</div>`, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
 const freshTxt = m => (m < 60 ? Math.max(1, m) + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd') + ' ago';
 const floodColor = s => ({ high: '#f0453a', medium: '#f5a623', receding: '#8fbaff' }[s] || '#f0453a');
@@ -493,7 +493,7 @@ function renderEvac() {
     L.marker([e.to_lat, e.to_lng], { icon: freshIcon('🏁') }).addTo(layers.evac).bindPopup('🏁 Safe: ' + esc(e.label || 'this way'));
   }
 }
-function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderOffers(); renderBlocked(); renderFacilities(); renderEvac(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); }
+function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderOffers(); renderBlocked(); renderFacilities(); renderEvac(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); drawPlume(); }
 
 /* -------------------------------- photos -------------------------------- */
 function photoTagLabel(k) { for (const m of ['relief', 'rehab']) { const f = (C.PHOTO_TAGS[m] || []).find(x => x.k === k); if (f) return vt(f.l); } return k || ''; }
@@ -619,6 +619,46 @@ async function renderAdvisory() {
     $('advText').textContent = a.body || '';
     $('advMeta').textContent = (a.source ? a.source + ' · ' : '') + (a.updated_at ? t('updated') + ' ' + new Date(a.updated_at).toLocaleString() : '');
   } catch {}
+}
+
+/* ---- Automated toxic-plume model (industrial events). Live wind decides which way a leak drifts,
+   so evacuation goes upwind / crosswind. Auto-refreshes every 10 min; draws a downwind cone from each
+   marked leak source (or the incident centre). An estimate from Open-Meteo wind, not an official model. */
+const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+const compass = d => COMPASS[Math.round((((d % 360) + 360) % 360) / 45) % 8];
+function destPoint(lat, lng, brg, distKm) {
+  const R = 6371, br = brg * Math.PI / 180, dr = distKm / R, la1 = lat * Math.PI / 180, lo1 = lng * Math.PI / 180;
+  const la2 = Math.asin(Math.sin(la1) * Math.cos(dr) + Math.cos(la1) * Math.sin(dr) * Math.cos(br));
+  const lo2 = lo1 + Math.atan2(Math.sin(br) * Math.sin(dr) * Math.cos(la1), Math.cos(dr) - Math.sin(la1) * Math.sin(la2));
+  return [la2 * 180 / Math.PI, lo2 * 180 / Math.PI];
+}
+function conePts(lat, lng, brg, distKm, half = 22) {
+  const pts = [[lat, lng]];
+  for (let a = -half; a <= half; a += 4) pts.push(destPoint(lat, lng, brg + a, distKm));
+  pts.push([lat, lng]);
+  return pts;
+}
+let plumeWind = null;
+async function fetchWind() {
+  if (!EVENT || EVENT.family !== 'tech') return;
+  try {
+    const j = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${EVENT.center[0]}&longitude=${EVENT.center[1]}&current=wind_speed_10m,wind_direction_10m&timezone=auto`)).json();
+    if (j && j.current && j.current.wind_direction_10m != null) { plumeWind = { from: j.current.wind_direction_10m, spd: j.current.wind_speed_10m || 0 }; drawPlume(); }
+  } catch {}
+}
+function drawPlume() {
+  if (!EVENT || EVENT.family !== 'tech') return;
+  layers.plume.clearLayers();
+  const adv = $('plumeAdv');
+  if (!plumeWind) { if (adv) adv.hidden = true; return; }
+  const toBrg = (plumeWind.from + 180) % 360, distKm = Math.min(10, 3 + plumeWind.spd * 0.25);
+  let src = (STATE.flood_reports || []).filter(f => f.kind === 'leak').map(f => [f.lat, f.lng]);
+  if (!src.length) src = [[EVENT.center[0], EVENT.center[1]]];
+  const popup = `🧭 Live plume estimate: drifting <b>${compass(toBrg)}</b> on ${Math.round(plumeWind.spd)} km/h wind. Go upwind (${compass(plumeWind.from)}). Estimate only - follow official orders.`;
+  src.forEach(([la, lo]) => {
+    L.polygon(conePts(la, lo, toBrg, distKm), { color: '#9333EA', weight: 1, dashArray: '4 4', fillColor: '#9333EA', fillOpacity: 0.16 }).bindPopup(popup).addTo(layers.plume);
+  });
+  if (adv) { adv.hidden = false; adv.innerHTML = `🧭 <b>Live wind:</b> from the ${compass(plumeWind.from)} at ${Math.round(plumeWind.spd)} km/h. <b>Toxic plume drifting ${compass(toBrg)}.</b> Move <b>upwind (${compass(plumeWind.from)})</b> or crosswind - do not go ${compass(toBrg)}. <span class="pa-src">Auto-estimated from Open-Meteo wind, refreshed every 10 min. An estimate - follow official evacuation orders.</span>`; }
 }
 
 /* ------------------------- consensus / actions ------------------------- */
@@ -1418,5 +1458,6 @@ function renderOfficialSources() {
   try { await refresh(); await renderAdvisory(); } catch (e) { toast('Cannot reach server - is it running? ' + e.message); }
   if (!location.hash.match(/@/)) fitToHotspot();   // first load: fly to the worst-hit area (unless a deep-link says otherwise)
   setInterval(() => { refresh().catch(() => {}); renderAdvisory().catch(() => {}); }, 20000);
+  if (EVENT && EVENT.family === 'tech') { fetchWind(); setInterval(() => fetchWind().catch(() => {}), 10 * 60 * 1000); }   // live wind -> plume
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

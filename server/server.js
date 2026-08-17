@@ -326,7 +326,7 @@ on('POST', '/api/flood-reports', async (req, res) => {
   const b = await readBody(req);
   if (b.lat == null || b.lng == null) return json(res, 400, { error: 'lat, lng required' });
   const sev = ['high', 'medium', 'receding', 'receded'].includes(b.severity) ? b.severity : 'high';
-  const kind = ['flood', 'wind', 'surge', 'fire', 'smoke', 'collapse', 'landslide'].includes(b.kind) ? b.kind : 'flood';
+  const kind = ['flood', 'wind', 'surge', 'fire', 'smoke', 'collapse', 'landslide', 'leak', 'plume'].includes(b.kind) ? b.kind : 'flood';
   const r = run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,kind,event_id,device) VALUES(?,?,?,?,?,?,?,?,?)',
     now(), now(), str(b.place, 120), num(b.lat), num(b.lng), sev, kind, (num(b.event_id) || eventForLocation(num(b.lat), num(b.lng))), dev(b));
   log(req, 'flood_marked', 'flood:' + Number(r.lastInsertRowid), { device: dev(b), detail: kind + '/' + sev, area: str(b.place, 120) || coarse(b.lat, b.lng) });
