@@ -19,7 +19,7 @@ import { updateWeather } from './weather.js';
 import { refreshFloodAuto, getFloodAuto } from './flood-auto.js';
 import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLifecycle, voteOver, voteReopen, archiveList, LIFECYCLE } from './events.js';
-import { DISASTERS, familyOf, HAZARD, HAZARD_KINDS, HAZARD_TAB, FAMILY_KEYWORDS, TYPE_NEEDS } from './disasters.js';
+import { DISASTERS, familyOf, HAZARD, HAZARD_KINDS, HAZARD_TAB, FAMILY_KEYWORDS, TYPE_NEEDS, TYPE_OFFERS, TYPE_FACILITIES } from './disasters.js';
 import { officialEvents, tropicalCyclones } from './official.js';
 import { situationFor, trackerData } from './situation.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
@@ -682,7 +682,7 @@ async function serveEventApp(req, res, ev) {
     zoom: isAssam ? 7 : isOdisha ? 7 : isColombia ? 7 : isBangladesh ? 7 : 9, minZoom: isAssam ? 7 : isOdisha ? 6 : isColombia ? 6 : isBangladesh ? 6 : 5,
     bounds: isAssam ? [[24.0, 89.6], [28.4, 96.1]] : isOdisha ? [[18.3, 82.2], [22.9, 87.8]] : isColombia ? [[2.5, -77.7], [6.6, -74.3]] : isBangladesh ? [[20.9, 89.7], [25.4, 92.8]] : [[ev.lat - 1.4, ev.lng - 1.6], [ev.lat + 1.4, ev.lng + 1.6]],
     official: !!officialData, officialData, items: (ev.needs && ev.needs.length) ? ev.needs : (TYPE_NEEDS[ev.disaster_type] || f.needs || []), modules: ev.modules || [],
-    offerKinds: f.offerKinds || [], facilityKinds: f.facilityKinds || [], helplines: isAssam ? null : helplinesForCountry(ev.family, cc),
+    offerKinds: TYPE_OFFERS[ev.disaster_type] || f.offerKinds || [], facilityKinds: TYPE_FACILITIES[ev.disaster_type] || f.facilityKinds || [], helplines: isAssam ? null : helplinesForCountry(ev.family, cc),
     hazardLabel: (HAZARD[ev.family] || {}).label || null, hazardSev: (HAZARD[ev.family] || {}).sev || null,
     hazardKinds: HAZARD_KINDS[ev.family] || null,   // storm=wind+surge, fire=fire+smoke; most families single
     hazardTab: HAZARD_TAB[ev.family] || null,       // neutral label for a multi-kind hazard tab

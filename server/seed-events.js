@@ -51,6 +51,14 @@ const DEMOS = [
     needs: [['South Delhi', 28.53, 77.24, ['Oxygen', 'ICU / hospital bed'], 400], ['Rohini', 28.74, 77.06, ['Medicines', 'Meals (isolation)'], 150], ['Dwarka', 28.59, 77.05, ['Ambulance', 'Testing'], 90]],
     offers: [['oxygen', 28.55, 77.25, '30 cylinders, refilling daily'], ['beds', 28.56, 77.23, '8 ICU beds free now'], ['plasma', 28.57, 77.22, 'Recovered donors available'], ['ambulance', 28.60, 77.20, 'Ambulance on call, 24x7']],
     facilities: [['pharmacy', 28.60, 77.20, 'Apollo Pharmacy', 'open'], ['hospital', 28.57, 77.19, 'City Hospital', 'limited'], ['oxygen', 28.55, 77.25, 'Oxygen refill point', 'open'], ['testing', 28.58, 77.23, 'RT-PCR test centre', 'open'], ['vaccination', 28.56, 77.21, 'Vaccination centre', 'open'], ['grocery', 28.62, 77.23, 'Ration store', 'closed']] },
+  { fam: 'health', type: 'zoonotic', slug: 'demo-nipah', title: 'Kerala Nipah Outbreak (demo)', lat: 11.25, lng: 75.78,
+    needs: [['Kozhikode', 11.25, 75.78, ['Isolation / quarantine', 'PPE / masks', 'Contact tracing'], 40], ['Perambra', 11.57, 75.77, ['Testing (human)', 'Veterinary teams'], 20]],
+    offers: [['medical', 11.26, 75.79, 'Isolation-ward team'], ['ppe', 11.25, 75.77, 'PPE kits available'], ['veterinary', 11.55, 75.78, 'Vet team - fruit-bat survey']],
+    facilities: [['hospital', 11.25, 75.78, 'Medical College isolation', 'open'], ['testing', 11.26, 75.80, 'Virology lab (NIV)', 'open'], ['quarantine', 11.30, 75.76, 'Quarantine ward', 'open']] },
+  { fam: 'health', type: 'animal-disease', slug: 'demo-lumpy', title: 'Rajasthan Lumpy Skin Disease (demo)', lat: 26.29, lng: 73.02,
+    needs: [['Jodhpur', 26.29, 73.02, ['Veterinary teams', 'Animal vaccination'], 5000], ['Bikaner', 28.02, 73.31, ['Safe culling & disposal', 'Fodder (quarantined)', 'Compensation help'], 3000]],
+    offers: [['veterinary', 26.30, 73.03, 'Mobile vet unit'], ['vaccine', 26.28, 73.01, 'Goat-pox vaccine stock'], ['disinfectant', 28.03, 73.30, 'Disinfectant + sprayers'], ['fodder', 28.01, 73.32, 'Fodder for quarantined cattle']],
+    facilities: [['veterinary', 26.29, 73.02, 'Govt Veterinary Hospital', 'open'], ['vaccination', 28.02, 73.31, 'Cattle vaccination camp', 'open'], ['disposal', 26.25, 73.05, 'Safe carcass disposal site', 'open']] },
   { fam: 'tech', type: 'chemical-leak', title: 'Industrial Gas Leak (demo)', lat: 23.26, lng: 77.41,
     needs: [['Old city', 23.26, 77.41, ['Evacuation', 'Medical / decontamination'], 250]],
     offers: [['transport', 23.27, 77.42, 'Buses for evacuation'], ['masks', 23.26, 77.41, 'Gas masks available'], ['medical', 23.25, 77.40, 'Decontamination unit']],
@@ -69,7 +77,7 @@ const DEMOS = [
 
 for (const d of DEMOS) {
   const r = run('INSERT INTO events(created_at,slug,title,disaster_type,lat,lng,radius_km,modules,source,listed,status) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-    now(), 'demo-' + d.fam, d.title, d.type, d.lat, d.lng, 80, JSON.stringify(RECIPES[d.fam] || ['needs', 'photos']), 'demo', 1, 'active');
+    now(), d.slug || ('demo-' + d.fam), d.title, d.type, d.lat, d.lng, 80, JSON.stringify(RECIPES[d.fam] || ['needs', 'photos']), 'demo', 1, 'active');
   const eid = Number(r.lastInsertRowid);
   for (const [place, lat, lng, items, people] of (d.needs || []))
     run('INSERT INTO reports(created_at,place,lat,lng,items,people,reporter_kind,mode,disaster_type,event_id,device) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
@@ -84,6 +92,6 @@ for (const d of DEMOS) {
     run('INSERT INTO flood_reports(created_at,updated_at,place,lat,lng,severity,kind,event_id,device) VALUES(?,?,?,?,?,?,?,?,?)', now(), now(), place, lat, lng, severity, kind || 'flood', eid, 'demo');
   for (const [fl, fg, tl, tg, label] of (d.evac || []))
     run('INSERT INTO evac_routes(created_at,updated_at,event_id,from_lat,from_lng,to_lat,to_lng,label,device) VALUES(?,?,?,?,?,?,?,?,?)', now(), now(), eid, fl, fg, tl, tg, label, 'demo');
-  console.log('seeded', d.title.padEnd(34), '-> /e/demo-' + d.fam);
+  console.log('seeded', d.title.padEnd(34), '-> /e/' + (d.slug || ('demo-' + d.fam)));
 }
 console.log('\ndone -', DEMOS.length, 'demo events. Remove later with: node --experimental-sqlite server/seed-events.js clear');

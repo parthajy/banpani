@@ -41,7 +41,7 @@ export const DISASTERS = {
   // knowing which shops/clinics are OPEN. Tailored top to bottom; no flood-relief items.
   health: {
     color: '#12B5A5', emoji: '🦠', label: 'Health',
-    types: ['pandemic', 'epidemic', 'outbreak'],
+    types: ['pandemic', 'epidemic', 'outbreak', 'zoonotic', 'animal-disease', 'avian-flu', 'livestock-disease'],
     needs: ['Oxygen', 'Hospital bed (ICU)', 'Medicines', 'Plasma / blood', 'Testing', 'Ambulance', 'Food / meals', 'Groceries / essentials', 'Home care', 'Vaccination help'],
     offerKinds: [['oxygen', '🫁 Oxygen'], ['beds', '🛏️ Beds'], ['plasma', '🩸 Plasma / blood'], ['medicine', '💊 Medicine'], ['ambulance', '🚑 Ambulance'], ['food', '🍚 Food / meals'], ['groceries', '🛒 Groceries'], ['volunteer', '🙋 Volunteer']],
     facilityKinds: [['pharmacy', '💊 Pharmacy'], ['grocery', '🛒 Grocery / ration'], ['hospital', '🏥 Hospital'], ['clinic', '🩺 Clinic'], ['testing', '🧪 Test centre'], ['vaccination', '💉 Vaccination'], ['oxygen', '🫁 Oxygen refill']],
@@ -62,7 +62,7 @@ export const DISASTERS = {
   },
   agri: {
     color: '#84CC16', emoji: '🌾', label: 'Agriculture',
-    types: ['locust', 'livestock-disease', 'crop-pest', 'fisheries'],
+    types: ['locust', 'crop-pest', 'fisheries'],   // livestock-disease moved to the health family
     needs: ['Pesticide / control', 'Veterinary help', 'Fodder', 'Crop protection', 'Compensation'],
     offerKinds: [['pesticide', '🧴 Pesticide'], ['sprayer', '💦 Sprayer'], ['fodder', '🌾 Fodder'], ['veterinary', '🐄 Veterinary'], ['other', '📦 Other']],
     facilityKinds: [['veterinary', '🐄 Vet centre'], ['shop', '🏪 Agri shop']],
@@ -106,10 +106,29 @@ export const TYPE_NEEDS = {
   'water-scarcity': ['Drinking water', 'Water tanker', 'Borewell / source repair', 'Fodder for livestock', 'Food ration'],
   heatwave:         ['Drinking water', 'ORS / electrolytes', 'Cooling / shade', 'Cool shelter (fan/AC)', 'Heat-stroke medical', 'Shade & water for cattle'],
   coldwave:         ['Blankets', 'Warm clothes', 'Night shelter', 'Firewood / heating', 'Hot food', 'Medical'],
-  // Health: a respiratory PANDEMIC (COVID-style) vs a water/vector-borne OUTBREAK need different things.
+  // Health covers ANY disease - human, animal or zoonotic - and each needs different things.
   pandemic:         ['Oxygen', 'ICU / hospital bed', 'Ventilator', 'Medicines', 'PPE / masks', 'Testing', 'Ambulance', 'Plasma / blood', 'Home care', 'Meals (isolation)', 'Vaccination help'],
   outbreak:         ['ORS / IV fluids', 'Clean drinking water', 'Testing', 'Medicines', 'Hospital bed', 'Ambulance', 'Blood / platelets', 'Vector control / fogging', 'Sanitation', 'Home care'],
   epidemic:         ['ORS / IV fluids', 'Clean drinking water', 'Testing', 'Medicines', 'Hospital bed', 'Ambulance', 'Blood / platelets', 'Vector control / fogging', 'Sanitation', 'Home care'],
+  // Zoonotic (Nipah, bird flu jumping to people): human isolation measures AND animal control together.
+  zoonotic:         ['Isolation / quarantine', 'PPE / masks', 'Testing (human)', 'Contact tracing', 'Medicines', 'Ambulance', 'Veterinary teams', 'Safe culling & disposal', 'Public advisory'],
+  // Animal / livestock disease (Lumpy Skin, Foot-and-Mouth, African Swine Fever, avian flu).
+  'animal-disease':   ['Veterinary teams', 'Animal vaccination', 'Safe culling & disposal', 'Quarantine / movement ban', 'Disinfection', 'Fodder (quarantined)', 'Compensation help', 'Vaccine cold storage', 'Milk / meat safety info'],
+  'livestock-disease':['Veterinary teams', 'Animal vaccination', 'Safe culling & disposal', 'Quarantine / movement ban', 'Disinfection', 'Fodder (quarantined)', 'Compensation help', 'Vaccine cold storage', 'Milk / meat safety info'],
+  'avian-flu':        ['Veterinary teams', 'Poultry culling & disposal', 'Disinfection', 'Quarantine / movement ban', 'PPE for cullers', 'Compensation help', 'Testing (birds)', 'Public advisory'],
+};
+
+// Subtype-aware Offers + Facilities (parallel to TYPE_NEEDS), so an animal-disease response shows vets
+// and disposal rather than oxygen and ICU beds. Falls back to the family's generic kinds otherwise.
+const VET_OFFERS = [['veterinary', '🐄 Vet team'], ['vaccine', '💉 Animal vaccine'], ['disinfectant', '🧴 Disinfectant'], ['fodder', '🌾 Fodder'], ['transport', '🚚 Transport'], ['other', '📦 Other']];
+const VET_FACILITIES = [['veterinary', '🐄 Vet centre'], ['vaccination', '💉 Vaccination camp'], ['disposal', '⚰️ Safe disposal site'], ['quarantine', '🚧 Quarantine zone']];
+export const TYPE_OFFERS = {
+  'animal-disease': VET_OFFERS, 'livestock-disease': VET_OFFERS, 'avian-flu': VET_OFFERS,
+  zoonotic: [['medical', '🩹 Medical'], ['veterinary', '🐄 Vet team'], ['ppe', '😷 PPE'], ['ambulance', '🚑 Ambulance'], ['other', '📦 Other']],
+};
+export const TYPE_FACILITIES = {
+  'animal-disease': VET_FACILITIES, 'livestock-disease': VET_FACILITIES, 'avian-flu': VET_FACILITIES,
+  zoonotic: [['hospital', '🏥 Hospital'], ['veterinary', '🐄 Vet centre'], ['testing', '🧪 Test centre'], ['quarantine', '🚧 Quarantine']],
 };
 
 // Family-level default search keywords, so EVERY event of a family indexes for its real terms even
@@ -120,7 +139,7 @@ export const FAMILY_KEYWORDS = {
   geo: 'earthquake, quake, tremor, aftershock, magnitude, epicentre, landslide, collapsed building, trapped, search and rescue, NDRF, Himalayan earthquake, seismic, relief',
   fire: 'wildfire, forest fire, bushfire, fire, evacuation, smoke, air quality, burns, firefighting, fire line, shelter, Uttarakhand forest fire, relief',
   climate: 'drought, heatwave, coldwave, water scarcity, water tanker, fodder, crop failure, cattle camp, cooling shelter, ORS, heat stroke, blankets, relief',
-  health: 'pandemic, epidemic, outbreak, COVID, oxygen, oxygen SOS, ICU bed, hospital bed, ventilator, plasma, platelets, medicine, testing, RT-PCR, ambulance, vaccination, dengue, cholera, ORS, relief',
+  health: 'pandemic, epidemic, outbreak, COVID, oxygen, oxygen SOS, ICU bed, ventilator, plasma, platelets, testing, RT-PCR, ambulance, vaccination, dengue, cholera, ORS, zoonotic, Nipah, bird flu, avian influenza, H5N1, African swine fever, foot and mouth, lumpy skin disease, culling, quarantine, veterinary, animal vaccination, one health, relief',
 };
 
 export function familyOf(type) {
