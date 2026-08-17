@@ -53,41 +53,41 @@ const BD_POINTS = [
 // gateway map. Points on genuinely large rivers clear the discharge>=300 guard; small ones just read 'low'.
 const INDIA_POINTS = [
   // Ganga and tributaries
-  { d: 'Ganga at Patna', river: 'Ganga', lat: 25.62, lng: 85.14 },
-  { d: 'Ganga at Bhagalpur', river: 'Ganga', lat: 25.25, lng: 86.98 },
-  { d: 'Ganga at Varanasi', river: 'Ganga', lat: 25.31, lng: 83.01 },
-  { d: 'Ganga at Kanpur', river: 'Ganga', lat: 26.47, lng: 80.32 },
-  { d: 'Ganga at Farakka', river: 'Ganga', lat: 24.80, lng: 87.93 },
-  { d: 'Yamuna at Prayagraj', river: 'Yamuna', lat: 25.42, lng: 81.88 },
-  { d: 'Yamuna at Delhi', river: 'Yamuna', lat: 28.66, lng: 77.23 },
-  { d: 'Ghaghara at Ayodhya', river: 'Ghaghara', lat: 26.79, lng: 82.15 },
-  { d: 'Kosi at Kursela', river: 'Kosi', lat: 25.41, lng: 87.24 },
-  { d: 'Gandak at Hajipur', river: 'Gandak', lat: 25.69, lng: 85.21 },
-  { d: 'Chambal at Kota', river: 'Chambal', lat: 25.18, lng: 75.86 },
+  { d: 'Ganga at Patna', river: 'Ganga', lat: 25.62, lng: 85.14, state: 'Bihar' },
+  { d: 'Ganga at Bhagalpur', river: 'Ganga', lat: 25.25, lng: 86.98, state: 'Bihar' },
+  { d: 'Ganga at Varanasi', river: 'Ganga', lat: 25.31, lng: 83.01, state: 'Uttar Pradesh' },
+  { d: 'Ganga at Kanpur', river: 'Ganga', lat: 26.47, lng: 80.32, state: 'Uttar Pradesh' },
+  { d: 'Ganga at Farakka', river: 'Ganga', lat: 24.80, lng: 87.93, state: 'West Bengal' },
+  { d: 'Yamuna at Prayagraj', river: 'Yamuna', lat: 25.42, lng: 81.88, state: 'Uttar Pradesh' },
+  { d: 'Yamuna at Delhi', river: 'Yamuna', lat: 28.66, lng: 77.23, state: 'Delhi' },
+  { d: 'Ghaghara at Ayodhya', river: 'Ghaghara', lat: 26.79, lng: 82.15, state: 'Uttar Pradesh' },
+  { d: 'Kosi at Kursela', river: 'Kosi', lat: 25.41, lng: 87.24, state: 'Bihar' },
+  { d: 'Gandak at Hajipur', river: 'Gandak', lat: 25.69, lng: 85.21, state: 'Bihar' },
+  { d: 'Chambal at Kota', river: 'Chambal', lat: 25.18, lng: 75.86, state: 'Rajasthan' },
   // Brahmaputra and the north-east
-  { d: 'Brahmaputra at Guwahati', river: 'Brahmaputra', lat: 26.19, lng: 91.69 },
-  { d: 'Brahmaputra at Dibrugarh', river: 'Brahmaputra', lat: 27.48, lng: 94.91 },
-  { d: 'Barak at Silchar', river: 'Barak', lat: 24.82, lng: 92.80 },
-  { d: 'Teesta at Jalpaiguri', river: 'Teesta', lat: 26.52, lng: 88.72 },
+  { d: 'Brahmaputra at Guwahati', river: 'Brahmaputra', lat: 26.19, lng: 91.69, state: 'Assam' },
+  { d: 'Brahmaputra at Dibrugarh', river: 'Brahmaputra', lat: 27.48, lng: 94.91, state: 'Assam' },
+  { d: 'Barak at Silchar', river: 'Barak', lat: 24.82, lng: 92.80, state: 'Assam' },
+  { d: 'Teesta at Jalpaiguri', river: 'Teesta', lat: 26.52, lng: 88.72, state: 'West Bengal' },
   // East-flowing peninsular rivers
-  { d: 'Mahanadi at Cuttack', river: 'Mahanadi', lat: 20.47, lng: 85.88 },
-  { d: 'Mahanadi at Sambalpur', river: 'Mahanadi', lat: 21.47, lng: 83.97 },
-  { d: 'Brahmani (lower)', river: 'Brahmani', lat: 20.95, lng: 85.30 },
-  { d: 'Godavari at Rajahmundry', river: 'Godavari', lat: 17.00, lng: 81.78 },
-  { d: 'Godavari at Bhadrachalam', river: 'Godavari', lat: 17.67, lng: 80.89 },
-  { d: 'Krishna at Vijayawada', river: 'Krishna', lat: 16.51, lng: 80.62 },
-  { d: 'Krishna at Nagarjuna Sagar', river: 'Krishna', lat: 16.57, lng: 79.31 },
-  { d: 'Cauvery at Tiruchirapalli', river: 'Cauvery', lat: 10.80, lng: 78.69 },
-  { d: 'Cauvery at Mettur', river: 'Cauvery', lat: 11.79, lng: 77.80 },
-  { d: 'Penna at Nellore', river: 'Penna', lat: 14.44, lng: 79.99 },
-  { d: 'Subarnarekha at Jamshedpur', river: 'Subarnarekha', lat: 22.80, lng: 86.18 },
-  { d: 'Damodar at Durgapur', river: 'Damodar', lat: 23.50, lng: 87.30 },
+  { d: 'Mahanadi at Cuttack', river: 'Mahanadi', lat: 20.47, lng: 85.88, state: 'Odisha' },
+  { d: 'Mahanadi at Sambalpur', river: 'Mahanadi', lat: 21.47, lng: 83.97, state: 'Odisha' },
+  { d: 'Brahmani (lower)', river: 'Brahmani', lat: 20.95, lng: 85.30, state: 'Odisha' },
+  { d: 'Godavari at Rajahmundry', river: 'Godavari', lat: 17.00, lng: 81.78, state: 'Andhra Pradesh' },
+  { d: 'Godavari at Bhadrachalam', river: 'Godavari', lat: 17.67, lng: 80.89, state: 'Telangana' },
+  { d: 'Krishna at Vijayawada', river: 'Krishna', lat: 16.51, lng: 80.62, state: 'Andhra Pradesh' },
+  { d: 'Krishna at Nagarjuna Sagar', river: 'Krishna', lat: 16.57, lng: 79.31, state: 'Telangana' },
+  { d: 'Cauvery at Tiruchirapalli', river: 'Cauvery', lat: 10.80, lng: 78.69, state: 'Tamil Nadu' },
+  { d: 'Cauvery at Mettur', river: 'Cauvery', lat: 11.79, lng: 77.80, state: 'Tamil Nadu' },
+  { d: 'Penna at Nellore', river: 'Penna', lat: 14.44, lng: 79.99, state: 'Andhra Pradesh' },
+  { d: 'Subarnarekha at Jamshedpur', river: 'Subarnarekha', lat: 22.80, lng: 86.18, state: 'Jharkhand' },
+  { d: 'Damodar at Durgapur', river: 'Damodar', lat: 23.50, lng: 87.30, state: 'West Bengal' },
   // West-flowing rivers
-  { d: 'Narmada at Hoshangabad', river: 'Narmada', lat: 22.75, lng: 77.72 },
-  { d: 'Narmada at Bharuch', river: 'Narmada', lat: 21.70, lng: 72.98 },
-  { d: 'Tapti at Surat', river: 'Tapti', lat: 21.20, lng: 72.85 },
-  { d: 'Periyar (Kerala)', river: 'Periyar', lat: 10.18, lng: 76.40 },
-  { d: 'Bharathapuzha (Kerala)', river: 'Bharathapuzha', lat: 10.77, lng: 76.20 },
+  { d: 'Narmada at Hoshangabad', river: 'Narmada', lat: 22.75, lng: 77.72, state: 'Madhya Pradesh' },
+  { d: 'Narmada at Bharuch', river: 'Narmada', lat: 21.70, lng: 72.98, state: 'Gujarat' },
+  { d: 'Tapti at Surat', river: 'Tapti', lat: 21.20, lng: 72.85, state: 'Gujarat' },
+  { d: 'Periyar (Kerala)', river: 'Periyar', lat: 10.18, lng: 76.40, state: 'Kerala' },
+  { d: 'Bharathapuzha (Kerala)', river: 'Bharathapuzha', lat: 10.77, lng: 76.20, state: 'Kerala' },
 ];
 const INDIA_HELPLINES = [
   { label: 'Emergency 112', tel: '112' },
@@ -152,7 +152,8 @@ async function refreshRegion(key) {
     const sev = classify(pctPeak, rain3, current);
     const trend = trendOf(current, near);
     const gauge = { lat: p.lat, lng: p.lng, trend, discharge: current != null ? Math.round(current) : null,
-      peak: peak != null ? Math.round(peak) : null, pct: Math.round(pctPeak * 100), rain3: Math.round(rain3), source: 'GloFAS + rainfall (auto)' };
+      peak: peak != null ? Math.round(peak) : null, pct: Math.round(pctPeak * 100), rain3: Math.round(rain3),
+      ...(p.state ? { state: p.state } : {}), source: 'GloFAS + rainfall (auto)' };
 
     if (cfg.mode === 'districts') {
       if (!sev) return;

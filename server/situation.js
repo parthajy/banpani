@@ -28,7 +28,7 @@ export async function trackerData() {
   if (fr && fr.gauges) for (const g of fr.gauges) {
     if (g.risk !== 'high' && g.risk !== 'medium') continue;
     signals.push({
-      family: 'water', kind: 'flood-risk', title: g.station || g.river || 'River', state: stateOf(g.lat, g.lng),
+      family: 'water', kind: 'flood-risk', title: g.station || g.river || 'River', state: g.state || stateOf(g.lat, g.lng),
       district: g.river || null, lat: g.lat, lng: g.lng, level: g.risk,
       detail: `Flow ${num(g.discharge)} m³/s · ${g.pct}th percentile · ${g.trend}`, source: 'GloFAS river model',
     });
