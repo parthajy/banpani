@@ -3,7 +3,7 @@
 // live coordination space immediately - no waiting to "graduate" (graduation only affects
 // SEO/discovery via `promoted`). Each event enables a recipe of modules per disaster family.
 import { all, one, run, now, decoratedReports } from './db.js';
-import { familyOf, DISASTERS } from './disasters.js';
+import { familyOf, DISASTERS, TYPE_NEEDS } from './disasters.js';
 
 export const slugify = s => (String(s || '').toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').slice(0, 50) || 'area');
 const haversine = (aLat, aLng, bLat, bLng) => {
@@ -153,7 +153,7 @@ export function eventBySlug(slug) {
     lat: e.lat, lng: e.lng, source: e.source, modules: JSON.parse(e.modules || '[]'), created_at: e.created_at,
     status: e.status, dormant_at: e.dormant_at || null, archived_at: e.archived_at || null,
     reopenVotes: e.status === 'dormant' ? reopenVotes(e.id) : 0,
-    reports, photos, floods, blocked, offers, count: c, needs: DISASTERS[familyOf(e.disaster_type)]?.needs || [],
+    reports, photos, floods, blocked, offers, count: c, needs: TYPE_NEEDS[e.disaster_type] || DISASTERS[familyOf(e.disaster_type)]?.needs || [],
   };
 }
 
