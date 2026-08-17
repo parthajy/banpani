@@ -3,138 +3,152 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>District situation · Banpani</title>
-  <meta name="description" content="Live district-by-district situation for the flood response: open needs, relief camps, flood-risk and the gaps nobody has reached yet. Community data, automated." />
+  <title>India disaster tracker · Banpani</title>
+  <meta name="description" content="A live, filterable tracker of disasters across India - floods, earthquakes, cyclones, storms and more, by state and disaster type. Community needs plus official and modelled hazard signals. Automated, open data." />
+  <link rel="canonical" href="https://banpani.org/status" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon.png" sizes="any" />
   <meta name="theme-color" content="#0f1419" />
   <link rel="stylesheet" href="styles.css" />
   <style>
     body{overflow:auto}
-    .swrap{max-width:1040px;margin:0 auto;padding:16px 16px 60px}
-    header.shead{display:flex;align-items:center;gap:12px;padding:11px 16px;background:linear-gradient(180deg,#141b23,#10161d);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+    .swrap{max-width:1080px;margin:0 auto;padding:14px 16px 60px}
+    header.shead{display:flex;align-items:center;gap:10px;padding:11px 16px;background:linear-gradient(180deg,#141b23,#10161d);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
     header.shead .logo{width:28px;height:28px;border-radius:7px}
     header.shead h1{font-size:16px;margin:0;font-weight:800;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     header.shead a{color:var(--text);text-decoration:none;font-weight:700;font-size:13px;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:6px 12px;white-space:nowrap}
     header.shead a.cta{background:var(--accent);border-color:var(--accent);color:#fff}
     .sintro{color:var(--muted);font-size:13px;line-height:1.5;margin:14px 2px 4px}
-    .supd{color:var(--muted);font-size:12px;margin:8px 2px 16px}
+    .supd{color:var(--muted);font-size:12px;margin:8px 2px 14px}
     .supd b{color:var(--text)}
-    .scards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:8px}
-    .scard{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 15px}
-    .scard .n{font-size:26px;font-weight:800;line-height:1.1}
+    .scards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+    .scard{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:12px 15px}
+    .scard .n{font-size:25px;font-weight:800;line-height:1.1}
     .scard .l{color:var(--muted);font-size:12px;margin-top:3px}
     .scard.alert .n{color:#e11d1d}
-    .scard.gap .n{color:#f59e0b}
-    .sneeds{margin:18px 2px 6px}
-    .sneeds h2,.sdist h2{font-size:14px;margin:0 0 10px;font-weight:800}
-    .needchips{display:flex;flex-wrap:wrap;gap:7px}
-    .needchip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:6px 12px;font-size:12.5px;font-weight:600}
-    .needchip b{color:var(--accent)}
-    .sdist{margin-top:24px}
-    .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px}
-    .dcard{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 15px}
-    .dcard.high{border-left:4px solid #e11d1d}
-    .dcard.medium{border-left:4px solid #f59e0b}
-    .dcard.gapc{border-left:4px solid #f59e0b;background:linear-gradient(180deg,rgba(245,158,11,.06),transparent)}
-    .dhead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-    .dhead .dn{font-weight:800;font-size:15px;flex:1}
-    .badge{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:20px}
+    /* filters */
+    .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;position:sticky;top:52px;z-index:9;
+      background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line)}
+    .fam{display:flex;flex-wrap:wrap;gap:6px}
+    .fchip{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:18px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+    .fchip.on{color:var(--text);border-color:var(--c,var(--accent));background:var(--panel2)}
+    .fchip .dot{width:8px;height:8px;border-radius:50%;background:var(--c,#888)}
+    .fspace{flex:1}
+    .filters select,.filters input{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:16px;padding:8px 12px;font-size:13px;font-family:inherit}
+    .filters input{min-width:150px}
+    /* signal rows */
+    .sigs{display:flex;flex-direction:column;gap:8px}
+    .sig{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px;display:flex;gap:11px;align-items:flex-start}
+    .sig .em{font-size:20px;line-height:1.2;flex:0 0 auto}
+    .sig .body{flex:1;min-width:0}
+    .sig .t{font-weight:700;font-size:14px}
+    .sig .meta{color:var(--muted);font-size:12px;margin-top:2px}
+    .sig .meta .st{color:var(--text);font-weight:700}
+    .sig .det{color:var(--muted);font-size:12.5px;margin-top:4px}
+    .sig a.mini{color:var(--accent);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+    .badge{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap;flex:0 0 auto}
     .badge.high{background:#3a1616;color:#ff8a8a;border:1px solid #e11d1d}
     .badge.medium{background:#332413;color:#f5c37a;border:1px solid #f59e0b}
-    .badge.gap{background:#332413;color:#f5c37a;border:1px solid #f59e0b}
-    .dstat{display:flex;gap:16px;margin-bottom:9px}
-    .dstat div{font-size:12px;color:var(--muted)}
-    .dstat b{display:block;font-size:19px;color:var(--text);font-weight:800}
-    .dstat b.open{color:#e11d1d}
-    .dneeds{display:flex;flex-wrap:wrap;gap:5px}
-    .dneeds span{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px 9px;font-size:11.5px;color:var(--muted)}
-    .dcamp{font-size:11.5px;color:var(--muted);margin-top:9px;padding-top:8px;border-top:1px solid var(--line)}
-    .gaphint{color:#f59e0b;font-size:12px;margin-top:6px;font-weight:600}
-    .sfoot{color:var(--muted);font-size:11.5px;line-height:1.55;margin-top:26px;padding-top:14px;border-top:1px solid var(--line)}
-    .sempty{color:var(--muted);font-size:14px;padding:30px 4px;text-align:center}
-    @media(max-width:560px){ header.shead h1{font-size:14px} .scard .n{font-size:22px} }
+    .badge.need{background:#12243a;color:#8fc0ff;border:1px solid #2E77FF}
+    .badge.info{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+    .sempty{color:var(--muted);font-size:14px;padding:34px 4px;text-align:center}
+    .sfoot{color:var(--muted);font-size:11.5px;line-height:1.55;margin-top:24px;padding-top:14px;border-top:1px solid var(--line)}
+    @media(max-width:560px){ header.shead h1{font-size:14px} .filters{top:50px} .fspace{flex-basis:100%;height:0} }
   </style>
 </head>
 <body>
   <header class="shead">
     <img class="logo" src="favicon.png" alt="Banpani" />
-    <h1 id="stitle">District situation</h1>
-    <a id="maplink" href="/e/assam-floods-2026">🗺️ Map</a>
+    <h1>India disaster tracker</h1>
+    <a href="/">🗺️ Map</a>
     <a class="cta" href="/volunteers.html">🙋 Volunteer</a>
   </header>
   <div class="swrap">
-    <p class="sintro">A live, district-by-district picture of this flood response: where the open needs are, how many relief camps and people are sheltered, which districts the river model flags at risk, and the <b>gaps</b> - places at risk that nobody has reported from yet. Community data, updated automatically. Not an official government figure; always call <b>112</b> in an emergency.</p>
-    <div class="supd" id="supd">Loading live situation…</div>
+    <p class="sintro">A live, filterable picture of disasters across India - community-reported needs plus modelled river flood-risk (GloFAS), official multi-hazard alerts (GDACS) and active cyclones. Filter by disaster type, state or place. Automated from open data; not an official government figure. Always call <b>112</b> in an emergency.</p>
+    <div class="supd" id="supd">Loading live tracker…</div>
 
     <div class="scards" id="scards"></div>
 
-    <div class="sneeds" id="sneeds" hidden>
-      <h2>Most-needed right now</h2>
-      <div class="needchips" id="needchips"></div>
+    <div class="filters" id="filters" hidden>
+      <div class="fam" id="fam"></div>
+      <span class="fspace"></span>
+      <select id="stateSel"><option value="">All states</option></select>
+      <input id="search" type="search" placeholder="Search place / river…" autocomplete="off" />
     </div>
 
-    <div class="sdist" id="sdist" hidden>
-      <h2>Districts <span style="color:var(--muted);font-weight:400">(highest risk / most open needs first)</span></h2>
-      <div class="dgrid" id="dgrid"></div>
-    </div>
+    <div class="sigs" id="sigs"></div>
 
     <div class="sfoot">
-      Needs and reports are community-submitted and unverified unless confirmed by others. Flood-risk is a modelled estimate (GloFAS, auto every 3h), not an official warning. Relief-camp totals are from ASDMA/press and approximate. Official source: ASDMA. Emergency: 112 · ASDMA control room: 1079.
+      Signals are a mix of community reports (unverified unless confirmed by others), modelled flood-risk (GloFAS, auto every 3h - an estimate, not an official warning) and official alerts (GDACS). State is assigned by nearest centroid and is approximate near borders. Emergency: 112.
     </div>
   </div>
 
   <script>
     var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); };
-    var params = new URLSearchParams(location.search);
-    var slug = params.get('event') || 'assam-floods-2026';
-    document.getElementById('maplink').href = '/e/' + slug;
+    var DATA = null, activeFam = '', activeState = '', q = '';
 
     function card(n, label, cls) { return '<div class="scard ' + (cls || '') + '"><div class="n">' + n + '</div><div class="l">' + label + '</div></div>'; }
+    function badge(level) {
+      var cls = (level === 'high' || level === 'red') ? 'high' : (level === 'medium' || level === 'orange') ? 'medium' : level === 'need' ? 'need' : 'info';
+      var txt = cls === 'high' ? 'High' : cls === 'medium' ? 'Watch' : cls === 'need' ? 'Needs' : 'Info';
+      return '<span class="badge ' + cls + '">' + txt + '</span>';
+    }
 
-    fetch('/api/situation?event=' + encodeURIComponent(slug)).then(function (r) { return r.json(); }).then(function (j) {
-      if (j.error) { document.getElementById('supd').textContent = 'No situation available for this response.'; return; }
-      document.title = (j.title || 'District situation') + ' · Banpani';
-      document.getElementById('stitle').textContent = (j.title || 'District') + ' · situation';
-      var t = j.totals || {};
-      document.getElementById('supd').innerHTML = j.updated ? ('Flood-risk auto-updated <b>' + esc(j.updated) + '</b>. Needs update the moment people report.') : 'Live community data.';
-
-      document.getElementById('scards').innerHTML =
-        card(t.openNeeds || 0, 'Open needs', (t.openNeeds ? 'alert' : '')) +
-        card(t.districtsAffected || 0, 'Districts reporting') +
-        card(t.highRisk || 0, 'Districts at high flood-risk', (t.highRisk ? 'alert' : '')) +
-        card((t.camps || 0).toLocaleString('en-IN'), 'Relief camps') +
-        card((t.peopleInCamps || 0).toLocaleString('en-IN'), 'People in camps') +
-        card(t.gaps || 0, 'Gaps (at risk, unreported)', (t.gaps ? 'gap' : ''));
-
-      var needs = j.topNeeds || [];
-      if (needs.length) {
-        document.getElementById('sneeds').hidden = false;
-        document.getElementById('needchips').innerHTML = needs.map(function (n) {
-          return '<span class="needchip">' + esc(n.item) + ' <b>' + n.count + '</b></span>';
-        }).join('');
-      }
-
-      var ds = j.districts || [];
-      var affected = ds.filter(function (d) { return d.reports > 0 || d.risk || d.camps > 0; });
-      var grid = document.getElementById('dgrid');
-      document.getElementById('sdist').hidden = false;
-      if (!affected.length) { grid.innerHTML = '<div class="sempty">No reports yet. When people report needs, districts will appear here.</div>'; return; }
-      grid.innerHTML = affected.map(function (d) {
-        var cls = d.gap ? 'gapc' : (d.risk || '');
-        var badge = d.gap ? '<span class="badge gap">Gap · at risk, no reports</span>'
-          : d.risk === 'high' ? '<span class="badge high">High flood-risk</span>'
-            : d.risk === 'medium' ? '<span class="badge medium">Flood-risk</span>' : '';
-        var needsHtml = (d.topNeeds || []).map(function (n) { return '<span>' + esc(n.item) + ' · ' + n.count + '</span>'; }).join('');
-        var camp = (d.camps || d.people) ? '<div class="dcamp">🏕️ ' + (d.camps || 0).toLocaleString('en-IN') + ' relief camp(s) · ' + (d.people || 0).toLocaleString('en-IN') + ' sheltered</div>' : '';
-        var gapHint = d.gap ? '<div class="gaphint">⚠️ River model flags this district, but nobody has reported here yet - worth checking.</div>' : '';
-        return '<div class="dcard ' + cls + '">'
-          + '<div class="dhead"><span class="dn">' + esc(d.district) + '</span>' + badge + '</div>'
-          + '<div class="dstat"><div><b class="open">' + (d.open || 0) + '</b>open needs</div><div><b>' + (d.resolved || 0) + '</b>resolved</div></div>'
-          + (needsHtml ? '<div class="dneeds">' + needsHtml + '</div>' : '')
-          + gapHint + camp + '</div>';
+    function render() {
+      var sigs = DATA.signals.filter(function (s) {
+        if (activeFam && s.family !== activeFam) return false;
+        if (activeState && s.state !== activeState) return false;
+        if (q) { var hay = (s.title + ' ' + (s.district || '') + ' ' + (s.state || '') + ' ' + (s.detail || '')).toLowerCase(); if (hay.indexOf(q) < 0) return false; }
+        return true;
+      });
+      var box = document.getElementById('sigs');
+      if (!sigs.length) { box.innerHTML = '<div class="sempty">No signals match. Try clearing the filters.</div>'; return; }
+      var fam = {};
+      DATA.families.forEach(function (f) { fam[f.key] = f; });
+      box.innerHTML = sigs.map(function (s) {
+        var f = fam[s.family] || { emoji: '•' };
+        var loc = (s.state || 'India') + (s.district ? ' · ' + s.district : '');
+        var link = s.url ? '<a class="mini" href="' + esc(s.url) + '" target="_blank" rel="noopener">details →</a>' : (s.kind === 'community' ? '<a class="mini" href="/">on map →</a>' : '');
+        return '<div class="sig"><span class="em">' + (f.emoji || '•') + '</span><div class="body">'
+          + '<div class="t">' + esc(s.title) + '</div>'
+          + '<div class="meta"><span class="st">' + esc(loc) + '</span> · ' + esc(s.source) + '</div>'
+          + (s.detail ? '<div class="det">' + esc(s.detail) + '</div>' : '')
+          + '</div>' + badge(s.level) + (link ? '<div style="align-self:center">' + link + '</div>' : '') + '</div>';
       }).join('');
-    }).catch(function () { document.getElementById('supd').textContent = 'Could not load the situation right now. Try again in a moment.'; });
+    }
+
+    function buildFilters() {
+      var famBox = document.getElementById('fam');
+      var total = DATA.signals.length;
+      var pills = ['<button class="fchip on" data-k="" style="--c:var(--accent)"><span class="dot"></span>All <b>' + total + '</b></button>'];
+      DATA.families.forEach(function (f) {
+        pills.push('<button class="fchip" data-k="' + f.key + '" style="--c:' + f.color + '">' + f.emoji + ' ' + esc(f.label) + ' <b>' + f.count + '</b></button>');
+      });
+      famBox.innerHTML = pills.join('');
+      famBox.querySelectorAll('.fchip').forEach(function (b) {
+        b.onclick = function () { activeFam = b.dataset.k; famBox.querySelectorAll('.fchip').forEach(function (x) { x.classList.remove('on'); }); b.classList.add('on'); render(); };
+      });
+      var sel = document.getElementById('stateSel');
+      DATA.states.forEach(function (st) { var o = document.createElement('option'); o.value = st; o.textContent = st; sel.appendChild(o); });
+      sel.onchange = function () { activeState = sel.value; render(); };
+      document.getElementById('search').oninput = function (e) { q = e.target.value.trim().toLowerCase(); render(); };
+    }
+
+    fetch('/api/tracker').then(function (r) { return r.json(); }).then(function (j) {
+      if (j.error) { document.getElementById('supd').textContent = 'Could not load the tracker right now.'; return; }
+      DATA = j;
+      var t = j.totals || {};
+      document.getElementById('supd').innerHTML = j.updated ? ('Flood-risk auto-updated <b>' + esc(j.updated) + '</b>. Community needs update the moment people report.') : 'Live, automated from open data.';
+      document.getElementById('scards').innerHTML =
+        card(t.signals || 0, 'Live signals') +
+        card(t.states || 0, 'States affected') +
+        card(t.communityNeeds || 0, 'Open community needs', (t.communityNeeds ? 'alert' : '')) +
+        card(t.floodRisk || 0, 'River reaches at flood-risk', (t.floodRisk ? 'alert' : ''));
+      if (!DATA.signals.length) { document.getElementById('sigs').innerHTML = '<div class="sempty">All quiet across India right now - no active hazard signals or open needs. This page fills automatically when something happens.</div>'; return; }
+      document.getElementById('filters').hidden = false;
+      buildFilters();
+      render();
+    }).catch(function () { document.getElementById('supd').textContent = 'Could not load the tracker right now. Try again in a moment.'; });
   </script>
 </body>
 </html>

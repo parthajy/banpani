@@ -21,7 +21,7 @@ import { fetchNews } from './news.js';
 import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLifecycle, voteOver, voteReopen, archiveList, LIFECYCLE } from './events.js';
 import { DISASTERS, familyOf, HAZARD } from './disasters.js';
 import { officialEvents, tropicalCyclones } from './official.js';
-import { situationFor } from './situation.js';
+import { situationFor, trackerData } from './situation.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
 import { volunteersEnabled, validEmail, addVolunteer, volunteerSummary, listVolunteers } from './volunteers.js';
 
@@ -204,6 +204,9 @@ on('POST', '/api/volunteer', async (req, res) => {
 on('GET', '/api/official', async (req, res) => { try { json(res, 200, { official: await officialEvents() }); } catch { json(res, 200, { official: [] }); } });
 // Live tropical-cyclone positions + category (GDACS), for the gateway map's cyclone layer.
 on('GET', '/api/cyclones', async (req, res) => { try { json(res, 200, { cyclones: await tropicalCyclones() }); } catch { json(res, 200, { cyclones: [] }); } });
+// Pan-India disaster tracker: community needs + flood-risk + official alerts + cyclones, tagged by
+// state + disaster family so the /status page can filter across all of India.
+on('GET', '/api/tracker', async (req, res) => { try { json(res, 200, await trackerData()); } catch (e) { json(res, 500, { error: 'tracker failed' }); } });
 // District situation rollup for a flood event (needs, gaps, camps, flood-risk per district).
 on('GET', '/api/situation', (req, res, params, url) => {
   const slug = (url && url.searchParams.get('event')) || 'assam-floods-2026';
@@ -733,7 +736,7 @@ const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not fou
 function sitemapXml() {
   const evs = listEvents().filter(e => e.promoted);
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/how-it-works', 'weekly', '0.7'], ['/manifesto', 'monthly', '0.6'], ['/contributors', 'weekly', '0.6'], ['/press', 'weekly', '0.6'], ['/archive', 'daily', '0.8'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
+  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/how-it-works', 'weekly', '0.7'], ['/manifesto', 'monthly', '0.6'], ['/contributors', 'weekly', '0.6'], ['/press', 'weekly', '0.6'], ['/archive', 'daily', '0.8'], ['/status', 'hourly', '0.8'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
     .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
     + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')
