@@ -493,7 +493,7 @@ function renderEvac() {
     L.marker([e.to_lat, e.to_lng], { icon: freshIcon('🏁') }).addTo(layers.evac).bindPopup('🏁 Safe: ' + esc(e.label || 'this way'));
   }
 }
-function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderOffers(); renderBlocked(); renderFacilities(); renderEvac(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); drawPlume(); }
+function renderAll() { renderOfficial(); renderFlood(); renderNeeds(); renderPhotos(); renderCover(); renderNgo(); renderOffers(); renderBlocked(); renderFacilities(); renderEvac(); renderPane(); renderStats(); renderFeed(); renderNgoList(); renderFloodNow(); renderAuto(); }
 
 /* -------------------------------- photos -------------------------------- */
 function photoTagLabel(k) { for (const m of ['relief', 'rehab']) { const f = (C.PHOTO_TAGS[m] || []).find(x => x.k === k); if (f) return vt(f.l); } return k || ''; }
@@ -638,27 +638,44 @@ function conePts(lat, lng, brg, distKm, half = 22) {
   pts.push([lat, lng]);
   return pts;
 }
-let plumeWind = null;
-async function fetchWind() {
-  if (!EVENT || EVENT.family !== 'tech') return;
+// Wind-drift families: a hazard that travels downwind (tech = toxic plume, agri locust = swarm). Each
+// draws a downwind cone from its source markers with tailored copy.
+const DRIFT = {
+  tech: { color: '#9333EA', srcKind: 'leak',
+    adv: (f, to, s) => `🧭 <b>Live wind:</b> from the ${compass(f)} at ${s} km/h. <b>Toxic plume drifting ${compass(to)}.</b> Move <b>upwind (${compass(f)})</b> or crosswind - do not go ${compass(to)}.`,
+    pop: (f, to, s) => `🧭 Live plume estimate: drifting <b>${compass(to)}</b> on ${s} km/h wind. Go upwind (${compass(f)}). Estimate only - follow official orders.`,
+    src: 'Auto-estimated from Open-Meteo wind, refreshed every 10 min. An estimate - follow official evacuation orders.' },
+  agri: { color: '#84CC16', srcKind: 'swarm',
+    adv: (f, to, s) => `🦗 <b>Live wind:</b> from the ${compass(f)} at ${s} km/h. <b>Locust swarm likely to move ${compass(to)}.</b> Warn and protect crops to the <b>${compass(to)}</b> next.`,
+    pop: (f, to, s) => `🦗 Likely swarm drift: <b>${compass(to)}</b> on ${s} km/h wind (locusts fly downwind). Estimate only.`,
+    src: 'Auto-estimated from Open-Meteo wind - locusts travel downwind. Refreshed every 10 min. An estimate.' },
+};
+// Which events get a live auto-advisory: tech (plume), agri locust (swarm drift), infra (rescue conditions).
+function autoActive() { if (!EVENT) return false; if (EVENT.family === 'tech' || EVENT.family === 'infra') return true; return EVENT.family === 'agri' && EVENT.disaster_type === 'locust'; }
+let autoWx = null;
+async function fetchAutoWx() {
+  if (!autoActive()) return;
   try {
-    const j = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${EVENT.center[0]}&longitude=${EVENT.center[1]}&current=wind_speed_10m,wind_direction_10m&timezone=auto`)).json();
-    if (j && j.current && j.current.wind_direction_10m != null) { plumeWind = { from: j.current.wind_direction_10m, spd: j.current.wind_speed_10m || 0 }; drawPlume(); }
+    const j = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${EVENT.center[0]}&longitude=${EVENT.center[1]}&current=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,is_day&timezone=auto`)).json();
+    if (j && j.current) { autoWx = j.current; renderAuto(); }
   } catch {}
 }
-function drawPlume() {
-  if (!EVENT || EVENT.family !== 'tech') return;
+function renderAuto() {
   layers.plume.clearLayers();
   const adv = $('plumeAdv');
-  if (!plumeWind) { if (adv) adv.hidden = true; return; }
-  const toBrg = (plumeWind.from + 180) % 360, distKm = Math.min(10, 3 + plumeWind.spd * 0.25);
-  let src = (STATE.flood_reports || []).filter(f => f.kind === 'leak').map(f => [f.lat, f.lng]);
+  if (!autoActive() || !autoWx) { if (adv) adv.hidden = true; return; }
+  if (EVENT.family === 'infra') {   // live rescue conditions - exposure + lighting for search & rescue
+    const tC = Math.round(autoWx.temperature_2m), rain = (autoWx.precipitation || 0) > 0, day = autoWx.is_day === 1;
+    const risk = tC <= 12 ? ' Cold - exposure risk for trapped people.' : tC >= 38 ? ' Hot - heat risk for trapped people and rescuers.' : '';
+    if (adv) { adv.hidden = false; adv.innerHTML = `🛟 <b>Rescue conditions:</b> ${tC}°C${rain ? ', rain now' : ''}, ${day ? 'daylight' : '<b>dark - rescuers need lighting</b>'}.${risk} <span class="pa-src">Live from Open-Meteo, refreshed every 10 min. Plan lighting, shelter and medical accordingly.</span>`; }
+    return;
+  }
+  const d = DRIFT[EVENT.family]; if (!d || autoWx.wind_direction_10m == null) { if (adv) adv.hidden = true; return; }
+  const from = autoWx.wind_direction_10m, spd = Math.round(autoWx.wind_speed_10m || 0), to = (from + 180) % 360, distKm = Math.min(10, 3 + (autoWx.wind_speed_10m || 0) * 0.25);
+  let src = (STATE.flood_reports || []).filter(f => f.kind === d.srcKind).map(f => [f.lat, f.lng]);
   if (!src.length) src = [[EVENT.center[0], EVENT.center[1]]];
-  const popup = `🧭 Live plume estimate: drifting <b>${compass(toBrg)}</b> on ${Math.round(plumeWind.spd)} km/h wind. Go upwind (${compass(plumeWind.from)}). Estimate only - follow official orders.`;
-  src.forEach(([la, lo]) => {
-    L.polygon(conePts(la, lo, toBrg, distKm), { color: '#9333EA', weight: 1, dashArray: '4 4', fillColor: '#9333EA', fillOpacity: 0.16 }).bindPopup(popup).addTo(layers.plume);
-  });
-  if (adv) { adv.hidden = false; adv.innerHTML = `🧭 <b>Live wind:</b> from the ${compass(plumeWind.from)} at ${Math.round(plumeWind.spd)} km/h. <b>Toxic plume drifting ${compass(toBrg)}.</b> Move <b>upwind (${compass(plumeWind.from)})</b> or crosswind - do not go ${compass(toBrg)}. <span class="pa-src">Auto-estimated from Open-Meteo wind, refreshed every 10 min. An estimate - follow official evacuation orders.</span>`; }
+  src.forEach(([la, lo]) => L.polygon(conePts(la, lo, to, distKm), { color: d.color, weight: 1, dashArray: '4 4', fillColor: d.color, fillOpacity: 0.16 }).bindPopup(d.pop(from, to, spd)).addTo(layers.plume));
+  if (adv) { adv.hidden = false; adv.innerHTML = d.adv(from, to, spd) + ` <span class="pa-src">${d.src}</span>`; }
 }
 
 /* ------------------------- consensus / actions ------------------------- */
@@ -1458,6 +1475,6 @@ function renderOfficialSources() {
   try { await refresh(); await renderAdvisory(); } catch (e) { toast('Cannot reach server - is it running? ' + e.message); }
   if (!location.hash.match(/@/)) fitToHotspot();   // first load: fly to the worst-hit area (unless a deep-link says otherwise)
   setInterval(() => { refresh().catch(() => {}); renderAdvisory().catch(() => {}); }, 20000);
-  if (EVENT && EVENT.family === 'tech') { fetchWind(); setInterval(() => fetchWind().catch(() => {}), 10 * 60 * 1000); }   // live wind -> plume
+  if (autoActive()) { fetchAutoWx(); setInterval(() => fetchAutoWx().catch(() => {}), 10 * 60 * 1000); }   // live wind/weather -> plume / swarm / rescue conditions
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

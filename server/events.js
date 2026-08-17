@@ -27,8 +27,8 @@ export const RECIPES = {
   climate: ['needs', 'offers', 'facilities', 'photos'],
   health:  ['needs', 'offers', 'facilities', 'photos'],
   tech:    ['needs', 'offers', 'facilities', 'hazard', 'photos'],
-  infra:   ['needs', 'offers', 'blocked', 'facilities', 'photos'],
-  agri:    ['needs', 'offers', 'facilities', 'photos'],
+  infra:   ['needs', 'offers', 'blocked', 'facilities', 'hazard', 'photos'],
+  agri:    ['needs', 'offers', 'facilities', 'hazard', 'photos'],
 };
 
 function counts(eventId) {

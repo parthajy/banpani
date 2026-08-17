@@ -63,9 +63,9 @@ export const DISASTERS = {
   agri: {
     color: '#84CC16', emoji: '🌾', label: 'Agriculture',
     types: ['locust', 'crop-pest', 'fisheries'],   // livestock-disease moved to the health family
-    needs: ['Pesticide / control', 'Veterinary help', 'Fodder', 'Crop protection', 'Compensation'],
-    offerKinds: [['pesticide', '🧴 Pesticide'], ['sprayer', '💦 Sprayer'], ['fodder', '🌾 Fodder'], ['veterinary', '🐄 Veterinary'], ['other', '📦 Other']],
-    facilityKinds: [['veterinary', '🐄 Vet centre'], ['shop', '🏪 Agri shop']],
+    needs: ['Pesticide / spraying', 'Crop protection', 'Compensation', 'Agronomy advisory', 'Alternate income'],
+    offerKinds: [['pesticide', '🧴 Pesticide'], ['sprayer', '💦 Sprayer'], ['labour', '🧑‍🌾 Labour'], ['other', '📦 Other']],
+    facilityKinds: [['shop', '🏪 Agri shop'], ['warehouse', '🏭 Pesticide depot']],
   },
 };
 
@@ -78,6 +78,8 @@ export const HAZARD = {
   storm: { label: 'Storm damage', sev: [['high', 'Severe'], ['medium', 'Moderate'], ['receding', 'Easing'], ['receded', 'Passed']] },
   geo:   { label: 'Damage', sev: [['high', 'Heavy damage'], ['medium', 'Some damage'], ['receding', 'Minor'], ['receded', 'Cleared']] },
   tech:  { label: 'Contamination', sev: [['high', 'Dangerous'], ['medium', 'Moderate'], ['receding', 'Easing'], ['receded', 'Cleared']] },
+  infra: { label: 'Damage zone', sev: [['high', 'Critical'], ['medium', 'Unstable'], ['receding', 'Secured'], ['receded', 'Cleared']] },
+  agri:  { label: 'Affected area', sev: [['high', 'Heavy infestation'], ['medium', 'Spreading'], ['receding', 'Controlled'], ['receded', 'Cleared']] },
 };
 
 // Hazard "kinds" a family can mark on the map. A storm marks WIND and SURGE separately (a cyclone is a
@@ -99,9 +101,17 @@ export const HAZARD_KINDS = {
     { k: 'leak', label: 'Leak / spill source', emoji: '☣️', color: '#D6409F' },
     { k: 'plume', label: 'Toxic plume / hazardous air', emoji: '💨', color: '#9333EA' },
   ],
+  infra: [
+    { k: 'rubble', label: 'Collapse / rubble zone', emoji: '🧱', color: '#64748B' },
+    { k: 'cordon', label: 'Cordon - keep clear', emoji: '🚧', color: '#EF4444' },
+  ],
+  agri: [
+    { k: 'swarm', label: 'Locust swarm sighting', emoji: '🦗', color: '#84CC16' },
+    { k: 'cropdamage', label: 'Crop damage / infested', emoji: '🌾', color: '#B45309' },
+  ],
 };
 // Neutral group label for a multi-kind hazard tab (the kinds themselves are the sub-choices).
-export const HAZARD_TAB = { storm: 'Storm hazards', fire: 'Fire & smoke', geo: 'Damage & landslides', tech: 'Leak & plume' };
+export const HAZARD_TAB = { storm: 'Storm hazards', fire: 'Fire & smoke', geo: 'Damage & landslides', tech: 'Leak & plume', infra: 'Damage & cordons', agri: 'Swarm & crop damage' };
 
 // Per-subtype need lists, where one family's subtypes need OPPOSITE things (a heatwave vs a coldwave).
 // Used when an event has no custom needs; falls back to the family's generic list otherwise.
@@ -126,6 +136,18 @@ export const TYPE_NEEDS = {
   nuclear:              ['Evacuation', 'Radiation screening', 'Potassium iodide (KI)', 'Decontamination', 'Sealed shelter', 'Medical', 'Clean water / food'],
   'water-contamination':['Safe drinking water', 'Water testing', 'Boil-water advisory', 'ORS', 'Medical', 'Water tanker'],
   'grid-failure':       ['Power / generator', 'Fuel', 'Water pumping', 'Oxygen-dependent care', 'Vaccine / insulin cold storage', 'Charging / communication'],
+  // Infrastructure incidents - mostly mass-casualty rescue, but access/rerouting for road & bridge.
+  'building-collapse':  ['Search & rescue', 'People trapped', 'Medical / trauma', 'Heavy equipment (cranes/cutters)', 'Sniffer dogs', 'Blood', 'Ambulance', 'Shelter (displaced)'],
+  'bridge-collapse':    ['Search & rescue', 'Divers / boats', 'Medical / trauma', 'Heavy equipment', 'Traffic diversion', 'Blood', 'Ambulance'],
+  'road-washout':       ['Alternate route', 'Heavy equipment', 'Stranded-vehicle help', 'Food / water (stranded)', 'Temporary repair'],
+  train:                ['Search & rescue', 'Medical / trauma', 'Cutting equipment', 'Blood', 'Ambulance', 'Relatives helpdesk', 'Shelter'],
+  ship:                 ['Search & rescue at sea', 'Boats / coast guard', 'Medical', 'Life jackets', 'Divers'],
+  aircraft:             ['Search & rescue', 'Medical / trauma', 'Fire control', 'Blood', 'Relatives helpdesk', 'Forensics support'],
+  tunnel:               ['Search & rescue', 'People trapped', 'Oxygen / air supply', 'Drilling / boring', 'Medical', 'Communication'],
+  // Agriculture - a locust swarm vs a crop pest vs a fisheries collapse need different things.
+  locust:               ['Pesticide / spraying', 'Aerial spray support', 'Crop protection', 'Swarm reporting', 'Compensation', 'Alternate income'],
+  'crop-pest':          ['Pesticide / control', 'Agronomy advisory', 'Resistant seeds', 'Crop protection', 'Compensation'],
+  fisheries:            ['Fish-kill removal', 'Water testing', 'Cold storage', 'Boat / net repair', 'Alternate income', 'Compensation'],
 };
 
 // Subtype-aware Offers + Facilities (parallel to TYPE_NEEDS), so an animal-disease response shows vets
@@ -138,6 +160,8 @@ export const TYPE_OFFERS = {
   'grid-failure': [['power', '🔌 Power / generator'], ['fuel', '⛽ Fuel'], ['water', '💧 Water'], ['medical', '🩹 Medical'], ['other', '📦 Other']],
   'water-contamination': [['water', '💧 Safe water'], ['testing', '🧪 Water testing'], ['medical', '🩹 Medical'], ['transport', '🚗 Transport'], ['other', '📦 Other']],
   nuclear: [['medical', '🩹 Medical / screening'], ['transport', '🚗 Evacuation'], ['shelter', '🏠 Sealed shelter'], ['water', '💧 Clean water'], ['other', '📦 Other']],
+  locust: [['pesticide', '🧴 Pesticide'], ['sprayer', '💦 Sprayer'], ['drone', '🚁 Aerial spray'], ['labour', '🧑‍🌾 Labour'], ['other', '📦 Other']],
+  fisheries: [['coldstorage', '❄️ Cold storage'], ['boat', '🚤 Boat / net'], ['testing', '🧪 Water testing'], ['transport', '🚗 Transport'], ['other', '📦 Other']],
 };
 export const TYPE_FACILITIES = {
   'animal-disease': VET_FACILITIES, 'livestock-disease': VET_FACILITIES, 'avian-flu': VET_FACILITIES,
@@ -145,6 +169,7 @@ export const TYPE_FACILITIES = {
   'water-contamination': [['water', '🚰 Safe water point'], ['testing', '🧪 Water testing'], ['hospital', '🏥 Hospital'], ['clinic', '🩺 Clinic']],
   'grid-failure': [['power', '🔌 Charging / power point'], ['fuel', '⛽ Fuel'], ['hospital', '🏥 Hospital'], ['shelter', '⛺ Shelter']],
   nuclear: [['hospital', '🏥 Hospital'], ['clinic', '🩺 Screening'], ['shelter', '⛺ Sealed shelter']],
+  fisheries: [['coldstorage', '❄️ Cold storage'], ['market', '🏪 Fish market'], ['testing', '🧪 Water testing']],
 };
 
 // Family-level default search keywords, so EVERY event of a family indexes for its real terms even
@@ -157,6 +182,8 @@ export const FAMILY_KEYWORDS = {
   climate: 'drought, heatwave, coldwave, water scarcity, water tanker, fodder, crop failure, cattle camp, cooling shelter, ORS, heat stroke, blankets, relief',
   health: 'pandemic, epidemic, outbreak, COVID, oxygen, oxygen SOS, ICU bed, ventilator, plasma, platelets, testing, RT-PCR, ambulance, vaccination, dengue, cholera, ORS, zoonotic, Nipah, bird flu, avian influenza, H5N1, African swine fever, foot and mouth, lumpy skin disease, culling, quarantine, veterinary, animal vaccination, one health, relief',
   tech: 'industrial accident, chemical leak, gas leak, toxic gas, ammonia, chlorine, styrene, Bhopal, Vizag, evacuation, decontamination, HAZMAT, respirator, radiation, nuclear, water contamination, boil water, power outage, grid failure, blackout, plume, downwind, relief',
+  infra: 'building collapse, bridge collapse, road washout, train accident, derailment, plane crash, aircraft, ship, tunnel, search and rescue, NDRF, trapped, cranes, cutters, trauma, blood, ambulance, relief',
+  agri: 'locust, locust swarm, desert locust, crop pest, pest attack, pesticide, aerial spray, crop damage, fish kill, fisheries, agriculture, farmer, compensation, FAO, relief',
 };
 
 export function familyOf(type) {
