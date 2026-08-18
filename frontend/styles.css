@@ -419,6 +419,8 @@ body{overscroll-behavior:none}
 .plume-adv{background:#2a1633;border:1px solid #9333EA;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;line-height:1.5;color:#e7d6f5}
 .plume-adv b{color:#fff}
 .plume-adv .pa-src{display:block;color:#a98fc0;font-size:11px;margin-top:5px}
+.homeback{color:var(--muted);text-decoration:none;font-size:20px;font-weight:800;padding:1px 7px;border-radius:8px;line-height:1;flex:0 0 auto}
+.homeback:hover{color:var(--text);background:var(--panel2)}
 
 /* Official-sources panel (event pages): real responders, clearly separated from community reports */
 .offsrc-box #offSrcList{display:flex;flex-direction:column;gap:4px;margin:4px 0 6px}

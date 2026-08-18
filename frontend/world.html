@@ -40,6 +40,9 @@
     .wtitle h1{font-size:16px;margin:0;white-space:nowrap}
     header{position:relative}
     .wsearch-wrap{position:absolute;left:50%;transform:translateX(-50%);width:42vw;max-width:460px;z-index:5}
+    header .wexp{background:linear-gradient(135deg,#ff8a3d,#f5551d);border:1px solid transparent;border-radius:18px;box-shadow:0 2px 10px rgba(245,85,29,.35)}
+    header .wexp .e,header .wexp .t{color:#fff}
+    header .wexp:hover{filter:brightness(1.06)}
     .wsearch-wrap input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:20px;padding:8px 15px;font-size:14px;font-family:inherit}
     .wsearch-wrap input:focus{outline:none;border-color:var(--accent)}
     .wsearch-wrap .searchresults{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:700}
@@ -64,7 +67,7 @@
       border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--muted);box-shadow:var(--shadow);line-height:1.5}
     .wbeta a{color:var(--accent);font-weight:600}
     .wcount{color:var(--text);font-weight:700}
-    @media(max-width:860px){ .wtitle{display:none} header .hdr-primary .t{display:none} header{gap:7px;padding:8px 10px} .wmast{padding:6px 10px;font-size:11.5px} #wfilters{top:92px} .leaflet-top.leaflet-left{top:46px} .wbeta{font-size:11px;padding:8px 12px} .wsearch-wrap{width:auto;left:48px;right:104px;transform:none;max-width:none} header .logo{margin-right:auto} .wexpand{width:36px;height:36px} .wlayers{top:150px;padding:6px 5px;gap:5px} .wlbtn{width:34px;height:34px;font-size:15px} }
+    @media(max-width:860px){ .wtitle{display:none} header .hdr-primary .t{display:none} header .wexp{display:none} header{gap:7px;padding:8px 10px} .wmast{padding:6px 10px;font-size:11.5px} #wfilters{top:92px} .leaflet-top.leaflet-left{top:46px} .wbeta{font-size:11px;padding:8px 12px} .wsearch-wrap{width:auto;left:48px;right:104px;transform:none;max-width:none} header .logo{margin-right:auto} .wexpand{width:36px;height:36px} .wlayers{top:150px;padding:6px 5px;gap:5px} .wlbtn{width:34px;height:34px;font-size:15px} }
     /* report-from-anywhere */
     .wfab{position:absolute;right:16px;bottom:74px;z-index:650;background:var(--accent);color:#fff;border:none;border-radius:26px;
       padding:13px 18px;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
@@ -148,12 +151,13 @@
 </head>
 <body>
   <header>
-    <img class="logo" src="favicon.png" alt="Banpani" width="28" height="28" />
+    <a href="/" aria-label="Banpani home" style="line-height:0"><img class="logo" src="favicon.png" alt="Banpani" width="28" height="28" /></a>
     <div class="wtitle"><h1>Banpani <span style="color:var(--muted);font-weight:400;font-size:13px">· India</span></h1></div>
     <div class="wsearch-wrap">
       <input id="wsearch" type="search" autocomplete="off" placeholder="Search a place in India…" />
       <div class="searchresults" id="wresults"></div>
     </div>
+    <a class="link ic-btn hdr-primary wexp" href="/sandbox"><span class="e">🧪</span><span class="t">Experience it</span></a>
     <a class="link ic-btn hdr-primary" href="/volunteers.html"><span class="e">🙋</span><span class="t">Volunteer</span></a>
     <a class="link ic-btn hdr-primary" href="#" id="wsavedBtn"><span class="e">★</span><span class="t">Saved</span></a>
     <button class="hamburger" id="wmenuBtn" aria-label="Menu" aria-haspopup="true">☰</button>
@@ -161,6 +165,7 @@
       <button class="link ic-btn" id="wshareBtn"><span class="e">↗</span><span class="t">Share</span></button>
       <a class="link ic-btn" href="/status"><span class="e">📊</span><span class="t">Disaster tracker</span></a>
       <a class="link ic-btn" href="/sandbox"><span class="e">🧪</span><span class="t">Experience it</span></a>
+      <a class="link ic-btn" href="/guide"><span class="e">📖</span><span class="t">Disaster guides</span></a>
       <a class="link ic-btn" href="/archive"><span class="e">🧾</span><span class="t">Activity</span></a>
       <a class="link ic-btn" href="mailto:parthajy@gmail.com?subject=Banpani"><span class="e">✉</span><span class="t">Contact</span></a>
       <button class="link ic-btn" id="wguideBtn"><span class="e">▶</span><span class="t">Guide</span></button>
