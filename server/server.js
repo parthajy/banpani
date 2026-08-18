@@ -831,6 +831,9 @@ http.createServer(async (req, res) => {
       if (!ev) { res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' }); return res.end(eventNotFound()); }
       return await serveEventApp(req, res, ev);
     }
+    // Non-API registered routes (e.g. /favicon.ico, /guide, /guide/:slug) before the static fallback.
+    const m = matchRoute(req.method, url.pathname);
+    if (m) { const r = await m.handler(req, res, m.params, url); if (req.method === 'POST') stateCache = null; return r; }
     return await serveStatic(req, res, url.pathname);
   } catch (e) { console.error(e); json(res, 500, { error: 'server error', detail: String(e.message || e) }); }
 }).listen(PORT, () => {
