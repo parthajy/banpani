@@ -1035,7 +1035,7 @@ $('g_submit').onclick = async () => {
 /* language, advisory toggle, helplines, share */
 // Language options adapt to the response's region (Assam -> Assamese; Odisha -> Odia; …).
 (function initLang() {
-  const LABEL = { en: 'EN', as: 'অস', bn: 'বাং', hi: 'हि', or: 'ଓଡ଼ି', es: 'ES' };
+  const LABEL = { en: 'EN', as: 'অস', bn: 'বাং', hi: 'हि', or: 'ଓଡ଼ି', es: 'ES', ta: 'தமிழ்', mr: 'मराठी', te: 'తెలుగు', kn: 'ಕನ್ನಡ', ml: 'മലയാളം', gu: 'ગુજ', pa: 'ਪੰਜਾਬੀ' };
   const opts = (EVENT && Array.isArray(EVENT.langs)) ? EVENT.langs : ['en', 'as', 'bn', 'hi'];
   $('lang').innerHTML = opts.map(l => `<option value="${l}">${LABEL[l] || l.toUpperCase()}</option>`).join('');
   if (!opts.includes(getLang())) setLang('en');   // saved language not offered here -> fall back to English

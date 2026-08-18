@@ -22,7 +22,7 @@ import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLife
 import { DISASTERS, familyOf, HAZARD, HAZARD_KINDS, HAZARD_TAB, FAMILY_KEYWORDS, TYPE_NEEDS, TYPE_OFFERS, TYPE_FACILITIES } from './disasters.js';
 import { officialEvents, tropicalCyclones } from './official.js';
 import { situationFor, trackerData } from './situation.js';
-import { districtOf, inIndia } from './india-geo.js';
+import { districtOf, inIndia, langsForState } from './india-geo.js';
 import { guidePage, guideIndexPage, guideSlugs } from './guides.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
 import { volunteersEnabled, validEmail, addVolunteer, volunteerSummary, listVolunteers } from './volunteers.js';
@@ -712,7 +712,9 @@ async function serveEventApp(req, res, ev) {
     familyLabel: (DISASTERS[ev.family] || {}).label || null,
     status: ev.status || 'active', dormantAt: ev.dormant_at || null, archivedAt: ev.archived_at || null,
     reopenVotes: ev.reopenVotes || 0, reopenNeed: LIFECYCLE.REOPEN_VOTES, overNeed: LIFECYCLE.OVER_VOTES,
-    langs: isColombia ? ['en', 'es'] : isBangladesh ? ['bn', 'en'] : isOdisha ? ['en', 'or', 'hi'] : ['en', 'as', 'hi'],   // language options for this response's region
+    // Language options adapt to the response's state: TN -> Tamil, Maharashtra -> Marathi, etc.; English + Hindi always.
+    langs: isColombia ? ['en', 'es'] : isBangladesh ? ['bn', 'en'] : isOdisha ? ['en', 'or', 'hi'] : isAssam ? ['en', 'as', 'hi']
+      : ((ev.lat != null && inIndia(ev.lat, ev.lng)) ? langsForState((districtOf(ev.lat, ev.lng) || {}).s) : ['en', 'hi']),
     officialSources: officialSourcesFor(isAssam ? 'IN' : cc),   // real responders, shown separate from community reports
   };
   let html;
