@@ -24,6 +24,7 @@ import { officialEvents, tropicalCyclones } from './official.js';
 import { situationFor, trackerData } from './situation.js';
 import { districtOf, inIndia, langsForState } from './india-geo.js';
 import { guidePage, guideIndexPage, guideSlugs } from './guides.js';
+import { stateHubPage, stateIndexPage, stateSlugs } from './statehubs.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
 import { volunteersEnabled, validEmail, addVolunteer, volunteerSummary, listVolunteers } from './volunteers.js';
 
@@ -154,6 +155,9 @@ on('GET', '/api/events', (req, res) => json(res, 200, { events: listEvents() }))
 // Evergreen SEO guides - one per major disaster type (rank year-round, funnel to the live map).
 on('GET', '/guide', (req, res) => writeBody(req, res, 200, Buffer.from(guideIndexPage()), 'text/html; charset=utf-8', 'no-cache'));
 on('GET', '/guide/:slug', (req, res, params) => { const h = guidePage(params.slug); if (!h) return json(res, 404, { error: 'not found' }); writeBody(req, res, 200, Buffer.from(h), 'text/html; charset=utf-8', 'no-cache'); });
+// State hubs - evergreen "disaster relief in <state>" pages.
+on('GET', '/india', (req, res) => writeBody(req, res, 200, Buffer.from(stateIndexPage()), 'text/html; charset=utf-8', 'no-cache'));
+on('GET', '/india/:slug', (req, res, params) => { const h = stateHubPage(params.slug); if (!h) return json(res, 404, { error: 'not found' }); writeBody(req, res, 200, Buffer.from(h), 'text/html; charset=utf-8', 'no-cache'); });
 // Sandbox: the demo scenarios (one per disaster type) so people can experience how Banpani works
 // before a real disaster. These never appear on the live map, tracker or sitemap.
 on('GET', '/api/demos', (req, res) => {
@@ -775,7 +779,9 @@ function sitemapXml() {
   const evs = listEvents().filter(e => e.promoted);
   const today = new Date().toISOString().slice(0, 10);
   const urls = [['/', 'hourly', '1.0'], ['/how-it-works', 'weekly', '0.7'], ['/manifesto', 'monthly', '0.6'], ['/contributors', 'weekly', '0.6'], ['/press', 'weekly', '0.6'], ['/archive', 'daily', '0.8'], ['/status', 'hourly', '0.8'], ['/sandbox', 'monthly', '0.5'], ['/guide', 'weekly', '0.7'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
+    .concat([['/india', 'weekly', '0.6']])
     .concat(guideSlugs().map(s => ['/guide/' + s, 'monthly', '0.7']))
+    .concat(stateSlugs().map(s => ['/india/' + s, 'weekly', '0.6']))
     .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
     + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')
