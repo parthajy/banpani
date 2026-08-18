@@ -382,7 +382,7 @@ async function load() {
   try {
     const evs = (await (await fetch((C.API || '') + '/api/events')).json()).events || [];
     evs.forEach(ev => {
-      if (FOREIGN.has(ev.slug) || !inIndia(ev.lat, ev.lng)) return;   // India front door only
+      if (ev.source === 'demo' || FOREIGN.has(ev.slug) || !inIndia(ev.lat, ev.lng)) return;   // India front door only; demos live in the sandbox
       const f = FAM[ev.family] || FAM.water;
       const radius = 6 + Math.min(16, Math.sqrt(ev.reports || 1) * 3.2);
       evBySlug[ev.slug] = { slug: ev.slug, title: ev.title, family: ev.family, emoji: f.emoji };

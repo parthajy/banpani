@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decoratedReports } from './db.js';
+import { decoratedReports, all } from './db.js';
 import { getFloodAuto, ASSAM_DISTRICTS } from './flood-auto.js';
 import { officialEvents, tropicalCyclones } from './official.js';
 import { familyOf, DISASTERS } from './disasters.js';
@@ -62,7 +62,8 @@ export async function trackerData() {
   } catch { /* keep going */ }
 
   // 4. Community-reported needs (all India events), aggregated by state + family
-  const reports = decoratedReports().filter(r => r.lat != null && r.lng != null && inIndia(r.lat, r.lng) && r.status !== 'resolved');
+  const demoIds = new Set(all("SELECT id FROM events WHERE source='demo'").map(e => e.id));   // keep sandbox demos out of the live tracker
+  const reports = decoratedReports().filter(r => r.lat != null && r.lng != null && inIndia(r.lat, r.lng) && r.status !== 'resolved' && !demoIds.has(r.event_id));
   const agg = {};
   for (const r of reports) {
     const fam = familyOf(r.disaster_type || 'flood');

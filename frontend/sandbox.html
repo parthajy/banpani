@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Experience Banpani - disaster response sandbox</title>
+  <meta name="description" content="A safe sandbox to experience how Banpani coordinates relief for every kind of disaster - floods, cyclones, fires, earthquakes, industrial accidents, disease outbreaks, locust swarms and more. Explore before a real one hits." />
+  <link rel="canonical" href="https://banpani.org/sandbox" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta name="theme-color" content="#0f1419" />
+  <meta property="og:title" content="Experience Banpani - disaster response sandbox" />
+  <meta property="og:description" content="See how Banpani coordinates relief for every kind of disaster, before one strikes. Floods, cyclones, fires, quakes, outbreaks and more." />
+  <meta property="og:url" content="https://banpani.org/sandbox" />
+  <meta property="og:image" content="https://banpani.org/og-world.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body{overflow:auto}
+    .swrap{max-width:1000px;margin:0 auto;padding:14px 16px 60px}
+    header.shead{display:flex;align-items:center;gap:10px;padding:11px 16px;background:linear-gradient(180deg,#141b23,#10161d);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+    header.shead .logo{width:28px;height:28px;border-radius:7px}
+    header.shead h1{font-size:16px;margin:0;font-weight:800;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    header.shead a.cta{color:#fff;text-decoration:none;font-weight:700;font-size:13px;background:var(--accent);border:1px solid var(--accent);border-radius:16px;padding:6px 12px;white-space:nowrap}
+    .lead{color:var(--text);font-size:15px;line-height:1.6;margin:16px 2px 4px}
+    .sub{color:var(--muted);font-size:13px;line-height:1.6;margin:6px 2px 18px}
+    .note{background:#1b2733;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:20px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+    .card{display:block;text-decoration:none;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px;transition:border-color .15s,transform .1s}
+    .card:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .card .em{font-size:26px;line-height:1}
+    .card .fam{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 3px}
+    .card .tt{color:var(--text);font-weight:800;font-size:15.5px;line-height:1.3}
+    .card .how{color:var(--muted);font-size:12.5px;line-height:1.5;margin-top:7px}
+    .card .go{color:var(--accent);font-size:12.5px;font-weight:700;margin-top:10px;display:inline-block}
+    .sfoot{color:var(--muted);font-size:11.5px;line-height:1.55;margin-top:26px;padding-top:14px;border-top:1px solid var(--line)}
+    @media(max-width:560px){ header.shead h1{font-size:14px} }
+  </style>
+</head>
+<body>
+  <header class="shead">
+    <img class="logo" src="/favicon.png" alt="Banpani" />
+    <h1>Experience Banpani</h1>
+    <a class="cta" href="/">🗺️ Live map</a>
+  </header>
+  <div class="swrap">
+    <p class="lead">A safe <b>sandbox</b> to see exactly how Banpani coordinates relief for every kind of disaster - before a real one hits. Open any scenario and try it: report a need, drop a pin, mark a hazard, follow the live signals.</p>
+    <p class="sub">Banpani tailors itself to each disaster. A flood needs boats and camps; a cyclone brings wind and storm surge; an industrial leak drifts downwind; a locust swarm follows the wind; an earthquake means collapse and landslides. Each scenario below shows that in action.</p>
+    <div class="note">🧪 These are <b>simulations for learning</b>, not live emergencies. They never appear on the real India map, the tracker or in search results. In a real disaster, open the <a href="/" style="color:var(--accent)">live map</a> or report from where you are.</div>
+    <div class="grid" id="grid"><div class="sub">Loading scenarios…</div></div>
+    <div class="sfoot">Banpani is free, open source and owned by no one. Made by Partha Borthakur and volunteers. In a real emergency always call <b>112</b>.</div>
+  </div>
+
+  <script>
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); };
+    // How to use Banpani for each family - the teaching copy.
+    var HOW = {
+      water: 'Report stranded families, mark flood extent, and find boats, drinking water and relief camps.',
+      fire: 'Mark the active fire front and the smoke/hazardous-air zones, and find evacuation routes and shelters.',
+      storm: 'Mark wind damage and storm surge separately, and find cyclone shelters and power restoration.',
+      geo: 'Mark collapsed buildings and landslides, and call for search & rescue, blood and heavy equipment.',
+      climate: 'For drought: water tankers, fodder, cattle camps. For heatwave/coldwave: cooling or blankets and shelter.',
+      health: 'Coordinate oxygen, ICU beds, testing and vaccines - for a human pandemic, an animal disease, or a zoonotic outbreak.',
+      tech: 'Watch the live wind-driven toxic plume, evacuate upwind, and find masks and decontamination.',
+      infra: 'Coordinate search & rescue at a collapse, train or bridge - with a live rescue-conditions readout.',
+      agri: 'Track a locust swarm’s live wind drift and protect the crops it is heading toward next.',
+    };
+    fetch('/api/demos').then(function (r) { return r.json(); }).then(function (j) {
+      var d = (j && j.demos) || [], g = document.getElementById('grid');
+      if (!d.length) { g.innerHTML = '<div class="sub">No scenarios available right now.</div>'; return; }
+      g.innerHTML = d.map(function (x) {
+        return '<a class="card" href="/e/' + esc(x.slug) + '">'
+          + '<div class="em">' + (x.emoji || '•') + '</div>'
+          + '<div class="fam">' + esc(x.label) + '</div>'
+          + '<div class="tt">' + esc(x.title.replace(/\s*\(demo\)\s*$/i, '')) + '</div>'
+          + '<div class="how">' + esc(HOW[x.family] || 'See how Banpani coordinates this response.') + '</div>'
+          + '<div class="go">Try this scenario →</div></a>';
+      }).join('');
+    }).catch(function () { document.getElementById('grid').innerHTML = '<div class="sub">Could not load scenarios. Try again in a moment.</div>'; });
+  </script>
+</body>
+</html>

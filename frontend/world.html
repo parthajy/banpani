@@ -6,8 +6,13 @@
   <title>Banpani - Live India disaster map</title>
   <meta name="description" content="A live, community-run India map of disasters - floods, fires, storms and more. Report a disaster anywhere in India, find who needs help. No accounts, no login. Open source, owned by everyone." />
   <link rel="canonical" href="https://banpani.org/" />
-  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="icon" href="favicon.png" sizes="any" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="theme-color" content="#0f1419" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Banpani" />
@@ -22,6 +27,9 @@
   <meta name="twitter:title" content="India's disasters, coordinated by everyone - Banpani" />
   <meta name="twitter:description" content="Live community India map of floods, fires, storms and more. Report anywhere, no accounts. Open source." />
   <meta name="twitter:image" content="https://banpani.org/og-world.png" />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Banpani","alternateName":"বানপানী","url":"https://banpani.org/","logo":"https://banpani.org/favicon-96.png","description":"A free, open-source, community-run live disaster map for India - report and coordinate relief for floods, cyclones, fires, earthquakes, industrial accidents, disease outbreaks and more. No accounts, no money.","founder":{"@type":"Person","name":"Partha Borthakur"},"sameAs":["https://github.com/parthajy/banpani"]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Banpani","alternateName":"India disaster map","url":"https://banpani.org/","inLanguage":"en-IN","publisher":{"@type":"Organization","name":"Banpani"}}</script>
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
@@ -152,6 +160,7 @@
     <div class="hdr-actions" id="wmenu">
       <button class="link ic-btn" id="wshareBtn"><span class="e">↗</span><span class="t">Share</span></button>
       <a class="link ic-btn" href="/status"><span class="e">📊</span><span class="t">Disaster tracker</span></a>
+      <a class="link ic-btn" href="/sandbox"><span class="e">🧪</span><span class="t">Experience it</span></a>
       <a class="link ic-btn" href="/archive"><span class="e">🧾</span><span class="t">Activity</span></a>
       <a class="link ic-btn" href="mailto:parthajy@gmail.com?subject=Banpani"><span class="e">✉</span><span class="t">Contact</span></a>
       <button class="link ic-btn" id="wguideBtn"><span class="e">▶</span><span class="t">Guide</span></button>

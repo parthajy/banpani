@@ -22,6 +22,7 @@ import { listEvents, eventBySlug, createOrJoinEvent, eventForLocation, sweepLife
 import { DISASTERS, familyOf, HAZARD, HAZARD_KINDS, HAZARD_TAB, FAMILY_KEYWORDS, TYPE_NEEDS, TYPE_OFFERS, TYPE_FACILITIES } from './disasters.js';
 import { officialEvents, tropicalCyclones } from './official.js';
 import { situationFor, trackerData } from './situation.js';
+import { districtOf, inIndia } from './india-geo.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
 import { volunteersEnabled, validEmail, addVolunteer, volunteerSummary, listVolunteers } from './volunteers.js';
 
@@ -143,6 +144,12 @@ on('GET', '/api/news', async (req, res, params, url) => {
 });
 // Events: first-class persisted responses (for the world map). `promoted` = SEO-worthy.
 on('GET', '/api/events', (req, res) => json(res, 200, { events: listEvents() }));
+// Sandbox: the demo scenarios (one per disaster type) so people can experience how Banpani works
+// before a real disaster. These never appear on the live map, tracker or sitemap.
+on('GET', '/api/demos', (req, res) => {
+  const rows = all("SELECT slug,title,disaster_type FROM events WHERE source='demo' AND hidden=0 ORDER BY id");
+  json(res, 200, { demos: rows.map(e => { const fam = familyOf(e.disaster_type); const f = DISASTERS[fam] || {}; return { slug: e.slug, title: e.title, type: e.disaster_type, family: fam, emoji: f.emoji || '•', label: f.label || fam }; }) });
+});
 // Community flag-to-hide: anyone can flag an event as fake/duplicate/wrong. No account, one vote
 // per device (logged). At 3 distinct devices the event auto-hides - the same soft-consensus model
 // used for reports/offers/etc. A maintainer can also hide directly via /api/admin/events/:id/hide.
@@ -655,12 +662,18 @@ const EVENT_SEO = {
       + '<p>Banpani is a free, community-run live map to coordinate flood relief across Odisha, India, during the 2026 floods. Report a stranded family or a relief need such as a boat, drinking water, medicine, food or shelter, and volunteers nearby can act. It covers the worst-hit districts including Bhadrak, Baleshwar (Balasore), Jajpur, Mayurbhanj and Keonjhar. No account, no money, owned by no one. Available in English, Odia and Hindi. Official source: OSDMA (Odisha State Disaster Management Authority). Emergency: 112. Community reports on this map are not official.</p>',
   },
 };
-function seoFor(ev, f) {
+// Auto SEO for EVERY event. Hand-tuned flagships use their EVENT_SEO block; any other event (including
+// ones auto-created the moment a disaster is reported) gets rich SEO built from its place, its
+// reverse-geocoded district + state, and its family's keywords - no human editing, ever.
+function seoFor(ev, f, geo) {
   const c = EVENT_SEO[ev.slug];
+  if (c) return c;
+  const rw = reliefWordOf(ev), inPlace = geo ? ` in ${geo.d}, ${geo.s}` : '';
+  const geoKw = geo ? `${geo.d} ${rw}, ${geo.s} ${rw}, ${geo.d}, ${geo.s}, ` : '';
   return {
-    desc: c ? c.desc : `Report needs, offers, blocked roads and photos for ${ev.title}. A free, community-run ${f.label.toLowerCase()} relief map - no accounts, no money, owned by everyone.`,
-    keywords: c ? c.keywords : `${ev.title}, ${reliefWordOf(ev)} relief, ${FAMILY_KEYWORDS[ev.family] || 'disaster relief'}, community map, volunteer, coordination, banpani`,
-    body: c ? c.body : `<h1>${htmlEsc(ev.title)} - Community Relief Map</h1><p>A free, community-run live map to coordinate ${f.label.toLowerCase()} relief for ${htmlEsc(ev.title)}. Report needs, offer help, and find the areas nobody has reached yet. No account, no money, owned by no one. Community reports on this map are not official.</p>`,
+    desc: `Live community map to coordinate ${rw} relief for ${ev.title}${inPlace}, India. Report stranded people and needs, offer help, and find where nobody has reached yet. No accounts, no money, open source.`,
+    keywords: `${ev.title}, ${geoKw}${rw} relief, ${FAMILY_KEYWORDS[ev.family] || 'disaster relief'}, community map, volunteer, coordination, banpani`,
+    body: `<h1>${htmlEsc(ev.title)} - Community Relief Map</h1><p>Banpani is a free, community-run live map to coordinate ${f.label.toLowerCase()} relief for ${htmlEsc(ev.title)}${geo ? ' in ' + htmlEsc(geo.d) + ' district, ' + htmlEsc(geo.s) : ''}, India. Report a stranded family or a need such as rescue, drinking water, medicine, food or shelter, and volunteers nearby can act. No account, no money, owned by no one. Community reports on this map are not official.</p>`,
   };
 }
 async function serveEventApp(req, res, ev) {
@@ -695,12 +708,20 @@ async function serveEventApp(req, res, ev) {
   let html;
   try { html = await readFile(join(FRONTEND, 'index.html'), 'utf8'); } catch { return json(res, 500, { error: 'read failed' }); }
   const url = 'https://banpani.org/e/' + ev.slug;
-  const seo = seoFor(ev, f);
+  // Reverse-geocode to district + state (India only) so the auto SEO ranks for local terms.
+  const dd = (ev.lat != null && inIndia(ev.lat, ev.lng)) ? districtOf(ev.lat, ev.lng) : null;
+  const geo = dd ? { d: dd.d, s: dd.s } : null;
+  const seo = seoFor(ev, f, geo);
   const ld = JSON.stringify({
     '@context': 'https://schema.org', '@type': 'SpecialAnnouncement',
     name: ev.title, text: seo.desc,
     datePosted: ev.created_at, category: 'https://www.wikidata.org/wiki/Q3839081', url,
-    ...(ev.lat != null ? { spatialCoverage: { '@type': 'Place', geo: { '@type': 'GeoCoordinates', latitude: ev.lat, longitude: ev.lng } } } : {}),
+    ...(ev.lat != null ? {
+      spatialCoverage: {
+        '@type': 'Place', geo: { '@type': 'GeoCoordinates', latitude: ev.lat, longitude: ev.lng },
+        ...(geo ? { address: { '@type': 'PostalAddress', addressRegion: geo.s, addressCountry: 'IN' } } : {}),
+      },
+    } : {}),
   }).replace(/</g, '\\u003c');
   const crumb = JSON.stringify({
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
@@ -717,8 +738,9 @@ async function serveEventApp(req, res, ev) {
   const ogImg = `https://banpani.org/og-${ev.family}.png`;
   const set = (h, attr, val) => h.replace(new RegExp('(<meta ' + attr + ' content=")[^"]*(")'), '$1' + htmlEsc(val).replace(/\$/g, '$$$$') + '$2');
   html = html
-    // served under /e/<slug>, so relative asset URLs (styles.css, app.js…) must resolve from root
-    .replace('<head>', '<head>\n  <base href="/">')
+    // served under /e/<slug>, so relative asset URLs (styles.css, app.js…) must resolve from root.
+    // Demo/sandbox events are noindex (never compete in search with real disasters).
+    .replace('<head>', '<head>\n  <base href="/">\n  <meta name="robots" content="' + (ev.source === 'demo' ? 'noindex,follow' : 'index,follow,max-image-preview:large,max-snippet:-1') + '">')
     .replace('<script src="config.js"></script>', inject + '<script src="config.js"></script>')
     .replace(/<title>[\s\S]*?<\/title>/, '<title>' + htmlEsc(ev.title + ' - ' + cap(reliefWordOf(ev)) + ' relief coordination · Banpani') + '</title>')
     .replace(/(<link rel="canonical" href=")[^"]*(")/, '$1' + url + '$2');
@@ -740,7 +762,7 @@ const eventNotFound = () => `<!doctype html><meta charset="utf-8"><title>Not fou
 function sitemapXml() {
   const evs = listEvents().filter(e => e.promoted);
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [['/', 'hourly', '1.0'], ['/world', 'hourly', '0.9'], ['/how-it-works', 'weekly', '0.7'], ['/manifesto', 'monthly', '0.6'], ['/contributors', 'weekly', '0.6'], ['/press', 'weekly', '0.6'], ['/archive', 'daily', '0.8'], ['/status', 'hourly', '0.8'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
+  const urls = [['/', 'hourly', '1.0'], ['/how-it-works', 'weekly', '0.7'], ['/manifesto', 'monthly', '0.6'], ['/contributors', 'weekly', '0.6'], ['/press', 'weekly', '0.6'], ['/archive', 'daily', '0.8'], ['/status', 'hourly', '0.8'], ['/sandbox', 'monthly', '0.5'], ['/volunteers.html', 'weekly', '0.8'], ['/about.html', 'weekly', '0.7'], ['/privacy.html', 'monthly', '0.4']]
     .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
     + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')
@@ -753,6 +775,7 @@ function sitemapXml() {
 const PRETTY = { '/': '/world.html', '/volunteers': '/volunteers.html',
   '/press': '/press.html', '/how-it-works': '/how-it-works.html', '/manifesto': '/manifesto.html', '/contributors': '/contributors.html',
   '/archive': '/archive.html', '/status': '/situation.html', '/situation': '/situation.html',
+  '/sandbox': '/sandbox.html', '/experience': '/sandbox.html',
   '/admin': '/admin.html', '/parthajy/admin': '/admin.html' };   // one admin, reachable at either path
 async function serveStatic(req, res, pathname) {
   countView(req, pathname);

@@ -113,7 +113,7 @@ export function listEvents() {
       reports: c.reports, people: c.people, confirmations: c.confirmations, score,
       // Our hand-built flagship responses (Assam, seeded events like Odisha) are always SEO-worthy,
       // so they belong in the sitemap even before community activity pushes their score up.
-      promoted: score >= 3 || e.source === 'assam' || e.source === 'seeded',
+      promoted: e.source !== 'demo' && (score >= 3 || e.source === 'assam' || e.source === 'seeded'),
       unconfirmed: !active, status: e.status, reopenVotes: e.status === 'dormant' ? reopenVotes(e.id) : 0,
     };
   });
@@ -191,7 +191,18 @@ export function createOrJoinEvent(lat, lng, disasterType, place, device) {
   const r = run(`INSERT INTO events(created_at,slug,title,disaster_type,lat,lng,radius_km,modules,source,created_by,listed,status)
     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, now(), slug, title, disasterType || fam, lat, lng, 30,
     JSON.stringify(RECIPES[fam] || ['needs', 'photos']), 'community', device || null, 0, 'active');
+  pingIndexNow('https://banpani.org/e/' + slug);   // automatic fast indexing the moment a disaster spins up an event
   return Number(r.lastInsertRowid);
+}
+
+// IndexNow: tell Bing/Yandex/others to crawl a new URL immediately (free, no Google equivalent - Google
+// discovers via the sitemap + links). Fire-and-forget; never blocks or throws.
+const INDEXNOW_KEY = '52f38b48dff15b5759cc15fedace2c90';
+export function pingIndexNow(url) {
+  try {
+    fetch(`https://api.indexnow.org/indexnow?url=${encodeURIComponent(url)}&key=${INDEXNOW_KEY}&keyLocation=https://banpani.org/${INDEXNOW_KEY}.txt`,
+      { signal: AbortSignal.timeout(6000) }).catch(() => {});
+  } catch { /* never let indexing break a report */ }
 }
 
 // Lighter lookup for rows without a disaster_type (photos, routes, drop-offs): nearest event.
