@@ -28,12 +28,15 @@ export function stateOf(lat, lng) { const d = districtOf(lat, lng); return d ? d
 // State -> its primary language, but ONLY for languages we ship a UI module for (so the dropdown never
 // offers a language that does nothing). Add a state here as its language module lands in i18n.js.
 export const STATE_LANG = {
-  'Tamil Nadu': 'ta', 'Maharashtra': 'mr', 'West Bengal': 'bn', 'Odisha': 'or', 'Assam': 'as', 'Tripura': 'bn', 'Goa': 'mr',
+  'Andhra Pradesh': 'te', 'Assam': 'as', 'Bihar': 'mai', 'Goa': ['kok', 'mr'], 'Gujarat': 'gu',
+  'Karnataka': 'kn', 'Kerala': 'ml', 'Maharashtra': 'mr', 'Odisha': 'or', 'Punjab': 'pa',
+  'Sikkim': 'ne', 'Tamil Nadu': 'ta', 'Telangana': 'te', 'Tripura': 'bn', 'West Bengal': 'bn',
 };
-// Every India response offers English + Hindi by default, plus the state's language when available.
+// Every India response offers English + Hindi by default, plus the state's language(s) when available.
 export function langsForState(state) {
   const l = STATE_LANG[state], base = ['en', 'hi'];
-  return (l && !base.includes(l)) ? base.concat(l) : base;
+  if (!l) return base;
+  return base.concat((Array.isArray(l) ? l : [l]).filter(x => !base.includes(x)));
 }
 
 // The full state -> districts map, so the tracker page can offer a cascading state/district filter.
