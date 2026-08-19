@@ -151,6 +151,17 @@ on('GET', '/favicon.ico', async (req, res) => {
   try { const buf = await readFile(join(FRONTEND, 'favicon-96.png')); writeBody(req, res, 200, buf, 'image/png', 'public, max-age=604800'); }
   catch { json(res, 404, { error: 'not found' }); }
 });
+// Legacy path: the web manifest was renamed to .webmanifest; 301 so old references don't 404.
+on('GET', '/manifest.json', (req, res) => { res.writeHead(301, { Location: '/manifest.webmanifest' }); res.end(); });
+// Google News sitemap: only events from the last 2 days, in the news-sitemap format. Empty until a
+// fresh disaster spins up an event - then Google News (if the publication is approved) picks it up fast.
+on('GET', '/news-sitemap.xml', (req, res) => {
+  const cutoff = new Date(Date.now() - 2 * 864e5).toISOString();
+  const evs = all("SELECT slug,title,created_at FROM events WHERE hidden=0 AND source!='demo' AND created_at > ? AND status IN ('active','dormant') ORDER BY created_at DESC LIMIT 1000", cutoff);
+  const items = evs.map(e => `  <url>\n    <loc>https://banpani.org/e/${e.slug}</loc>\n    <news:news>\n      <news:publication><news:name>Banpani</news:name><news:language>en</news:language></news:publication>\n      <news:publication_date>${e.created_at}</news:publication_date>\n      <news:title>${htmlEsc(e.title)}</news:title>\n    </news:news>\n  </url>`).join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n${items}\n</urlset>`;
+  writeBody(req, res, 200, Buffer.from(xml), 'application/xml', 'no-cache');
+});
 on('GET', '/api/events', (req, res) => json(res, 200, { events: listEvents() }));
 // Evergreen SEO guides - one per major disaster type (rank year-round, funnel to the live map).
 on('GET', '/guide', (req, res) => writeBody(req, res, 200, Buffer.from(guideIndexPage()), 'text/html; charset=utf-8', 'no-cache'));

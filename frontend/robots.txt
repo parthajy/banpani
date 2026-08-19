@@ -5,3 +5,4 @@ Disallow: /admin
 Disallow: /parthajy/
 
 Sitemap: https://banpani.org/sitemap.xml
+Sitemap: https://banpani.org/news-sitemap.xml
