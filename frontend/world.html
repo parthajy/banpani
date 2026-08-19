@@ -30,6 +30,11 @@
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Banpani","alternateName":"বানপানী","url":"https://banpani.org/","logo":"https://banpani.org/favicon-96.png","description":"A free, open-source, community-run live disaster map for India - report and coordinate relief for floods, cyclones, fires, earthquakes, industrial accidents, disease outbreaks and more. No accounts, no money.","founder":{"@type":"Person","name":"Partha Borthakur"},"sameAs":["https://github.com/parthajy/banpani"]}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Banpani","alternateName":"India disaster map","url":"https://banpani.org/","inLanguage":"en-IN","publisher":{"@type":"Organization","name":"Banpani"}}</script>
+  <!-- LCP: warm up the map tile CDN + Leaflet before the map inits, so the first tiles paint faster. -->
+  <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin />
+  <link rel="preconnect" href="https://b.basemaps.cartocdn.com" crossorigin />
+  <link rel="preconnect" href="https://c.basemaps.cartocdn.com" crossorigin />
+  <link rel="preload" as="script" href="vendor/leaflet/leaflet.js" />
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHTJ828EM6"></script>
