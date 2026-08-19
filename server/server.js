@@ -813,6 +813,8 @@ async function serveStatic(req, res, pathname) {
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   if (req.method === 'OPTIONS') return json(res, 204, {});
+  // Canonical host: 301 www -> non-www so search engines see one site, not duplicate content.
+  if ((req.headers.host || '').toLowerCase().startsWith('www.')) { res.writeHead(301, { Location: 'https://banpani.org' + req.url }); return res.end(); }
   // /world is retired - Banpani is India-focused; the India map is the front door.
   if (url.pathname === '/world' || url.pathname === '/world.html') { res.writeHead(301, { Location: '/' }); return res.end(); }
   try {
