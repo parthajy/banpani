@@ -24,7 +24,7 @@ import { officialEvents, tropicalCyclones } from './official.js';
 import { situationFor, trackerData } from './situation.js';
 import { districtOf, inIndia, langsForState } from './india-geo.js';
 import { guidePage, guideIndexPage, guideSlugs } from './guides.js';
-import { stateHubPage, stateIndexPage, stateSlugs } from './statehubs.js';
+import { stateHubPage, stateIndexPage, stateSlugs, stateDisasterPage, stateDisasterCombos } from './statehubs.js';
 import { countryOf, helplinesFor as helplinesForCountry, newsLocale, officialSourcesFor } from './geo.js';
 import { volunteersEnabled, validEmail, addVolunteer, volunteerSummary, listVolunteers } from './volunteers.js';
 
@@ -169,6 +169,8 @@ on('GET', '/guide/:slug', (req, res, params) => { const h = guidePage(params.slu
 // State hubs - evergreen "disaster relief in <state>" pages.
 on('GET', '/india', (req, res) => writeBody(req, res, 200, Buffer.from(stateIndexPage()), 'text/html; charset=utf-8', 'no-cache'));
 on('GET', '/india/:slug', (req, res, params) => { const h = stateHubPage(params.slug); if (!h) return json(res, 404, { error: 'not found' }); writeBody(req, res, 200, Buffer.from(h), 'text/html; charset=utf-8', 'no-cache'); });
+// {disaster} relief in {state} - the high-intent long-tail pages (only real state x disaster combos).
+on('GET', '/india/:state/:disaster', (req, res, params) => { const h = stateDisasterPage(params.state, params.disaster); if (!h) return json(res, 404, { error: 'not found' }); writeBody(req, res, 200, Buffer.from(h), 'text/html; charset=utf-8', 'no-cache'); });
 // Sandbox: the demo scenarios (one per disaster type) so people can experience how Banpani works
 // before a real disaster. These never appear on the live map, tracker or sitemap.
 on('GET', '/api/demos', (req, res) => {
@@ -793,6 +795,7 @@ function sitemapXml() {
     .concat([['/india', 'weekly', '0.6']])
     .concat(guideSlugs().map(s => ['/guide/' + s, 'monthly', '0.7']))
     .concat(stateSlugs().map(s => ['/india/' + s, 'weekly', '0.6']))
+    .concat(stateDisasterCombos().map(([st, d]) => ['/india/' + st + '/' + d, 'weekly', '0.6']))
     .concat(evs.map(e => ['/e/' + e.slug, 'hourly', '0.8']));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
     + urls.map(([loc, cf, pr]) => `  <url><loc>https://banpani.org${loc}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')

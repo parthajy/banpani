@@ -29,7 +29,23 @@ export const STATES = {
 import { GUIDES } from './guides.js';
 const FAMEMOJI = { water: '💧', storm: '🌪️', geo: '⛰️', fire: '🔥', climate: '☀️', health: '🦠', tech: '☣️' };
 
+// Disaster metadata for the {disaster} relief in {state} pages. `guide` = the matching guide slug,
+// `family` = the tracker family to filter live responses by, `word` = the noun before "relief".
+const DISASTER = {
+  flood: { name: 'Flood', emoji: '💧', family: 'water', word: 'flood' },
+  cyclone: { name: 'Cyclone', emoji: '🌪️', family: 'storm', word: 'cyclone' },
+  earthquake: { name: 'Earthquake', emoji: '⛰️', family: 'geo', word: 'earthquake' },
+  landslide: { name: 'Landslide', emoji: '⛰️', family: 'geo', word: 'landslide' },
+  fire: { name: 'Fire', emoji: '🔥', family: 'fire', word: 'fire' },
+  drought: { name: 'Drought', emoji: '☀️', family: 'climate', word: 'drought' },
+  heatwave: { name: 'Heatwave', emoji: '☀️', family: 'climate', word: 'heatwave' },
+  'disease-outbreak': { name: 'Disease outbreak', emoji: '🦠', family: 'health', word: 'outbreak' },
+  'gas-leak': { name: 'Gas leak', emoji: '☣️', family: 'tech', word: 'gas-leak' },
+};
+
 export const stateSlugs = () => Object.keys(STATES);
+// Only the disasters each state is actually prone to - never irrelevant combos (avoids thin pages).
+export const stateDisasterCombos = () => Object.keys(STATES).flatMap(st => STATES[st].prone.filter(d => DISASTER[d] && GUIDES[d]).map(d => [st, d]));
 
 function shell(head, body) { return `<!doctype html>\n<html lang="en">\n<head>\n${head}\n</head>\n<body>\n${body}\n</body>\n</html>`; }
 
@@ -48,7 +64,7 @@ export function stateHubPage(slug) {
     { '@context': 'https://schema.org', '@type': 'WebPage', name: title, description: desc, url, about: { '@type': 'Place', name: s.name, address: { '@type': 'PostalAddress', addressRegion: s.name, addressCountry: 'IN' } } },
     { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'India states', item: 'https://banpani.org/india' }, { '@type': 'ListItem', position: 2, name: s.name, item: url }] },
   ];
-  const cards = s.prone.filter(p => GUIDES[p]).map(p => `<a class="card" href="/guide/${p}"><div class="em">${FAMEMOJI[GUIDES[p].family] || '🆘'}</div><div class="tt">${esc(GUIDES[p].title.replace(/ in India$/, ''))}</div><div class="go">Read the guide →</div></a>`).join('\n        ');
+  const cards = s.prone.filter(p => DISASTER[p] && GUIDES[p]).map(p => `<a class="card" href="/india/${slug}/${p}"><div class="em">${DISASTER[p].emoji}</div><div class="tt">${esc(DISASTER[p].name)} relief in ${esc(s.name)}</div><div class="go">See ${esc(DISASTER[p].name.toLowerCase())} relief →</div></a>`).join('\n        ');
   const head = [
     '  <meta charset="utf-8" />', '  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />',
     `  <title>${esc(title)} · Banpani</title>`, `  <meta name="description" content="${esc(desc)}" />`, `  <meta name="keywords" content="${esc(keywords)}" />`,
@@ -79,6 +95,61 @@ export function stateHubPage(slug) {
       var sig=(j&&j.signals||[]).filter(function(x){return x.state===${jesc(s.state)};});
       var esc=function(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});};
       if(!sig.length){box.innerHTML='<div class="muted">No active signals in ${esc(s.name)} right now. This fills automatically when something happens - open the <a href="/" style="color:var(--accent)">live map</a> to report.</div>';return;}
+      box.innerHTML=sig.slice(0,12).map(function(x){return '<div class="sig">'+esc(x.title)+'<div class="m">'+esc((x.district?x.district+' · ':'')+(x.detail||''))+' · '+esc(x.source)+'</div></div>';}).join('');
+    }).catch(function(){document.getElementById('live').innerHTML='<div class="muted">Could not load live signals.</div>';});
+  </script>`;
+  return shell(head, body);
+}
+
+// {disaster} relief in {state} - the high-intent long-tail page. Each is distinct: the state, the
+// disaster, the LIVE responses filtered to both, the matching guide, and the state's official sources.
+export function stateDisasterPage(stateSlug, disasterSlug) {
+  const s = STATES[stateSlug], d = DISASTER[disasterSlug], g = GUIDES[disasterSlug];
+  if (!s || !d || !g || !s.prone.includes(disasterSlug)) return null;   // only real, relevant combos
+  const url = `https://banpani.org/india/${stateSlug}/${disasterSlug}`;
+  const dl = d.name.toLowerCase();
+  const title = `${d.name} relief in ${s.name} - live map & how to help`;
+  const desc = `Live ${dl} relief coordination for ${s.name}, India. Report a stranded family or a need, see current ${dl} responses, and find how to help. No accounts, no money, open source.`;
+  const keywords = `${d.name} relief ${s.name}, ${dl} relief in ${s.name}, ${s.name} ${dl}, ${dl} help ${s.name}, ${dl} rescue ${s.name}, ${s.name} ${dl} 2026, volunteer ${dl} ${s.name}, ${dl} donation ${s.name}, ${dl} relief`;
+  const ld = [
+    { '@context': 'https://schema.org', '@type': 'WebPage', name: title, description: desc, url, about: [{ '@type': 'Place', name: s.name, address: { '@type': 'PostalAddress', addressRegion: s.name, addressCountry: 'IN' } }, { '@type': 'Thing', name: d.name }] },
+    { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'India states', item: 'https://banpani.org/india' },
+      { '@type': 'ListItem', position: 2, name: s.name, item: `https://banpani.org/india/${stateSlug}` },
+      { '@type': 'ListItem', position: 3, name: d.name + ' relief', item: url } ] },
+  ];
+  const others = s.prone.filter(p => p !== disasterSlug && DISASTER[p] && GUIDES[p]).map(p => `<a href="/india/${stateSlug}/${p}">${DISASTER[p].emoji} ${DISASTER[p].name} relief in ${esc(s.name)}</a>`).join('');
+  const head = [
+    '  <meta charset="utf-8" />', '  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />',
+    `  <title>${esc(title)} · Banpani</title>`, `  <meta name="description" content="${esc(desc)}" />`, `  <meta name="keywords" content="${esc(keywords)}" />`,
+    `  <link rel="canonical" href="${url}" />`, '  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />',
+    '  <link rel="icon" href="/favicon.ico" sizes="any" /><link rel="icon" href="/favicon.svg" type="image/svg+xml" />', '  <meta name="theme-color" content="#0f1419" />',
+    `  <meta property="og:type" content="website" /><meta property="og:title" content="${esc(title)}" /><meta property="og:description" content="${esc(desc)}" /><meta property="og:url" content="${url}" /><meta property="og:image" content="https://banpani.org/og-${d.family}.png" />`,
+    '  <link rel="stylesheet" href="/styles.css" />', ld.map(x => `  <script type="application/ld+json">${jesc(x)}</script>`).join('\n'), HEADCSS,
+  ].join('\n');
+  const body = `${ghead()}
+  <div class="gwrap">
+    <nav style="font-size:12px;color:var(--muted);margin-top:14px"><a href="/" style="color:var(--muted)">Home</a> › <a href="/india" style="color:var(--muted)">States</a> › <a href="/india/${stateSlug}" style="color:var(--muted)">${esc(s.name)}</a> › <span>${esc(d.name)} relief</span></nav>
+    <h1>${d.emoji} ${esc(d.name)} relief in ${esc(s.name)}</h1>
+    <p class="lead">${esc(s.name)} is prone to <b>${esc(d.name.toLowerCase())}s</b> - part of ${esc(s.hook)}. When one strikes, Banpani is a free, community-run live map to coordinate relief: report a stranded family or a need such as rescue, water, medicine or shelter, and volunteers nearby can act. No accounts, no money.</p>
+    <div class="cta-row"><a class="p" href="/">🆘 Open the live map</a><a class="s" href="/status">📊 Live tracker</a></div>
+    <h2>Live ${esc(dl)} responses in ${esc(s.name)}</h2>
+    <div class="live" id="live"><div class="muted">Loading current signals…</div></div>
+    <h2>What is usually needed</h2>
+    <div class="off">${esc(g.needs)}</div>
+    <h2>How to coordinate ${esc(dl)} relief</h2>
+    <p class="lead">In short: call 112 for anyone in danger, report exactly where help is needed, and match nearby help to open needs so nothing is duplicated. Full step-by-step: <a href="/guide/${disasterSlug}" style="color:var(--accent);font-weight:700">How to coordinate ${esc(dl)} relief in India →</a></p>
+    <h2>Official sources for ${esc(s.name)}</h2>
+    <div class="off">State authority: <b>${esc(s.sdma)}</b>.<br>National: <a href="https://ndma.gov.in" target="_blank" rel="noopener">NDMA</a> · disaster helpline <b>1078</b> · emergency <b>112</b>.<br><span class="muted">Banpani is a community tool, not an official agency. Community reports are not official figures - always follow official warnings.</span></div>
+    ${others ? `<h2>Other disasters in ${esc(s.name)}</h2>\n    <div class="rel" style="display:flex;flex-wrap:wrap;gap:8px">${others}</div>` : ''}
+    <div class="gfoot"><a href="/india/${stateSlug}" style="color:var(--accent)">← All disaster relief in ${esc(s.name)}</a> · Banpani is free, open source and owned by no one. In an emergency call 112.</div>
+  </div>
+  <script>
+    fetch('/api/tracker').then(function(r){return r.json();}).then(function(j){
+      var box=document.getElementById('live');
+      var sig=(j&&j.signals||[]).filter(function(x){return x.state===${jesc(s.state)}&&x.family===${jesc(d.family)};});
+      var esc=function(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});};
+      if(!sig.length){box.innerHTML='<div class="muted">No active ${esc(dl)} signals in ${esc(s.name)} right now. This fills automatically when something happens - open the <a href="/" style="color:var(--accent)">live map</a> to report.</div>';return;}
       box.innerHTML=sig.slice(0,12).map(function(x){return '<div class="sig">'+esc(x.title)+'<div class="m">'+esc((x.district?x.district+' · ':'')+(x.detail||''))+' · '+esc(x.source)+'</div></div>';}).join('');
     }).catch(function(){document.getElementById('live').innerHTML='<div class="muted">Could not load live signals.</div>';});
   </script>`;
