@@ -68,7 +68,9 @@ const isAdmin = req => req.headers['x-admin-key'] && req.headers['x-admin-key'] 
 // abuse (a hash repeating a lot) and to derive an anonymous per-actor id for the public
 // transparency feed. Salt = admin key (secret, per-deploy) unless overridden.
 const IP_SALT = process.env.BANPANI_IP_SALT || ('salt:' + ADMIN_KEY);
-const clientIp = req => (req.headers['x-real-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0] || req.socket?.remoteAddress || '').trim();
+// cf-connecting-ip is the real visitor behind Cloudflare; fall back to the usual headers / socket so
+// rate-limits + IP hashing keep working per-user whether or not a CDN is in front.
+const clientIp = req => (req.headers['cf-connecting-ip'] || req.headers['x-real-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0] || req.socket?.remoteAddress || '').trim();
 const ipHash = req => createHash('sha256').update(IP_SALT + '|' + clientIp(req)).digest('hex');
 // Comprehensive action log. Every write goes through this. `area` is a coarse public
 // label (place name / rounded location); nothing sensitive (no raw IP, no phone) is stored.
